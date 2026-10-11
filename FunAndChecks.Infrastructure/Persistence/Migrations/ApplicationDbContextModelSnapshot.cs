@@ -37,6 +37,104 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
                     b.ToTable("AttendanceSessionGroups");
                 });
 
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.AchievementAward", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AchievementId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("GrantedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IssuedByName")
+                        .IsRequired()
+                        .HasMaxLength(201)
+                        .HasColumnType("character varying(201)");
+
+                    b.Property<Guid?>("IssuedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RevokedByName")
+                        .HasMaxLength(201)
+                        .HasColumnType("character varying(201)");
+
+                    b.Property<Guid?>("RevokedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IssuedByUserId");
+
+                    b.HasIndex("RevokedByUserId");
+
+                    b.HasIndex("AchievementId", "UserId")
+                        .IsUnique()
+                        .HasFilter("\"RevokedAtUtc\" IS NULL");
+
+                    b.HasIndex("UserId", "GrantedAtUtc");
+
+                    b.ToTable("AchievementAwards", (string)null);
+                });
+
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.AchievementDefinition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedByName")
+                        .IsRequired()
+                        .HasMaxLength(201)
+                        .HasColumnType("character varying(201)");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("IsArchived", "Name");
+
+                    b.ToTable("AchievementDefinitions", (string)null);
+                });
+
             modelBuilder.Entity("FunAndChecks.Domain.Entities.AdminGroupAccess", b =>
                 {
                     b.Property<Guid>("AdminId")
@@ -249,6 +347,83 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
                     b.ToTable("GroupSubjects");
                 });
 
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.PinnedAchievement", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AchievementAwardId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "Position");
+
+                    b.HasIndex("AchievementAwardId")
+                        .IsUnique();
+
+                    b.ToTable("PinnedAchievements", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PinnedAchievements_Position", "\"Position\" >= 1 AND \"Position\" <= 3");
+                        });
+                });
+
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.ProfileMediaAsset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("AchievementDefinitionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<byte[]>("Data")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<double>("DurationSeconds")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsAnimated")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PosterContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<byte[]>("PosterData")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<Guid?>("UserProfileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AchievementDefinitionId")
+                        .IsUnique();
+
+                    b.HasIndex("UserProfileId")
+                        .IsUnique();
+
+                    b.ToTable("ProfileMediaAssets", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ProfileMediaAssets_OneOwner", "(\"UserProfileId\" IS NOT NULL AND \"AchievementDefinitionId\" IS NULL) OR (\"UserProfileId\" IS NULL AND \"AchievementDefinitionId\" IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("FunAndChecks.Domain.Entities.QueueEntry", b =>
                 {
                     b.Property<int>("Id")
@@ -442,6 +617,32 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
                     b.UseTpcMappingStrategy();
                 });
 
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.UserProfile", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AboutMe")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("GitHubUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("PortfolioUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("UserProfiles", (string)null);
+                });
+
             modelBuilder.Entity("FunAndChecks.Infrastructure.Identity.ApplicationRole", b =>
                 {
                     b.Property<Guid>("Id")
@@ -514,6 +715,7 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("PreferredCulture")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(5)
                         .HasColumnType("character varying(5)")
                         .HasDefaultValue("en-US");
@@ -728,6 +930,41 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.AchievementAward", b =>
+                {
+                    b.HasOne("FunAndChecks.Domain.Entities.AchievementDefinition", "Achievement")
+                        .WithMany()
+                        .HasForeignKey("AchievementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FunAndChecks.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("IssuedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("FunAndChecks.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("RevokedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("FunAndChecks.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Achievement");
+                });
+
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.AchievementDefinition", b =>
+                {
+                    b.HasOne("FunAndChecks.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
             modelBuilder.Entity("FunAndChecks.Domain.Entities.AdminGroupAccess", b =>
                 {
                     b.HasOne("FunAndChecks.Domain.Entities.Admin", "Admin")
@@ -851,6 +1088,34 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
                     b.Navigation("Subject");
                 });
 
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.PinnedAchievement", b =>
+                {
+                    b.HasOne("FunAndChecks.Domain.Entities.AchievementAward", null)
+                        .WithMany()
+                        .HasForeignKey("AchievementAwardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FunAndChecks.Domain.Entities.UserProfile", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.ProfileMediaAsset", b =>
+                {
+                    b.HasOne("FunAndChecks.Domain.Entities.AchievementDefinition", null)
+                        .WithOne()
+                        .HasForeignKey("FunAndChecks.Domain.Entities.ProfileMediaAsset", "AchievementDefinitionId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("FunAndChecks.Domain.Entities.UserProfile", null)
+                        .WithOne()
+                        .HasForeignKey("FunAndChecks.Domain.Entities.ProfileMediaAsset", "UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("FunAndChecks.Domain.Entities.QueueEntry", b =>
                 {
                     b.HasOne("FunAndChecks.Domain.Entities.Admin", "CurrentAdmin")
@@ -947,6 +1212,15 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
                     b.Navigation("Student");
 
                     b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.UserProfile", b =>
+                {
+                    b.HasOne("FunAndChecks.Infrastructure.Identity.ApplicationUser", null)
+                        .WithOne()
+                        .HasForeignKey("FunAndChecks.Domain.Entities.UserProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("FunAndChecks.Infrastructure.Identity.RefreshToken", b =>

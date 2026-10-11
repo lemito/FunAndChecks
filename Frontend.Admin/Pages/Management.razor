@@ -46,10 +46,10 @@ else
                         <MudItem xs="6" sm="3"><MudTimePicker @bind-Time="_queueTime" Label="@Loc["Management_TimeLabel"]" Variant="Variant.Outlined" /></MudItem>
                         <MudItem xs="12" sm="6">
                             <MudSelect T="int" SelectedValues="_autoFillGroupIds" SelectedValuesChanged="@(v => _autoFillGroupIds = v.ToList())"
-                                       MultiSelection="true"
+                                       MultiSelection="true" ToStringFunc="@(id => _groups.FirstOrDefault(g => g.Id == id)?.Name ?? "")"
                                        Label="@Loc["Management_AutoFillLabel"]" Variant="Variant.Outlined"
                                        Placeholder="@Loc["Management_SelectGroups"]"
-                                       MultiSelectionTextFunc="@(items => string.Format(Loc["Management_AutoFillSelected"], items.Count))">
+                                       MultiSelectionTextFunc="@(items => items.Count == 0 ? "" : string.Format(Loc["Management_AutoFillSelected"], items.Count))">
                                 @foreach (var g in _groups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
                             </MudSelect>
                         </MudItem>
@@ -98,10 +98,10 @@ else
             <div class="fc-management-form" >
                 <MudTextField @bind-Value="_newSubjectName" Label="@Loc["Management_NewSubjectLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 <MudSelect T="int" SelectedValues="_newSubjectGroupIds" SelectedValuesChanged="@(v => _newSubjectGroupIds = v.ToList())"
-                           MultiSelection="true"
+                           MultiSelection="true" ToStringFunc="@(id => _groups.FirstOrDefault(g => g.Id == id)?.Name ?? "")"
                            Label="@Loc["Management_GroupAccessLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense"
                            Placeholder="@Loc["Management_GroupAccessPlaceholder"]" Style="min-width: 0;"
-                           MultiSelectionTextFunc="@(items => string.Format(Loc["Management_GroupCount"], items.Count))">
+                           MultiSelectionTextFunc="@(items => items.Count == 0 ? "" : string.Format(Loc["Management_GroupCount"], items.Count))">
                     @foreach (var g in _groups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
                 </MudSelect>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateSubjectAsync">@Loc["Common_Add"]</MudButton>
@@ -133,10 +133,10 @@ else
             <div class="fc-management-form" >
                 <MudTextField @bind-Value="_newGroupName" Label="@Loc["Management_NewGroupLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 <MudSelect T="int" SelectedValues="_newGroupSubjectIds" SelectedValuesChanged="@(v => _newGroupSubjectIds = v.ToList())"
-                           MultiSelection="true"
+                           MultiSelection="true" ToStringFunc="@(id => _subjects.FirstOrDefault(s => s.Id == id)?.Name ?? "")"
                            Label="@Loc["Management_SubjectAccessLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense"
                            Placeholder="@Loc["Management_SubjectAccessPlaceholder"]" Style="min-width: 0;"
-                           MultiSelectionTextFunc="@(items => string.Format(Loc["Management_SubjectCount"], items.Count))">
+                           MultiSelectionTextFunc="@(items => items.Count == 0 ? "" : string.Format(Loc["Management_SubjectCount"], items.Count))">
                     @foreach (var s in _subjects) { <MudSelectItem T="int" Value="@s.Id">@s.Name</MudSelectItem> }
                 </MudSelect>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateGroupAsync">@Loc["Common_Add"]</MudButton>

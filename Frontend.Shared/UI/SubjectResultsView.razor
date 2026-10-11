@@ -1,21 +1,24 @@
 @namespace Frontend.Shared.UI
 @using Frontend.Shared.Models
 @inject IStringLocalizer<AppStrings> Loc
+@inject ResultsNavigationState ProfileReturn
+@inject NavigationManager Nav
 
 @if (Results is not null)
 {
+    <ResultsColorSubscription SubjectId="Results.SubjectId" OnColorsUpdated="UpdateStudentColors" />
     <div class="fc-results-average fc-muted">@Loc["Results_AveragePoints"]: <strong>@AveragePoints</strong></div>
     <section class="fc-panel fc-results-panel">
     <div class="fc-panel-heading">
         <h3>@Results.SubjectName</h3>
         <span class="fc-muted">@Results.UserResults.Count @Loc["Design_Students"]</span>
     </div>
-    <MudDataGrid T="StudentResultRowDto" Items="@Results.UserResults" Dense="true" Breakpoint="Breakpoint.None"
+    <MudDataGrid @ref="_grid" T="StudentResultRowDto" Items="@_rows" Dense="true" Breakpoint="Breakpoint.None"
                  Filterable="true" Hover="true" Class="fc-results-grid">
         <Columns>
             <TemplateColumn Title="@Loc["Results_ColName"]" SortBy="@(x => x.FullName)" CellClass="fc-results-sticky" HeaderClass="fc-results-sticky">
                 <CellTemplate>
-                    <span class="fc-result-name" style="@FioStyle(context.Item.StudentColor)">@context.Item.FullName</span>
+                    <ProfileLink UserId="context.Item.StudentId" Class="fc-result-name" Style="@FioStyle(context.Item.StudentColor)" BeforeNavigate="RememberResultsAsync">@context.Item.FullName</ProfileLink>
                 </CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.GroupName" Title="@Loc["Results_ColGroup"]" />
@@ -55,6 +58,25 @@
 
 @code {
     [Parameter] public SubjectResultsDto? Results { get; set; }
+    private MudDataGrid<StudentResultRowDto>? _grid;
+    private SubjectResultsDto? _parameterResults;
+    private List<StudentResultRowDto> _rows = [];
+    private readonly Guid _profileViewInstance = Guid.NewGuid();
+    private string StateKey => new Uri(Nav.Uri).AbsolutePath;
+    protected override async Task OnInitializedAsync() => await ProfileReturn.InitializeAsync();
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_parameterResults, Results))
+        {
+            _parameterResults = Results;
+            _rows = Results?.UserResults ?? [];
+        }
+        if (Results is not null)
+            ProfileReturn.SelectSubject(StateKey, Results.SubjectId);
+    }
+    private void UpdateStudentColors(IReadOnlyList<StudentColorUpdateDto> updates) => _rows = StudentColorRows.Apply(_rows, updates);
+    protected override Task OnAfterRenderAsync(bool firstRender) => ProfileReturn.RestoreAsync(StateKey, _grid, _profileViewInstance);
+    private Task RememberResultsAsync() => ProfileReturn.CaptureAsync(StateKey, _grid, _profileViewInstance);
     private string AveragePoints => Results?.UserResults is { Count: > 0 } rows
         ? rows.Average(row => row.TotalPoints).ToString("0.##", System.Globalization.CultureInfo.CurrentCulture)
         : "—";

@@ -85,6 +85,7 @@ public partial class StudentGrading
             { x => x.EventId, (int?)null },
             { x => x.SubjectId, _subjectId.Value },
             { x => x.StudentColor, student.Color },
+            { x => x.OnColorApplied, EventCallback.Factory.Create<StudentColorUpdateDto>(this, UpdateStudentColor) },
         };
 
         var dialog = await DialogService.ShowAsync<StudentInteractionDialog>(
@@ -97,6 +98,11 @@ public partial class StudentGrading
 
     private bool IsGroupRestricted(StudentDetailsDto student) =>
         student.GroupId is int groupId && _restrictedGroups.Contains(groupId);
+
+    private void UpdateStudentColor(StudentColorUpdateDto update) =>
+        _results = _results.Select(student => student.Id == update.StudentId
+            ? student with { Color = update.Color }
+            : student).ToList();
 
     private async Task EditAsync(StudentDetailsDto student)
     {

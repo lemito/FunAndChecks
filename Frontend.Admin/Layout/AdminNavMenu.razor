@@ -16,6 +16,9 @@
     <MudNavLink Href="/admin/attendance" Icon="@Icons.Material.Filled.FactCheck">
         Посещаемость
     </MudNavLink>
+    <MudNavLink Href="/admin/achievements" Icon="@Icons.Material.Outlined.EmojiEvents">
+        @(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru" ? "Достижения" : "Achievements")
+    </MudNavLink>
     <AuthorizeView Roles="@Roles.SuperAdmin">
         <MudNavLink Href="/admin/admins" Icon="@Icons.Material.Filled.AdminPanelSettings">
             @Loc["AdminNav_Admins"]

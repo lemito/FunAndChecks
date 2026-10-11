@@ -23,6 +23,9 @@ public record SetPreferredCultureRequest(string Culture);
 /// <summary>Установка админом цвета студента (null — убрать заливку).</summary>
 public record SetStudentColorRequest(string? Color);
 
+/// <summary>Общий цвет студента изменился; подписчики обновляют таблицу или очередь.</summary>
+public record StudentColorUpdateDto(Guid StudentId, string? Color);
+
 public record UpdateStudentAccountRequest(string FirstName, string LastName, int? GroupId, string Email, string? NewPassword);
 
 /// <summary>Учётная запись без административных прав, включая неподтверждённые регистрации.</summary>

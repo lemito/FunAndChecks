@@ -24,6 +24,7 @@ public partial class StudentInteractionDialog : IDisposable
     [Parameter] public bool ReadOnly { get; set; }
     [Parameter] public string? StudentColor { get; set; }
     [Parameter] public string? CheckingWarningName { get; set; }
+    [Parameter] public EventCallback<StudentColorUpdateDto> OnColorApplied { get; set; }
 
     [Inject] private StudentsApi Students { get; set; } = null!;
     [Inject] private SubjectsApi Subjects { get; set; } = null!;
@@ -44,6 +45,7 @@ public partial class StudentInteractionDialog : IDisposable
     private bool _loadingTasks = true;
     private bool _busy;
     private bool _hasChanges;
+    private int _activePanelIndex;
     private string? _pickerColor;
     private MudBlazor.Utilities.MudColor? _pickerMudColor;
     // Выбран ли цвет (включая сброс в null) — до выбора «Применить» неактивна.
@@ -60,7 +62,7 @@ public partial class StudentInteractionDialog : IDisposable
     private void OnColorPickerChanged(MudBlazor.Utilities.MudColor? color)
     {
         _pickerMudColor = color;
-        _pickerColor = color?.Value;
+        _pickerColor = color?.ToString(MudBlazor.Utilities.MudColorOutputFormats.Hex);
         _pickerTouched = true;
     }
     protected override async Task OnInitializedAsync()
@@ -218,7 +220,10 @@ public partial class StudentInteractionDialog : IDisposable
         try
         {
             await Students.SetColorAsync(StudentId, new SetStudentColorRequest(color));
+            StudentColor = color;
             _hasChanges = true;
+            _pickerTouched = false;
+            await OnColorApplied.InvokeAsync(new StudentColorUpdateDto(StudentId, color));
             Snackbar.Add(color is null ? Loc["Dialog_FillRemoved"] : Loc["Dialog_ColorApplied"], Severity.Success);
             _edits.MarkClean();
         }
@@ -248,6 +253,13 @@ public partial class StudentInteractionDialog : IDisposable
     {
         SubmissionStatus.Rejected => Color.Warning,
         SubmissionStatus.Accepted => Color.Success,
-        _ => Color.Default,
+        _ => Color.Error,
+    };
+
+    private static string TaskStatusClass(SubmissionStatus status) => status switch
+    {
+        SubmissionStatus.Accepted => "fc-task-accepted",
+        SubmissionStatus.Rejected => "fc-task-rework",
+        _ => "fc-task-unsubmitted",
     };
 }

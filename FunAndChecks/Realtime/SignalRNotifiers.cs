@@ -2,6 +2,7 @@ using FunAndChecks.Application.Common.Interfaces;
 using FunAndChecks.Application.Grades;
 using FunAndChecks.Application.Queues;
 using FunAndChecks.Application.Submissions;
+using FunAndChecks.Application.Students;
 using FunAndChecks.Hubs;
 using Microsoft.AspNetCore.SignalR;
 
@@ -13,6 +14,11 @@ public class QueueNotifier(IHubContext<QueueHub> hubContext) : IQueueNotifier
         hubContext.Clients
             .Group(QueueHub.GroupName(update.EventId))
             .SendAsync("QueueEntryUpdated", update, cancellationToken);
+
+    public Task StudentColorUpdatedAsync(int eventId, StudentColorUpdateDto update, CancellationToken cancellationToken = default) =>
+        hubContext.Clients
+            .Group(QueueHub.GroupName(eventId))
+            .SendAsync("StudentColorUpdated", update, cancellationToken);
 }
 
 public class ResultsNotifier(IHubContext<ResultsHub> hubContext) : IResultsNotifier
@@ -26,4 +32,9 @@ public class ResultsNotifier(IHubContext<ResultsHub> hubContext) : IResultsNotif
         hubContext.Clients
             .Group(ResultsHub.GroupName(subjectId))
             .SendAsync("GradeUpdated", update, cancellationToken);
+
+    public Task StudentColorUpdatedAsync(int subjectId, StudentColorUpdateDto update, CancellationToken cancellationToken = default) =>
+        hubContext.Clients
+            .Group(ResultsHub.GroupName(subjectId))
+            .SendAsync("StudentColorUpdated", update, cancellationToken);
 }

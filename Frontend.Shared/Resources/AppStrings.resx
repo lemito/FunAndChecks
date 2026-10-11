@@ -205,7 +205,8 @@
   <data name="Dialog_HideHistory" xml:space="preserve"><value>Hide history</value></data>
   <data name="Dialog_NoSubmissions" xml:space="preserve"><value>No submissions yet.</value></data>
   <data name="Dialog_NoGradeComponents" xml:space="preserve"><value>This subject has no grade columns (exam, coursework).</value></data>
-  <data name="Dialog_ColorSubtitle" xml:space="preserve"><value>Fill color of the student's name cell in the results table.</value></data>
+  <data name="Dialog_ColorSubtitle" xml:space="preserve"><value>The student's name color in results and queues. Queue status colors stay separate.</value></data>
+  <data name="Dialog_ColorSpectrumHint" xml:space="preserve"><value>Use the rainbow slider to choose a hue, then the square for brightness and saturation. You can also enter RGB or HEX.</value></data>
   <data name="Dialog_ColorPreview" xml:space="preserve"><value>Preview:</value></data>
   <data name="Dialog_RemoveFill" xml:space="preserve"><value>Remove fill</value></data>
   <data name="Dialog_Green" xml:space="preserve"><value>Green</value></data>
@@ -501,4 +502,29 @@
   <data name="Maintenance_BackupRowsPerPage" xml:space="preserve"><value>Files per page</value></data>
   <data name="Maintenance_BackupNotFound" xml:space="preserve"><value>This backup no longer exists on the server. Refresh the list.</value></data>
   <data name="Maintenance_BackupInvalidName" xml:space="preserve"><value>Invalid backup file name.</value></data>
+  <data name="ProfileError_ProfileNotFound" xml:space="preserve"><value>This profile is unavailable.</value></data>
+  <data name="ProfileError_PinsInvalid" xml:space="preserve"><value>Choose up to three of your current awards.</value></data>
+  <data name="ProfileError_UrlInvalid" xml:space="preserve"><value>Use an HTTPS link; GitHub links must use github.com.</value></data>
+  <data name="ProfileError_Archived" xml:space="preserve"><value>This achievement is archived and cannot be granted.</value></data>
+  <data name="ProfileError_AlreadyAwarded" xml:space="preserve"><value>This user already has this achievement.</value></data>
+  <data name="ProfileError_RevokeForbidden" xml:space="preserve"><value>Only its issuer or a super administrator can revoke this award.</value></data>
+  <data name="ProfileError_Changed" xml:space="preserve"><value>The award changed. Refresh and try again.</value></data>
+  <data name="ProfileError_AchievementNotFound" xml:space="preserve"><value>This achievement is unavailable.</value></data>
+  <data name="ProfileError_AwardNotFound" xml:space="preserve"><value>The award was not found.</value></data>
+  <data name="ProfileError_MediaNotFound" xml:space="preserve"><value>This image is unavailable.</value></data>
+  <data name="ProfileError_SessionLimit" xml:space="preserve"><value>Close another editor or try uploading again later.</value></data>
+  <data name="ProfileError_SessionNotFound" xml:space="preserve"><value>The editor session expired. Upload the source again.</value></data>
+  <data name="ProfileError_ProcessingUnavailable" xml:space="preserve"><value>Media processing is unavailable. Your existing image is preserved.</value></data>
+  <data name="ProfileError_SourceTooLarge" xml:space="preserve"><value>The source file must be no larger than 20 MB.</value></data>
+  <data name="ProfileError_ResultTooLarge" xml:space="preserve"><value>The result exceeds 2 MB. Select a shorter fragment.</value></data>
+  <data name="ProfileError_SelectionInvalid" xml:space="preserve"><value>Check the crop and time range: animations must be no longer than 10 seconds.</value></data>
+  <data name="ProfileError_SourceInvalid" xml:space="preserve"><value>The file could not be read. Select a supported image, GIF, or video.</value></data>
+  <data name="ProfileError_DimensionsInvalid" xml:space="preserve"><value>The source dimensions are too large. Select a lower-resolution file.</value></data>
+  <data name="ProfileError_DurationInvalid" xml:space="preserve"><value>The source is too long. Select a video or GIF up to five minutes.</value></data>
+  <data name="ProfileError_PreviewTooLarge" xml:space="preserve"><value>A compact preview could not be prepared. Select a shorter source.</value></data>
+  <data name="ProfileError_ProcessingFailed" xml:space="preserve"><value>The file could not be processed. Your existing image is preserved.</value></data>
+  <data name="ProfileError_ProcessingTimeout" xml:space="preserve"><value>Processing took too long. Try a smaller file.</value></data>
+  <data name="ProfileError_ProcessingMemoryLimit" xml:space="preserve"><value>Processing exceeded the memory limit. Try a lower-resolution file.</value></data>
+  <data name="Dialog_ColorHue" xml:space="preserve"><value>Hue</value></data>
+  <data name="Dialog_ColorSaturationBrightness" xml:space="preserve"><value>Saturation and brightness</value></data>
 </root>

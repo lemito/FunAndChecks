@@ -55,14 +55,14 @@ public partial class Management
     private List<ComponentRow> _components = [];
     private List<QueueRow> _queues = [];
     private bool _loading = true;
-    private string _section = "subjects";
+    private string _section = "queues";
     private static readonly (string Id, string Label, string Icon)[] ManagementSections =
     [
+        ("queues", "Management_TabQueues", Icons.Material.Filled.Queue),
         ("subjects", "Management_TabSubjects", Icons.Material.Filled.Layers),
         ("groups", "Management_TabGroups", Icons.Material.Filled.Groups),
         ("tasks", "Management_TabTasks", Icons.Material.Filled.Code),
         ("grades", "Management_TabGradeComponents", Icons.Material.Filled.Grading),
-        ("queues", "Management_TabQueues", Icons.Material.Filled.Queue),
         ("visibility", "Management_VisibilityTab", Icons.Material.Filled.Visibility)
     ];
 

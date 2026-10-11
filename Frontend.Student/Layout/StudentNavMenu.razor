@@ -13,4 +13,7 @@
     <MudNavLink Href="/student/attendance" Icon="@Icons.Material.Filled.FactCheck">
         Посещаемость
     </MudNavLink>
+    <MudNavLink Href="/student/achievements" Icon="@Icons.Material.Outlined.EmojiEvents">
+        @(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru" ? "Достижения" : "Achievements")
+    </MudNavLink>
 </MudNavMenu>

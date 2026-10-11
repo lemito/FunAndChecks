@@ -30,7 +30,7 @@
                         <span class="fc-result-history-teacher" style="@TeacherStyle(entry.Admin)">@entry.Admin.Letter</span>
                         <div>
                             <div class="fc-result-history-meta">
-                                <strong>@entry.Admin.FullName</strong>
+                                <strong><ProfileLink UserId="entry.Admin.Id" BeforeNavigate="OpenProfileAsync">@entry.Admin.FullName</ProfileLink></strong>
                                 <time datetime="@entry.SubmittedAt.ToString("O")">@entry.SubmittedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</time>
                                 <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@(entry.Status == SubmissionStatus.Accepted ? Color.Success : Color.Warning)">
                                     @(entry.Status == SubmissionStatus.Accepted ? Loc["Task_StatusAccepted"] : Loc["Task_StatusRejected"])
@@ -55,6 +55,7 @@
     [Parameter] public string StudentName { get; set; } = "";
     [Parameter] public int TaskId { get; set; }
     [Parameter] public string TaskName { get; set; } = "";
+    [Parameter] public EventCallback BeforeProfileNavigate { get; set; }
     private bool _loading = true;
     private string? _error;
     private List<SubmissionLogDto> _history = [];
@@ -77,6 +78,7 @@
     }
 
     private void Close() => Dialog.Close();
+    private async Task OpenProfileAsync() { await BeforeProfileNavigate.InvokeAsync(); Dialog.Close(); }
     private static string TeacherStyle(AdminDto admin) => string.IsNullOrWhiteSpace(admin.Color) ? "" :
         $"background-color:{admin.Color};color:{ColorUtils.ContrastText(admin.Color)};";
 }

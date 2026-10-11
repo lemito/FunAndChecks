@@ -1,6 +1,7 @@
 using FunAndChecks.Application.Grades;
 using FunAndChecks.Application.Queues;
 using FunAndChecks.Application.Submissions;
+using FunAndChecks.Application.Students;
 
 namespace FunAndChecks.Application.Common.Interfaces;
 
@@ -10,6 +11,8 @@ namespace FunAndChecks.Application.Common.Interfaces;
 public interface IQueueNotifier
 {
     Task QueueEntryUpdatedAsync(QueueEntryUpdateDto update, CancellationToken cancellationToken = default);
+
+    Task StudentColorUpdatedAsync(int eventId, StudentColorUpdateDto update, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -20,4 +23,6 @@ public interface IResultsNotifier
     Task ResultUpdatedAsync(int subjectId, ResultUpdateDto update, CancellationToken cancellationToken = default);
 
     Task GradeUpdatedAsync(int subjectId, GradeUpdateDto update, CancellationToken cancellationToken = default);
+
+    Task StudentColorUpdatedAsync(int subjectId, StudentColorUpdateDto update, CancellationToken cancellationToken = default);
 }

@@ -28,6 +28,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<AttendanceSession> AttendanceSessions => Set<AttendanceSession>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+    public DbSet<ProfileMediaAsset> ProfileMediaAssets => Set<ProfileMediaAsset>();
+    public DbSet<AchievementDefinition> AchievementDefinitions => Set<AchievementDefinition>();
+    public DbSet<AchievementAward> AchievementAwards => Set<AchievementAward>();
+    public DbSet<PinnedAchievement> PinnedAchievements => Set<PinnedAchievement>();
 
     public async Task ExecuteSerializableAsync(Func<CancellationToken, Task> action, CancellationToken cancellationToken = default)
     {

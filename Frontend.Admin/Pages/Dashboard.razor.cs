@@ -18,11 +18,13 @@ public partial class Dashboard
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<AppStrings> Loc { get; set; } = null!;
     [Inject] private IDialogService Dialogs { get; set; } = null!;
+    [Inject] private ResultsNavigationState ProfileReturn { get; set; } = null!;
 
     private List<SubjectDto> _subjects = [];
     private SubjectDto? _selectedSubject;
     private SubjectResultsDto? _results;
     private MudDataGrid<StudentResultRowDto>? _grid;
+    private readonly Guid _profileViewInstance = Guid.NewGuid();
     private bool _loading;
     private Dictionary<Guid, (int Present, int Absent, int Unmarked)>? _attendance;
     private string AveragePoints => _results?.UserResults is { Count: > 0 } rows
@@ -44,6 +46,7 @@ public partial class Dashboard
             { dialog => dialog.StudentName, row.FullName },
             { dialog => dialog.TaskId, task.TaskId },
             { dialog => dialog.TaskName, task.TaskName },
+            { dialog => dialog.BeforeProfileNavigate, EventCallback.Factory.Create(this, RememberResultsAsync) },
         };
         await Dialogs.ShowAsync<ResultHistoryDialog>(Loc["Dialog_History"], parameters,
             new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small, CloseButton = true });
@@ -53,7 +56,10 @@ public partial class Dashboard
     {
         try
         {
+            await ProfileReturn.InitializeAsync();
             _subjects = await Me.GetVisibleSubjectsAsync();
+            if (ProfileReturn.Subject("/admin") is int id && _subjects.FirstOrDefault(s => s.Id == id) is { } subject)
+                await OnSubjectSelectedAsync(subject);
         }
         catch (ApiException ex)
         {
@@ -67,6 +73,7 @@ public partial class Dashboard
             return;
 
         _selectedSubject = subject;
+        ProfileReturn.SelectSubject("/admin", subject.Id);
         _loading = true;
         _results = null;
         _attendance = null;
@@ -105,6 +112,15 @@ public partial class Dashboard
         {
             Snackbar.Add(string.Format(Loc["Dashboard_ExportError"], ex.Message), Severity.Error);
         }
+    }
+
+    private Task RememberResultsAsync() => ProfileReturn.CaptureAsync("/admin", _grid, _profileViewInstance);
+    protected override Task OnAfterRenderAsync(bool firstRender) => ProfileReturn.RestoreAsync("/admin", _grid, _profileViewInstance);
+
+    private void UpdateStudentColors(IReadOnlyList<StudentColorUpdateDto> updates)
+    {
+        if (_results is not null)
+            _results = _results with { UserResults = StudentColorRows.Apply(_results.UserResults, updates) };
     }
 
     private static string FioStyle(string? color)

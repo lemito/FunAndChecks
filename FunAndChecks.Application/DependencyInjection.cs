@@ -9,6 +9,7 @@ using FunAndChecks.Application.Results;
 using FunAndChecks.Application.Students;
 using FunAndChecks.Application.Subjects;
 using FunAndChecks.Application.Submissions;
+using FunAndChecks.Application.Profiles;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FunAndChecks.Application;
@@ -32,6 +33,8 @@ public static class DependencyInjection
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IAdminAccessService, AdminAccessService>();
         services.AddScoped<IAttendanceService, AttendanceService>();
+        services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<IAchievementService, AchievementService>();
 
         return services;
     }

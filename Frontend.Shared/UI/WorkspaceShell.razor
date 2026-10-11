@@ -8,6 +8,8 @@
 @inject UnsavedChangesTracker Dirty
 @inject IStringLocalizer<AppStrings> Loc
 @inject IJSRuntime JS
+@using Frontend.Shared.Profiles
+@inject ProfileApi Profiles
 
 <MudThemeProvider Theme="Appearance.Theme" IsDarkMode="Appearance.IsDarkMode" />
 <MudPopoverProvider />
@@ -23,7 +25,7 @@
             <div class="fc-workspace"><MudIcon Icon="@Icons.Material.Outlined.FolderOpen" Size="Size.Small" /><div><strong>@(IsAdmin ? Text("Рабочее пространство", "Workspace") : _group ?? Text("Кабинет студента", "Student workspace"))</strong><small>@(IsAdmin ? Loc["AdminLayout_Role"] : Text("Студент", "Student"))</small></div></div>
             <nav class="fc-navigation" @onclick="CloseNav">@Navigation</nav>
             <div class="fc-sidebar-bottom"><UiVersionSwitch /><button type="button" class="fc-logout" @onclick="LogoutAsync"><MudIcon Icon="@Icons.Material.Outlined.Logout" Size="Size.Small" />@Loc["App_Logout"]</button>
-                <div class="fc-account"><span class="fc-avatar">@Initials</span><div><strong>@_userName</strong><small>@(IsAdmin ? Text("Преподаватель", "Teacher") : _group)</small></div></div>
+                <a class="fc-account fc-account-link" href="@(IsAdmin ? "/admin/profile" : "/student/profile")" aria-label="@Text("Открыть мой кабинет", "Open my profile")"><ProfileMedia Media="_avatar" Fallback="@Initials" Alt="@_userName" /><div><strong>@_userName</strong><small>@(IsAdmin ? Text("Преподаватель", "Teacher") : _group)</small></div></a>
             </div>
         </aside>
     }
@@ -53,6 +55,7 @@
     private string _userName = "";
     private string? _group;
     private string _caption = "";
+    private MediaDto? _avatar;
     private string ContentAnchor => new Uri(Nav.Uri).PathAndQuery + "#workspace-content";
     private string Initials => string.Concat(_userName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(s => s[0]));
     private string PageName
@@ -61,6 +64,8 @@
         {
             var path = new Uri(Nav.Uri).AbsolutePath;
             if (path.Contains("/student-accounts")) return Text("Управление аккаунтами", "Manage accounts");
+            if (path.Contains("/achievements")) return Text("Достижения", "Achievements");
+            if (path.Contains("/profile")) return Text("Личный кабинет", "Profile");
             return path.Contains("/queues") ? Loc["AdminNav_Queues"] : path.Contains("/attendance") ? Text("Посещаемость", "Attendance") :
                 path.Contains("/management") ? Loc["AdminNav_Management"] : path.Contains("/grading") ? Loc["AdminNav_Grading"] :
                 path.Contains("/admins") ? Loc["AdminNav_Admins"] : path.Contains("/maintenance") ? Loc["AdminNav_Maintenance"] :
@@ -73,8 +78,11 @@
         Nav.LocationChanged += LocationChanged;
         if (!Public)
         {
+            Profiles.ProfileChanged += ProfileChanged;
             try { var me = await Me.GetMeAsync(); _userName = me.FullName; _group = me.GroupName; }
             catch (ApiException) { /* The page handles data errors; the account label is optional. */ }
+            try { _avatar = (await Profiles.MineAsync()).Avatar; }
+            catch (ApiException) { }
         }
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -86,11 +94,16 @@
         StateHasChanged();
     }
     private void Refresh() => InvokeAsync(StateHasChanged);
+    private async void ProfileChanged()
+    {
+        try { _avatar = (await Profiles.MineAsync()).Avatar; await InvokeAsync(StateHasChanged); }
+        catch (ApiException) { }
+    }
     private void ToggleNav() => _mobileOpen = !_mobileOpen;
     private void CloseNav() => _mobileOpen = false;
     private void OpenSettings() => _settingsOpen = true;
     private async Task LogoutAsync() { await Auth.LogoutAsync(); AuthState.NotifyAuthenticationStateChanged(); Nav.NavigateTo("/login"); }
     private void LocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs args) { Dirty.ClearAll(); _mobileOpen = false; InvokeAsync(StateHasChanged); }
-    public void Dispose() { Appearance.Changed -= Refresh; Nav.LocationChanged -= LocationChanged; Dirty.ClearAll(); }
+    public void Dispose() { Appearance.Changed -= Refresh; Nav.LocationChanged -= LocationChanged; Profiles.ProfileChanged -= ProfileChanged; Dirty.ClearAll(); }
     private static string Text(string ru, string en) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru" ? ru : en;
 }

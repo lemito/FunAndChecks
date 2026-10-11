@@ -205,7 +205,8 @@
   <data name="Dialog_HideHistory" xml:space="preserve"><value>Скрыть историю</value></data>
   <data name="Dialog_NoSubmissions" xml:space="preserve"><value>Сдач ещё не было.</value></data>
   <data name="Dialog_NoGradeComponents" xml:space="preserve"><value>У предмета нет оценочных колонок (билет, курсовая).</value></data>
-  <data name="Dialog_ColorSubtitle" xml:space="preserve"><value>Заливка ячейки ФИО студента в таблице результатов.</value></data>
+  <data name="Dialog_ColorSubtitle" xml:space="preserve"><value>Цвет ФИО студента в результатах и очередях. Цвет статуса очереди остаётся отдельным.</value></data>
+  <data name="Dialog_ColorSpectrumHint" xml:space="preserve"><value>Выберите оттенок на радужной полосе, затем яркость и насыщенность в квадрате. Можно также ввести RGB или HEX.</value></data>
   <data name="Dialog_ColorPreview" xml:space="preserve"><value>Предпросмотр:</value></data>
   <data name="Dialog_RemoveFill" xml:space="preserve"><value>Убрать заливку</value></data>
   <data name="Dialog_Green" xml:space="preserve"><value>Зелёный</value></data>
@@ -501,4 +502,29 @@
   <data name="Maintenance_BackupRowsPerPage" xml:space="preserve"><value>Файлов на странице</value></data>
   <data name="Maintenance_BackupNotFound" xml:space="preserve"><value>Этого бэкапа больше нет на сервере. Обновите список.</value></data>
   <data name="Maintenance_BackupInvalidName" xml:space="preserve"><value>Недопустимое имя файла бэкапа.</value></data>
+  <data name="ProfileError_ProfileNotFound" xml:space="preserve"><value>Профиль недоступен.</value></data>
+  <data name="ProfileError_PinsInvalid" xml:space="preserve"><value>Выберите до трёх собственных действующих наград.</value></data>
+  <data name="ProfileError_UrlInvalid" xml:space="preserve"><value>Укажите HTTPS-ссылку; для GitHub используйте github.com.</value></data>
+  <data name="ProfileError_Archived" xml:space="preserve"><value>Это достижение находится в архиве и недоступно для выдачи.</value></data>
+  <data name="ProfileError_AlreadyAwarded" xml:space="preserve"><value>У пользователя уже есть это достижение.</value></data>
+  <data name="ProfileError_RevokeForbidden" xml:space="preserve"><value>Отозвать награду может выдавший её администратор или суперадмин.</value></data>
+  <data name="ProfileError_Changed" xml:space="preserve"><value>Награда изменилась. Обновите страницу и повторите действие.</value></data>
+  <data name="ProfileError_AchievementNotFound" xml:space="preserve"><value>Достижение недоступно.</value></data>
+  <data name="ProfileError_AwardNotFound" xml:space="preserve"><value>Выдача награды не найдена.</value></data>
+  <data name="ProfileError_MediaNotFound" xml:space="preserve"><value>Изображение недоступно.</value></data>
+  <data name="ProfileError_SessionLimit" xml:space="preserve"><value>Закройте другой редактор или повторите загрузку позже.</value></data>
+  <data name="ProfileError_SessionNotFound" xml:space="preserve"><value>Сессия редактора истекла. Загрузите исходник снова.</value></data>
+  <data name="ProfileError_ProcessingUnavailable" xml:space="preserve"><value>Обработка медиа временно недоступна. Прежнее изображение сохранено.</value></data>
+  <data name="ProfileError_SourceTooLarge" xml:space="preserve"><value>Исходный файл должен быть не больше 20 МБ.</value></data>
+  <data name="ProfileError_ResultTooLarge" xml:space="preserve"><value>Результат превышает 2 МБ. Выберите более короткий фрагмент.</value></data>
+  <data name="ProfileError_SelectionInvalid" xml:space="preserve"><value>Проверьте область обрезки и границы фрагмента: анимация должна быть не длиннее 10 секунд.</value></data>
+  <data name="ProfileError_SourceInvalid" xml:space="preserve"><value>Не удалось прочитать файл. Выберите поддерживаемое фото, GIF или видео.</value></data>
+  <data name="ProfileError_DimensionsInvalid" xml:space="preserve"><value>Слишком большие размеры исходного изображения. Выберите файл меньшего разрешения.</value></data>
+  <data name="ProfileError_DurationInvalid" xml:space="preserve"><value>Исходник слишком длинный. Выберите видео или GIF до пяти минут.</value></data>
+  <data name="ProfileError_PreviewTooLarge" xml:space="preserve"><value>Не удалось подготовить компактное превью. Выберите более короткий исходник.</value></data>
+  <data name="ProfileError_ProcessingFailed" xml:space="preserve"><value>Не удалось обработать файл. Прежнее изображение сохранено.</value></data>
+  <data name="ProfileError_ProcessingTimeout" xml:space="preserve"><value>Обработка заняла слишком много времени. Попробуйте файл меньшего размера.</value></data>
+  <data name="ProfileError_ProcessingMemoryLimit" xml:space="preserve"><value>Обработка превысила лимит памяти. Попробуйте файл меньшего разрешения.</value></data>
+  <data name="Dialog_ColorHue" xml:space="preserve"><value>Оттенок</value></data>
+  <data name="Dialog_ColorSaturationBrightness" xml:space="preserve"><value>Насыщенность и яркость</value></data>
 </root>

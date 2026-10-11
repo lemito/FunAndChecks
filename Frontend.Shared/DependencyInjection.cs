@@ -1,5 +1,6 @@
 using Frontend.Shared.Api;
 using Frontend.Shared.Services;
+using Frontend.Shared.Profiles;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -27,6 +28,9 @@ public static class DependencyInjection
         services.AddScoped<FileDownloader>();
         services.AddScoped<CultureService>();
         services.AddScoped<UnsavedChangesTracker>();
+        services.AddScoped<ResultsNavigationState>();
+        services.AddScoped<ProfileApi>();
+        services.AddScoped<ProfileMediaCache>();
 
         services.AddAuthorizationCore();
         services.AddScoped<JwtAuthenticationStateProvider>();

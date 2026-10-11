@@ -68,7 +68,7 @@ else if (_results is not null)
                                     <div>
                                         <strong>@StatusText(log.Status)</strong>
                                         @if (!string.IsNullOrWhiteSpace(log.Comment)) { <p>@log.Comment</p> }
-                                        <small>@Loc["MyLogs_CheckedBy", log.Admin.FullName, log.SubmittedAt.ToLocalTime().ToString("g")]</small>
+                                        <small><ProfileLink UserId="log.Admin.Id">@Loc["MyLogs_CheckedBy", log.Admin.FullName, log.SubmittedAt.ToLocalTime().ToString("g")]</ProfileLink></small>
                                     </div>
                                 </div>
                             }

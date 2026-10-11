@@ -24,6 +24,11 @@ public interface IApplicationDbContext
     DbSet<AdminGroupAccess> AdminGroupAccesses { get; }
     DbSet<AttendanceSession> AttendanceSessions { get; }
     DbSet<AttendanceRecord> AttendanceRecords { get; }
+    DbSet<UserProfile> UserProfiles { get; }
+    DbSet<ProfileMediaAsset> ProfileMediaAssets { get; }
+    DbSet<AchievementDefinition> AchievementDefinitions { get; }
+    DbSet<AchievementAward> AchievementAwards { get; }
+    DbSet<PinnedAchievement> PinnedAchievements { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

@@ -52,6 +52,21 @@ services:
       - default
       - caddy_net
 
+  # Разовая подготовка прав существующих томов после перехода API с root на app.
+  app-volume-init:
+    image: funandchecks-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    user: root
+    network_mode: none
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["chown -R app:app /app/backups /app/media-temp /home/app/.aspnet/DataProtection-Keys && chmod 700 /app/media-temp /home/app/.aspnet/DataProtection-Keys"]
+    volumes:
+      - backups:/app/backups
+      - media-temp:/app/media-temp
+      - dataprotection-keys:/home/app/.aspnet/DataProtection-Keys
+
   funandchecks-api:
     container_name: funandchecks-api
     image: funandchecks-api
@@ -59,12 +74,15 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
-    user: root
+    user: app
+    mem_limit: 2g
     depends_on:
       db:
         condition: service_healthy
       mail:
         condition: service_started
+      app-volume-init:
+        condition: service_completed_successfully
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:${API_INTERNAL_PORT}
@@ -80,6 +98,8 @@ services:
       - Smtp__FromName=FunAndChecks
       # Каталог бэкапов внутри контейнера (смонтирован на том backups).
       - Backup__Directory=/app/backups
+      # Только временные исходники редактора; готовые аватары и значки хранятся в БД.
+      - ProfileMedia__TemporaryDirectory=/app/media-temp
       # Разрешённые источники для CORS в проде (через запятую отображаются как массив).
       - Cors__AllowedOrigins__0=https://${APP_DOMAIN}
     healthcheck:
@@ -96,6 +116,7 @@ services:
       - ./secrets.json:/app/secrets.json:ro
       # Том для дампов БД (ручка POST /api/admin/backup).
       - backups:/app/backups
+      - media-temp:/app/media-temp
 
 
 volumes:
@@ -105,6 +126,7 @@ volumes:
   caddy_config:
   maildkim:
   backups:
+  media-temp:
 
 
 networks:

@@ -27,6 +27,10 @@ public partial class Queues : IAsyncDisposable
 
     private HubConnection? _hub;
     private readonly SemaphoreSlim _hubLock = new(1, 1);
+    private int? _viewedEventId;
+    private bool _disposed;
+    private long _colorRevision;
+    private readonly Dictionary<Guid, (long Revision, string? Color)> _latestColorChanges = [];
 
     protected override async Task OnInitializedAsync() => await LoadAllAsync();
 
@@ -74,6 +78,11 @@ public partial class Queues : IAsyncDisposable
 
     private async Task ViewQueueAsync(int eventId)
     {
+        if (_disposed)
+            return;
+        if (_viewedEventId != eventId)
+            _latestColorChanges.Clear();
+        _viewedEventId = eventId;
         try
         {
             await LoadDetailsAsync(eventId);
@@ -91,11 +100,20 @@ public partial class Queues : IAsyncDisposable
     {
         try
         {
-            _details = await QueuesApi.GetDetailsAsync(eventId);
-            _participants = _details.Participants
+            if (_disposed || _viewedEventId != eventId)
+                return;
+            var colorRevision = _colorRevision;
+            var details = await QueuesApi.GetDetailsAsync(eventId);
+            if (_disposed || _viewedEventId != eventId)
+                return;
+            _participants = details.Participants
+                .Select(participant => _latestColorChanges.TryGetValue(participant.StudentId, out var change) && change.Revision > colorRevision
+                    ? participant with { StudentColor = change.Color }
+                    : participant)
                 .OrderBy(p => p.Status)
                 .ThenByDescending(p => p.TotalPoints)
                 .ToList();
+            _details = details with { Participants = _participants };
             StateHasChanged();
         }
         catch (ApiException ex)
@@ -109,6 +127,8 @@ public partial class Queues : IAsyncDisposable
         await _hubLock.WaitAsync();
         try
         {
+            if (_disposed || _viewedEventId != eventId)
+                return;
             await DisposeHubAsync();
 
             _hub = new HubConnectionBuilder()
@@ -119,6 +139,9 @@ public partial class Queues : IAsyncDisposable
 
             // На любое обновление очереди перечитываем её состав.
             _hub.On<QueueEntryUpdateDto>("QueueEntryUpdated", _ => InvokeAsync(() => LoadDetailsAsync(eventId)));
+            _hub.On<StudentColorUpdateDto>("StudentColorUpdated", update => InvokeAsync(() => UpdateStudentColor(eventId, update)));
+
+            var hub = _hub;
 
             // После переподключения подписка на группу теряется — переподписываемся и обновляем данные,
             // иначе очередь «зависает» и перестаёт обновляться.
@@ -126,23 +149,30 @@ public partial class Queues : IAsyncDisposable
             {
                 try
                 {
-                    await _hub.InvokeAsync("SubscribeToQueue", eventId);
+                    if (_disposed || _viewedEventId != eventId || !ReferenceEquals(_hub, hub))
+                        return;
+                    await hub.InvokeAsync("SubscribeToQueue", eventId);
                     await InvokeAsync(() => LoadDetailsAsync(eventId));
                 }
                 catch (Exception ex)
                 {
-                    Snackbar.Add(string.Format(Loc["Common_SignalRReconnectError"], ex.Message), Severity.Error);
+                    if (!_disposed && _viewedEventId == eventId)
+                        Snackbar.Add(string.Format(Loc["Common_SignalRReconnectError"], ex.Message), Severity.Error);
                 }
             };
 
             try
             {
-                await _hub.StartAsync();
-                await _hub.InvokeAsync("SubscribeToQueue", eventId);
+                await hub.StartAsync();
+                if (_disposed || _viewedEventId != eventId)
+                    return;
+                await hub.InvokeAsync("SubscribeToQueue", eventId);
+                await LoadDetailsAsync(eventId);
             }
             catch (Exception ex)
             {
-                Snackbar.Add(string.Format(Loc["Common_SignalRConnectError"], ex.Message), Severity.Warning);
+                if (!_disposed && _viewedEventId == eventId)
+                    Snackbar.Add(string.Format(Loc["Common_SignalRConnectError"], ex.Message), Severity.Warning);
             }
         }
         finally
@@ -151,10 +181,29 @@ public partial class Queues : IAsyncDisposable
         }
     }
 
-    private void BackToList()
+    private async Task BackToList()
     {
+        _viewedEventId = null;
         _details = null;
-        _ = DisposeHubAsync();
+        await _hubLock.WaitAsync();
+        try { await DisposeHubAsync(); }
+        finally { _hubLock.Release(); }
+    }
+
+    private void UpdateStudentColor(int eventId, StudentColorUpdateDto update)
+    {
+        if (_disposed || _viewedEventId != eventId)
+            return;
+        _latestColorChanges[update.StudentId] = (++_colorRevision, update.Color);
+        if (!_participants.Any(participant => participant.StudentId == update.StudentId && participant.StudentColor != update.Color))
+            return;
+
+        _participants = _participants.Select(participant => participant.StudentId == update.StudentId
+            ? participant with { StudentColor = update.Color }
+            : participant).ToList();
+        if (_details is not null)
+            _details = _details with { Participants = _participants };
+        StateHasChanged();
     }
 
     private static Color StatusColor(QueueEntryStatus status) => status switch
@@ -168,6 +217,8 @@ public partial class Queues : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
+        _viewedEventId = null;
         // Под замком, чтобы не пересечься с идущей (пере)инициализацией хаба.
         await _hubLock.WaitAsync();
         try
@@ -178,7 +229,6 @@ public partial class Queues : IAsyncDisposable
         {
             _hubLock.Release();
         }
-        _hubLock.Dispose();
     }
 
     private async Task DisposeHubAsync()

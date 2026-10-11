@@ -83,4 +83,18 @@ public interface IIdentityService
 
     /// <summary>Атомарно удаляет учётную запись, не принадлежащую администратору; только для супер-админа.</summary>
     Task DeleteNonAdminAccountAsync(Guid actingAdminId, Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Current database roles, independent of potentially stale token claims.</summary>
+    Task<IReadOnlyCollection<string>> GetCurrentRolesAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Confirmed active student or administrator; never exposes account email.</summary>
+    Task<FunAndChecks.Application.Profiles.ProfileAccountInfo?> GetProfileAccountAsync(Guid userId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyDictionary<Guid, FunAndChecks.Application.Profiles.ProfileAccountInfo>> GetProfileAccountsAsync(
+        IEnumerable<Guid> userIds, CancellationToken cancellationToken = default);
+
+    /// <summary>Global eligible directory for achievement granting, without academic access restrictions.</summary>
+    Task<FunAndChecks.Application.Profiles.AchievementRecipientAccountPageDto> SearchAchievementRecipientsAsync(
+        string? query, int page, int pageSize, CancellationToken cancellationToken = default);
 }

@@ -5,6 +5,7 @@ using FunAndChecks.Infrastructure.Persistence;
 using FunAndChecks.Application.Common.Exceptions;
 using FunAndChecks.Application.Students;
 using FunAndChecks.Domain.Constants;
+using FunAndChecks.Application.Profiles;
 
 namespace FunAndChecks.Infrastructure.Identity;
 
@@ -294,5 +295,70 @@ public class IdentityService(
 
         throw new FluentValidation.ValidationException(result.Errors.Select(e =>
             new FluentValidation.Results.ValidationFailure(property, e.Description)).ToList());
+    }
+
+    public async Task<IReadOnlyCollection<string>> GetCurrentRolesAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        await (from membership in dbContext.UserRoles.AsNoTracking()
+            join role in dbContext.Roles.AsNoTracking() on membership.RoleId equals role.Id
+            where membership.UserId == userId && role.Name != null
+            select role.Name!).ToListAsync(cancellationToken);
+
+    public Task<ProfileAccountInfo?> GetProfileAccountAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        EligibleProfiles().Where(p => p.UserId == userId)
+            .Select(p => new ProfileAccountInfo(p.UserId, p.FirstName, p.LastName, p.GroupName, p.IsAdmin))
+            .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<IReadOnlyDictionary<Guid, ProfileAccountInfo>> GetProfileAccountsAsync(IEnumerable<Guid> userIds,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = userIds.Distinct().ToArray();
+        if (ids.Length == 0) return new Dictionary<Guid, ProfileAccountInfo>();
+        return await EligibleProfiles().Where(p => ids.Contains(p.UserId))
+            .Select(p => new ProfileAccountInfo(p.UserId, p.FirstName, p.LastName, p.GroupName, p.IsAdmin))
+            .ToDictionaryAsync(p => p.UserId, cancellationToken);
+    }
+
+    public async Task<AchievementRecipientAccountPageDto> SearchAchievementRecipientsAsync(string? query, int page,
+        int pageSize, CancellationToken cancellationToken = default)
+    {
+        if (page < 1 || pageSize is < 1 or > 100 || page > int.MaxValue / pageSize)
+            throw new FluentValidation.ValidationException("Page must be positive and page size must be between 1 and 100.");
+        var profiles = EligibleProfiles();
+        var term = query?.Trim().ToLowerInvariant();
+        if (!string.IsNullOrWhiteSpace(term))
+            profiles = profiles.Where(p => (p.LastName + " " + p.FirstName).ToLower().Contains(term) ||
+                (p.FirstName + " " + p.LastName).ToLower().Contains(term) ||
+                (p.GroupName != null && p.GroupName.ToLower().Contains(term)));
+        var count = await profiles.CountAsync(cancellationToken);
+        var items = await profiles.OrderBy(p => p.LastName).ThenBy(p => p.FirstName).ThenBy(p => p.UserId)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(p => new AchievementRecipientAccountDto(p.UserId, p.LastName + " " + p.FirstName, p.GroupName, p.IsAdmin))
+            .ToListAsync(cancellationToken);
+        return new(items, count, page, pageSize);
+    }
+
+    private IQueryable<ProfileDirectoryRow> EligibleProfiles() => dbContext.Users.AsNoTracking()
+        .Where(u => u.EmailConfirmed && (dbContext.Admins.Any(a => a.Id == u.Id) ||
+            dbContext.Students.Any(s => s.Id == u.Id && s.IsActive)))
+        .Select(u => new ProfileDirectoryRow
+        {
+            UserId = u.Id,
+            FirstName = dbContext.Admins.Where(a => a.Id == u.Id).Select(a => a.FirstName).FirstOrDefault() ??
+                dbContext.Students.Where(s => s.Id == u.Id).Select(s => s.FirstName).FirstOrDefault()!,
+            LastName = dbContext.Admins.Where(a => a.Id == u.Id).Select(a => a.LastName).FirstOrDefault() ??
+                dbContext.Students.Where(s => s.Id == u.Id).Select(s => s.LastName).FirstOrDefault()!,
+            GroupName = dbContext.Admins.Any(a => a.Id == u.Id) ? null :
+                dbContext.Students.Where(s => s.Id == u.Id).Select(s => s.Group == null ? null : s.Group.Name).FirstOrDefault(),
+            IsAdmin = dbContext.Admins.Any(a => a.Id == u.Id) || dbContext.UserRoles.Any(ur => ur.UserId == u.Id &&
+                dbContext.Roles.Any(r => r.Id == ur.RoleId && (r.Name == Roles.Admin || r.Name == Roles.SuperAdmin)))
+        });
+
+    private sealed class ProfileDirectoryRow
+    {
+        public Guid UserId { get; init; }
+        public string FirstName { get; init; } = "";
+        public string LastName { get; init; } = "";
+        public string? GroupName { get; init; }
+        public bool IsAdmin { get; init; }
     }
 }

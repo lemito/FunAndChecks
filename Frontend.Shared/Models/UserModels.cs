@@ -35,6 +35,9 @@ public record SetPreferredCultureRequest(string Culture);
 
 public record SetStudentColorRequest(string? Color);
 
+/// <summary>A global student color change; null clears a previously assigned color.</summary>
+public record StudentColorUpdateDto(Guid StudentId, string? Color);
+
 public record UpdateStudentAccountRequest(string FirstName, string LastName, int? GroupId, string Email, string? NewPassword);
 
 public record UserAccountDto(Guid Id, string? FirstName, string? LastName, string? Email, string? GroupName,

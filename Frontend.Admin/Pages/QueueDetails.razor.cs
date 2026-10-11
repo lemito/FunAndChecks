@@ -30,6 +30,9 @@ public partial class QueueDetails : IAsyncDisposable
     private bool _loading = true;
     private HubConnection? _hub;
     private Guid? _currentAdminId;
+    private bool _disposed;
+    private long _colorRevision;
+    private readonly Dictionary<Guid, (long Revision, string? Color)> _latestColorChanges = [];
 
     private string? _filter;
     private ParticipantSort _sort = ParticipantSort.Points;
@@ -42,7 +45,7 @@ public partial class QueueDetails : IAsyncDisposable
         if (Guid.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value ?? user.FindFirst("nameid")?.Value, out var adminId))
             _currentAdminId = adminId;
         await LoadAsync();
-        if (_details is not null)
+        if (_details is not null && !_disposed)
             await InitializeSignalRAsync();
     }
 
@@ -75,10 +78,20 @@ public partial class QueueDetails : IAsyncDisposable
 
     private async Task LoadAsync()
     {
+        if (_disposed)
+            return;
         try
         {
-            _details = await Queues.GetDetailsAsync(EventId);
-            _participants = _details.Participants.ToList();
+            var eventId = EventId;
+            var colorRevision = _colorRevision;
+            var details = await Queues.GetDetailsAsync(eventId);
+            if (_disposed || EventId != eventId)
+                return;
+            _participants = details.Participants.Select(participant =>
+                _latestColorChanges.TryGetValue(participant.StudentId, out var change) && change.Revision > colorRevision
+                    ? participant with { StudentColor = change.Color }
+                    : participant).ToList();
+            _details = details with { Participants = _participants };
         }
         catch (ApiException ex)
         {
@@ -88,45 +101,61 @@ public partial class QueueDetails : IAsyncDisposable
         }
         finally
         {
-            _loading = false;
-            StateHasChanged();
+            if (!_disposed)
+            {
+                _loading = false;
+                StateHasChanged();
+            }
         }
     }
 
     private async Task InitializeSignalRAsync()
     {
+        if (_disposed)
+            return;
         _hub = new HubConnectionBuilder()
             .WithUrl(Nav.ToAbsoluteUri("/apiHub/queueHub"), options =>
                 options.AccessTokenProvider = async () => await Auth.GetTokenAsync())
             .WithAutomaticReconnect()
             .Build();
 
+        var hub = _hub;
+        var eventId = EventId;
+
         _hub.On<QueueEntryUpdateDto>("QueueEntryUpdated", _ => InvokeAsync(LoadAsync));
-        _hub.Reconnecting += _ => InvokeAsync(StateHasChanged);
-        _hub.Closed += _ => InvokeAsync(StateHasChanged);
+        _hub.On<StudentColorUpdateDto>("StudentColorUpdated", update => InvokeAsync(() => UpdateStudentColor(update)));
+        _hub.Reconnecting += _ => InvokeAsync(() => { if (!_disposed) StateHasChanged(); });
+        _hub.Closed += _ => InvokeAsync(() => { if (!_disposed) StateHasChanged(); });
 
         // После переподключения переподписываемся, иначе обновления перестают приходить.
         _hub.Reconnected += async _ =>
         {
             try
             {
-                await _hub.InvokeAsync("SubscribeToQueue", EventId);
+                if (_disposed || !ReferenceEquals(_hub, hub) || EventId != eventId)
+                    return;
+                await hub.InvokeAsync("SubscribeToQueue", eventId);
                 await InvokeAsync(LoadAsync);
             }
             catch (Exception ex)
             {
-                Snackbar.Add(string.Format(Loc["Common_SignalRReconnectError"], ex.Message), Severity.Error);
+                if (!_disposed)
+                    Snackbar.Add(string.Format(Loc["Common_SignalRReconnectError"], ex.Message), Severity.Error);
             }
         };
 
         try
         {
-            await _hub.StartAsync();
-            await _hub.InvokeAsync("SubscribeToQueue", EventId);
+            await hub.StartAsync();
+            if (_disposed)
+                return;
+            await hub.InvokeAsync("SubscribeToQueue", eventId);
+            await LoadAsync();
         }
         catch (Exception ex)
         {
-            Snackbar.Add(string.Format(Loc["Common_SignalRConnectError"], ex.Message), Severity.Warning);
+            if (!_disposed)
+                Snackbar.Add(string.Format(Loc["Common_SignalRConnectError"], ex.Message), Severity.Warning);
         }
     }
 
@@ -167,6 +196,7 @@ public partial class QueueDetails : IAsyncDisposable
             { x => x.ReadOnly, IsReadOnly(participant) },
             { x => x.StudentColor, participant.StudentColor },
             { x => x.CheckingWarningName, checkingWarning },
+            { x => x.OnColorApplied, EventCallback.Factory.Create<StudentColorUpdateDto>(this, UpdateStudentColor) },
         };
 
         var dialog = await DialogService.ShowAsync<StudentInteractionDialog>(
@@ -188,6 +218,22 @@ public partial class QueueDetails : IAsyncDisposable
         _ => Color.Default,
     };
 
+    private void UpdateStudentColor(StudentColorUpdateDto update)
+    {
+        if (_disposed)
+            return;
+        _latestColorChanges[update.StudentId] = (++_colorRevision, update.Color);
+        if (!_participants.Any(participant => participant.StudentId == update.StudentId && participant.StudentColor != update.Color))
+            return;
+
+        _participants = _participants.Select(participant => participant.StudentId == update.StudentId
+            ? participant with { StudentColor = update.Color }
+            : participant).ToList();
+        if (_details is not null)
+            _details = _details with { Participants = _participants };
+        StateHasChanged();
+    }
+
     private bool IsReadOnly(QueueParticipantDto participant) => _currentAdminId is null;
 
     private bool IsOtherTeacherChecking(QueueParticipantDto participant) =>
@@ -204,6 +250,7 @@ public partial class QueueDetails : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
         if (_hub is not null)
         {
             try
