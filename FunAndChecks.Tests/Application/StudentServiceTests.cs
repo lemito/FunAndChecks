@@ -23,7 +23,7 @@ public class StudentServiceTests : IDisposable
     private readonly IQueueNotifier _queueNotifier = Substitute.For<IQueueNotifier>();
 
     private StudentService CreateSut(Infrastructure.Persistence.ApplicationDbContext ctx) =>
-        new(ctx, _identity, _cache, new AdminAccessService(ctx), new SetStudentColorRequestValidator(),
+        new(ctx, _identity, _cache, ctx.Access(), new SetStudentColorRequestValidator(),
             new FunAndChecks.Application.Students.Validators.UpdateStudentAccountRequestValidator(),
             _resultsNotifier, _queueNotifier, NullLogger<StudentService>.Instance);
 
@@ -35,6 +35,8 @@ public class StudentServiceTests : IDisposable
         var linkedGroup = ctx.Group("Linked");
         var otherGroup = ctx.Group("Other");
         var subject = ctx.Subject();
+        var admin = ctx.Admin();
+        ctx.GrantSubject(admin, subject);
         await ctx.SaveChangesAsync();
         ctx.LinkGroupSubject(linkedGroup, subject);
         var inSubject = ctx.Student(linkedGroup, "Linked");
@@ -46,7 +48,7 @@ public class StudentServiceTests : IDisposable
             .Returns(new Dictionary<Guid, string?> { [inSubject.Id] = "linked@example.com" });
 
         var sut = CreateSut(ctx);
-        var students = await sut.GetStudentsBySubjectAsync(Guid.NewGuid(), subjectId);
+        var students = await sut.GetStudentsBySubjectAsync(admin.Id, subjectId);
 
         students.Should().ContainSingle();
         students[0].LastName.Should().Be("Linked");
@@ -102,7 +104,7 @@ public class StudentServiceTests : IDisposable
         ctx.Student(visibleGroup, "Visible");
         ctx.Student(restrictedGroup, "Restricted");
         await ctx.SaveChangesAsync();
-        await new AdminAccessService(ctx).SetGroupRestrictedAsync(admin.Id, restrictedGroup.Id, true);
+        await ctx.Access().SetGroupRestrictedAsync(admin.Id, restrictedGroup.Id, true);
         _identity.GetEmailsAsync(Arg.Any<IEnumerable<Guid>>()).Returns(new Dictionary<Guid, string?>());
 
         var students = await CreateSut(ctx).SearchStudentsAsync(admin.Id, string.Empty);
@@ -185,7 +187,7 @@ public class StudentServiceTests : IDisposable
         var initialResults = new ResultsService(ctx, cache);
         (await initialResults.GetSubjectResultsAsync(firstSubject.Id)).UserResults.Single().StudentColor.Should().Be("#1122FF");
         (await initialResults.GetSubjectResultsAsync(secondSubject.Id)).UserResults.Single().StudentColor.Should().Be("#1122FF");
-        var service = new StudentService(ctx, _identity, cache, new AdminAccessService(ctx),
+        var service = new StudentService(ctx, _identity, cache, ctx.Access(),
             new SetStudentColorRequestValidator(), new FunAndChecks.Application.Students.Validators.UpdateStudentAccountRequestValidator(),
             _resultsNotifier, _queueNotifier, NullLogger<StudentService>.Instance);
 
@@ -200,7 +202,7 @@ public class StudentServiceTests : IDisposable
             await _resultsNotifier.Received(1).StudentColorUpdatedAsync(subjectId,
                 Arg.Is<StudentColorUpdateDto>(update => update.StudentId == student.Id && update.Color == color), Arg.Any<CancellationToken>());
         }
-        var queues = new QueueService(fresh, _queueNotifier, new AdminAccessService(fresh),
+        var queues = new QueueService(fresh, _queueNotifier, fresh.Access(),
             new CreateQueueEventRequestValidator(), new UpdateQueueEventRequestValidator(), NullLogger<QueueService>.Instance);
         foreach (var eventId in new[] { queue.Id, oldQueue.Id })
         {
@@ -254,7 +256,7 @@ public class StudentServiceTests : IDisposable
         await ctx.SaveChangesAsync();
         var student = ctx.Student(group);
         await ctx.SaveChangesAsync();
-        await new AdminAccessService(ctx).SetGroupRestrictedAsync(admin.Id, group.Id, true);
+        await ctx.Access().SetGroupRestrictedAsync(admin.Id, group.Id, true);
 
         var act = () => CreateSut(ctx).SetColorAsync(admin.Id, student.Id, new SetStudentColorRequest("#228822"));
 

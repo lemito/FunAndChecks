@@ -1,10 +1,12 @@
 using System.Globalization;
 using Frontend.Admin.Dialogs;
 using Frontend.Shared.Api;
+using Frontend.Shared.Auth;
 using Frontend.Shared.Models;
 using Frontend.Shared.Resources;
 using Frontend.Shared.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 
@@ -17,6 +19,7 @@ public partial class Management
     [Inject] private GradesApi Grades { get; set; } = null!;
     [Inject] private QueuesApi QueuesApi { get; set; } = null!;
     [Inject] private MeApi Me { get; set; } = null!;
+    [Inject] private AuthenticationStateProvider Authentication { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private AttendanceApi Attendance { get; set; } = null!;
@@ -55,6 +58,7 @@ public partial class Management
     private List<ComponentRow> _components = [];
     private List<QueueRow> _queues = [];
     private bool _loading = true;
+    private bool _isSuperAdmin;
     private string _section = "queues";
     private static readonly (string Id, string Label, string Icon)[] ManagementSections =
     [
@@ -97,6 +101,7 @@ public partial class Management
 
     protected override async Task OnInitializedAsync()
     {
+        _isSuperAdmin = (await Authentication.GetAuthenticationStateAsync()).User.IsInRole(Roles.SuperAdmin);
         await ReloadAsync();
         _loading = false;
     }
@@ -200,10 +205,11 @@ public partial class Management
             async () =>
             {
                 var subject = await Subjects.CreateAsync(new CreateSubjectRequest(_newSubjectName.Trim()));
-                foreach (var groupId in _newSubjectGroupIds)
-                    await Groups.LinkSubjectAsync(groupId, subject.Id);
+                if (_isSuperAdmin)
+                    foreach (var groupId in _newSubjectGroupIds)
+                        await Groups.LinkSubjectAsync(groupId, subject.Id);
             },
-            Loc["Management_SubjectCreated"],
+            Loc[_isSuperAdmin ? "Management_SubjectCreated" : "Management_SubjectCreatedPendingAccess"],
             async () => { _newSubjectName = ""; _newSubjectGroupIds = new HashSet<int>(); await ReloadAsync(); });
     }
 
@@ -356,7 +362,9 @@ public partial class Management
             return;
         }
 
-        var options = _subjects.Select(s => new EntityLinkDialog.LinkOption(s.Id, s.Name)).ToList();
+        var options = AvailableSubjects.Select(s => new EntityLinkDialog.LinkOption(s.Id, s.Name)).ToList();
+        var editableIds = options.Select(option => option.Id).ToHashSet();
+        current = current.Where(editableIds.Contains).ToList();
         var selected = await ShowAccessDialogAsync(string.Format(Loc["Management_GroupAccessTitle"], group.Name), options, current);
         if (selected is null)
             return;
@@ -399,6 +407,8 @@ public partial class Management
     // ----- Видимость / архив (скрытие самим админом) -----
     private bool IsSubjectArchived(int id) => _hiddenSubjects.Contains(id);
     private bool IsSubjectRestricted(int id) => _restrictedSubjects.Contains(id);
+    private bool CanUseSubject(int id) => !IsSubjectRestricted(id) && !IsSubjectArchived(id);
+    private IEnumerable<SubjectRow> AvailableSubjects => _subjects.Where(subject => CanUseSubject(subject.Id));
     private bool IsGroupArchived(int id) => _hiddenGroups.Contains(id);
     private bool IsGroupRestricted(int id) => _restrictedGroups.Contains(id);
 

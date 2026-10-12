@@ -291,6 +291,8 @@
   <data name="Management_QueueUpdated" xml:space="preserve"><value>Queue updated.</value></data>
   <data name="Management_QueueDeleted" xml:space="preserve"><value>Queue deleted.</value></data>
   <data name="Management_SubjectCreated" xml:space="preserve"><value>Subject created.</value></data>
+  <data name="Management_SubjectCreatedPendingAccess" xml:space="preserve"><value>Subject created. A super administrator must grant you access to it.</value></data>
+  <data name="Management_SubjectPermissionRequired" xml:space="preserve"><value>A super administrator must grant access to a new subject before you can configure it.</value></data>
   <data name="Management_SubjectDeleted" xml:space="preserve"><value>Subject deleted.</value></data>
   <data name="Management_GroupCreated" xml:space="preserve"><value>Group created.</value></data>
   <data name="Management_GroupDeleted" xml:space="preserve"><value>Group deleted.</value></data>
@@ -481,6 +483,7 @@
   <data name="Design_MaxPoints" xml:space="preserve"><value>Maximum points</value></data>
   <data name="Error_QueueCheckedByOther" xml:space="preserve"><value>Another teacher is checking this student. Refresh the queue.</value></data>
   <data name="Results_AveragePoints" xml:space="preserve"><value>Average score</value></data>
+  <data name="Results_ShowAcceptedTeacherColors" xml:space="preserve"><value>Teacher colors for accepted tasks</value></data>
   <data name="QueueDetails_OtherTeacherWarning" xml:space="preserve"><value>When this window opened, {0} was reviewing this student. You can continue the review.</value></data>
   <data name="Maintenance_BackupListTitle" xml:space="preserve"><value>Backups on the server</value></data>
   <data name="Maintenance_BackupCount" xml:space="preserve"><value>Files: {0}</value></data>

@@ -291,6 +291,8 @@
   <data name="Management_QueueUpdated" xml:space="preserve"><value>Очередь обновлена.</value></data>
   <data name="Management_QueueDeleted" xml:space="preserve"><value>Очередь удалена.</value></data>
   <data name="Management_SubjectCreated" xml:space="preserve"><value>Предмет создан.</value></data>
+  <data name="Management_SubjectCreatedPendingAccess" xml:space="preserve"><value>Предмет создан. Доступ к нему должен выдать суперадминистратор.</value></data>
+  <data name="Management_SubjectPermissionRequired" xml:space="preserve"><value>Для настройки нового предмета сначала получите разрешение суперадминистратора.</value></data>
   <data name="Management_SubjectDeleted" xml:space="preserve"><value>Предмет удалён.</value></data>
   <data name="Management_GroupCreated" xml:space="preserve"><value>Группа создана.</value></data>
   <data name="Management_GroupDeleted" xml:space="preserve"><value>Группа удалена.</value></data>
@@ -481,6 +483,7 @@
   <data name="Design_MaxPoints" xml:space="preserve"><value>Максимум баллов</value></data>
   <data name="Error_QueueCheckedByOther" xml:space="preserve"><value>Студента проверяет другой преподаватель. Обновите очередь.</value></data>
   <data name="Results_AveragePoints" xml:space="preserve"><value>Средний балл</value></data>
+  <data name="Results_ShowAcceptedTeacherColors" xml:space="preserve"><value>Цвета преподавателей у зачтённых заданий</value></data>
   <data name="QueueDetails_OtherTeacherWarning" xml:space="preserve"><value>При открытии окна студента уже принимал преподаватель {0}. Вы можете продолжить проверку.</value></data>
   <data name="Maintenance_BackupListTitle" xml:space="preserve"><value>Бэкапы на сервере</value></data>
   <data name="Maintenance_BackupCount" xml:space="preserve"><value>Файлов: {0}</value></data>

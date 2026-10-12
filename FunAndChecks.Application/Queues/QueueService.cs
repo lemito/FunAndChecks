@@ -21,22 +21,26 @@ public class QueueService(
     /// <summary>Сколько времени событие остаётся в списке активных после своей даты.</summary>
     private static readonly TimeSpan ActiveEventGracePeriod = TimeSpan.FromDays(1);
 
-    private IQueryable<QueueEvent> VisibleEvents(Guid? adminId) =>
-        db.QueueEvents.Where(qe => !adminId.HasValue || !db.AdminSubjectAccesses.Any(
-            a => a.AdminId == adminId && a.SubjectId == qe.SubjectId && a.IsRestricted));
+    private async Task<IQueryable<QueueEvent>> VisibleEventsAsync(Guid? adminId, CancellationToken cancellationToken)
+    {
+        if (!adminId.HasValue || await accessService.IsSuperAdminAsync(adminId.Value, cancellationToken))
+            return db.QueueEvents;
+        return db.QueueEvents.Where(qe => db.AdminSubjectAccesses.Any(
+            a => a.AdminId == adminId && a.SubjectId == qe.SubjectId && !a.IsRestricted));
+    }
 
-    public Task<List<QueueEventDto>> GetActiveEventsAsync(Guid? adminId = null, CancellationToken cancellationToken = default)
+    public async Task<List<QueueEventDto>> GetActiveEventsAsync(Guid? adminId = null, CancellationToken cancellationToken = default)
     {
         var threshold = DateTime.UtcNow - ActiveEventGracePeriod;
-        return VisibleEvents(adminId)
+        return await (await VisibleEventsAsync(adminId, cancellationToken))
             .Where(qe => qe.EventDateTime > threshold)
             .OrderBy(qe => qe.EventDateTime)
             .Select(qe => new QueueEventDto(qe.Id, qe.Name, qe.EventDateTime, qe.AllowSelfJoin))
             .ToListAsync(cancellationToken);
     }
 
-    public Task<List<QueueEventDto>> GetAllEventsAsync(Guid? adminId = null, CancellationToken cancellationToken = default) =>
-        VisibleEvents(adminId)
+    public async Task<List<QueueEventDto>> GetAllEventsAsync(Guid? adminId = null, CancellationToken cancellationToken = default) =>
+        await (await VisibleEventsAsync(adminId, cancellationToken))
             .OrderBy(qe => qe.EventDateTime)
             .Select(qe => new QueueEventDto(qe.Id, qe.Name, qe.EventDateTime, qe.AllowSelfJoin))
             .ToListAsync(cancellationToken);

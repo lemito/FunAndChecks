@@ -67,6 +67,17 @@ public class AdminsController(
         return NoContent();
     }
 
+    /// <summary>Явно назначить предметы и ограничения групп (только супер-админ).</summary>
+    [HttpPut("{adminId:guid}/access/permissions")]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdmin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ReplacePermissions(
+        Guid adminId, ReplaceAdminPermissionsRequest request, CancellationToken cancellationToken)
+    {
+        await accessService.ReplacePermissionsAsync(adminId, request, cancellationToken);
+        return NoContent();
+    }
+
     /// <summary>Запретить/разрешить админу работу с предметом (только супер-админ).</summary>
     [HttpPut("{adminId:guid}/subjects/{subjectId:int}/restriction")]
     [Authorize(Policy = AuthorizationPolicies.SuperAdmin)]

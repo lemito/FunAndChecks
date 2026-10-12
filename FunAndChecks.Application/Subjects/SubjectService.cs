@@ -27,13 +27,12 @@ public class SubjectService(
 
     public async Task<List<SubjectDto>> GetVisibleForAdminAsync(Guid adminId, CancellationToken cancellationToken = default)
     {
-        var blocked = await db.AdminSubjectAccesses
-            .Where(a => a.AdminId == adminId && (a.IsRestricted || a.IsHidden))
-            .Select(a => a.SubjectId)
-            .ToListAsync(cancellationToken);
+        var isSuperAdmin = await accessService.IsSuperAdminAsync(adminId, cancellationToken);
 
         return await db.Subjects
-            .Where(s => !blocked.Contains(s.Id))
+            .Where(s => isSuperAdmin
+                ? !db.AdminSubjectAccesses.Any(a => a.AdminId == adminId && a.SubjectId == s.Id && a.IsHidden)
+                : db.AdminSubjectAccesses.Any(a => a.AdminId == adminId && a.SubjectId == s.Id && !a.IsRestricted && !a.IsHidden))
             .OrderBy(s => s.Name)
             .Select(s => new SubjectDto(s.Id, s.Name, s.AttendanceEnabled))
             .ToListAsync(cancellationToken);

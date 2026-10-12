@@ -12,6 +12,7 @@
     <div class="fc-panel-heading">
         <h3>@Results.SubjectName</h3>
         <span class="fc-muted">@Results.UserResults.Count @Loc["Design_Students"]</span>
+        <MudSwitch T="bool" @bind-Value="_showAcceptedTeacherColors" Color="Color.Primary" Label="@Loc["Results_ShowAcceptedTeacherColors"]" Class="fc-results-teacher-colors" />
     </div>
     <MudDataGrid @ref="_grid" T="StudentResultRowDto" Items="@_rows" Dense="true" Breakpoint="Breakpoint.None"
                  Filterable="true" Hover="true" Class="fc-results-grid">
@@ -25,7 +26,7 @@
 
             @foreach (var task in Results.TaskHeaders)
             {
-                <TemplateColumn Title="@task.TaskName" Sortable="false" CellClass="fc-results-number">
+                <TemplateColumn Title="@task.TaskName" Sortable="false" CellClass="fc-results-number" HeaderClass="fc-results-task-header">
                     <CellTemplate>
                         @{ var cell = context.Item.Results.GetValueOrDefault(task.TaskId); }
                         <span class="@CellClass(cell)" style="@CellStyle(cell)" title="@CellStatus(cell)" aria-label="@($"{task.TaskName}: {CellStatus(cell)} {CellText(cell)}")">@CellText(cell)</span>
@@ -61,6 +62,7 @@
     private MudDataGrid<StudentResultRowDto>? _grid;
     private SubjectResultsDto? _parameterResults;
     private List<StudentResultRowDto> _rows = [];
+    private bool _showAcceptedTeacherColors;
     private readonly Guid _profileViewInstance = Guid.NewGuid();
     private string StateKey => new Uri(Nav.Uri).AbsolutePath;
     protected override async Task OnInitializedAsync() => await ProfileReturn.InitializeAsync();
@@ -98,9 +100,13 @@
         _ => Loc["Task_StatusNotSubmitted"],
     };
 
-    private static string CellStyle(ResultCellDto? cell)
+    private string CellStyle(ResultCellDto? cell)
     {
-        if (cell?.Status != SubmissionStatus.Rejected || string.IsNullOrWhiteSpace(cell.AdminColor))
+        if (cell is null || string.IsNullOrWhiteSpace(cell.AdminColor))
+            return string.Empty;
+        if (cell.Status == SubmissionStatus.Accepted)
+            return _showAcceptedTeacherColors ? $"background-color:{cell.AdminColor};color:#000000;border-color:{cell.AdminColor};text-shadow:0 0 3px rgba(255,255,255,.7);" : string.Empty;
+        if (cell.Status != SubmissionStatus.Rejected)
             return string.Empty;
         return $"background-color:{cell.AdminColor};color:{ColorUtils.ContrastText(cell.AdminColor)};border-color:{cell.AdminColor};";
     }

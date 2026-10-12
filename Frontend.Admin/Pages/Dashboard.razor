@@ -20,6 +20,7 @@
             <MudSelectItem T="SubjectDto" Value="subject">@subject.Name</MudSelectItem>
         }
     </MudSelect>
+    <MudSwitch T="bool" @bind-Value="_showAcceptedTeacherColors" Color="Color.Primary" Label="@Loc["Results_ShowAcceptedTeacherColors"]" Class="fc-results-teacher-colors" />
 </div>
 
 @if (_loading)
@@ -48,7 +49,7 @@ else if (_results is not null)
                     <PropertyColumn Property="x => x.GroupName" Title="@Loc["Dashboard_Group"]" />
                     @foreach (var task in _results.TaskHeaders)
                     {
-                        <TemplateColumn Title="@task.TaskName" Sortable="false" CellClass="fc-results-task-column">
+                        <TemplateColumn Title="@task.TaskName" Sortable="false" CellClass="fc-results-task-column" HeaderClass="fc-results-task-header">
                             <CellTemplate>
                                 @{ var cell = context.Item.Results.GetValueOrDefault(task.TaskId); }
                                 @if (cell?.Status is SubmissionStatus.Accepted or SubmissionStatus.Rejected)
@@ -82,7 +83,7 @@ else if (_results is not null)
                             <CellTemplate>
                                 @{ var counts = _attendance.GetValueOrDefault(context.Item.StudentId); }
                                 <MudLink Href="@("/admin/attendance?subjectId=" + _results.SubjectId + "&studentId=" + context.Item.StudentId)">@counts.Present посещений · @counts.Absent пропусков</MudLink>
-                                @if (counts.Unmarked > 0) { <MudText Typo="Typo.caption">Не отмечено: @counts.Unmarked</MudText> }
+                                @if (counts.Unmarked > 0) { <MudText Typo="Typo.caption" Class="fc-results-attendance-unmarked">Не отмечено: @counts.Unmarked</MudText> }
                             </CellTemplate>
                         </TemplateColumn>
                     }

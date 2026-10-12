@@ -1,11 +1,12 @@
 using FunAndChecks.Application.Common.Exceptions;
 using FunAndChecks.Application.Common.Interfaces;
 using FunAndChecks.Domain.Entities;
+using FunAndChecks.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace FunAndChecks.Application.Admins;
 
-public class AdminAccessService(IApplicationDbContext db) : IAdminAccessService
+public class AdminAccessService(IApplicationDbContext db, IIdentityService identity) : IAdminAccessService
 {
     public async Task<AdminAccessDto> GetAccessAsync(Guid adminId, CancellationToken cancellationToken = default)
     {
@@ -16,11 +17,19 @@ public class AdminAccessService(IApplicationDbContext db) : IAdminAccessService
             .Where(a => a.AdminId == adminId)
             .ToListAsync(cancellationToken);
 
+        var isSuperAdmin = await IsSuperAdminAsync(adminId, cancellationToken);
+        var grantedIds = subjects.Where(a => !a.IsRestricted).Select(a => a.SubjectId).ToList();
+        List<int> restrictedSubjectIds = isSuperAdmin ? [] : await db.Subjects
+            .Where(s => !grantedIds.Contains(s.Id)).Select(s => s.Id).ToListAsync(cancellationToken);
+        var allowedSubjectIds = isSuperAdmin
+            ? await db.Subjects.Select(s => s.Id).ToListAsync(cancellationToken)
+            : grantedIds;
         return new AdminAccessDto(
-            subjects.Where(a => a.IsRestricted).Select(a => a.SubjectId).ToList(),
+            restrictedSubjectIds,
             groups.Where(a => a.IsRestricted).Select(a => a.GroupId).ToList(),
             subjects.Where(a => a.IsHidden).Select(a => a.SubjectId).ToList(),
-            groups.Where(a => a.IsHidden).Select(a => a.GroupId).ToList());
+            groups.Where(a => a.IsHidden).Select(a => a.GroupId).ToList(),
+            allowedSubjectIds);
     }
 
     public async Task EnsureSubjectAllowedAsync(Guid adminId, int subjectId, CancellationToken cancellationToken = default)
@@ -29,7 +38,7 @@ public class AdminAccessService(IApplicationDbContext db) : IAdminAccessService
             .Where(a => a.AdminId == adminId && a.SubjectId == subjectId)
             .Select(a => new { a.IsRestricted, a.IsHidden })
             .FirstOrDefaultAsync(cancellationToken);
-        if (access?.IsRestricted == true)
+        if (access?.IsRestricted != false && !await IsSuperAdminAsync(adminId, cancellationToken))
             throw new ForbiddenException("You are restricted from working with this subject.", "access.subject_restricted",
                 new Dictionary<string, object?> { ["subjectId"] = subjectId });
         if (access?.IsHidden == true)
@@ -77,9 +86,12 @@ public class AdminAccessService(IApplicationDbContext db) : IAdminAccessService
         }
     }
 
-    public Task<bool> IsSubjectRestrictedAsync(Guid adminId, int subjectId, CancellationToken cancellationToken = default) =>
-        db.AdminSubjectAccesses
-            .AnyAsync(a => a.AdminId == adminId && a.SubjectId == subjectId && a.IsRestricted, cancellationToken);
+    public async Task<bool> IsSubjectRestrictedAsync(Guid adminId, int subjectId, CancellationToken cancellationToken = default) =>
+        !await IsSuperAdminAsync(adminId, cancellationToken) &&
+        !await db.AdminSubjectAccesses.AnyAsync(a => a.AdminId == adminId && a.SubjectId == subjectId && !a.IsRestricted, cancellationToken);
+
+    public async Task<bool> IsSuperAdminAsync(Guid adminId, CancellationToken cancellationToken = default) =>
+        (await identity.GetCurrentRolesAsync(adminId, cancellationToken)).Contains(Roles.SuperAdmin);
 
     public async Task EnsureStudentAllowedAsync(Guid adminId, Guid studentId, CancellationToken cancellationToken = default)
     {
@@ -94,8 +106,7 @@ public class AdminAccessService(IApplicationDbContext db) : IAdminAccessService
     }
 
     public Task<bool> IsGroupRestrictedAsync(Guid adminId, int groupId, CancellationToken cancellationToken = default) =>
-        db.AdminGroupAccesses
-            .AnyAsync(a => a.AdminId == adminId && a.GroupId == groupId && a.IsRestricted, cancellationToken);
+        db.AdminGroupAccesses.AnyAsync(a => a.AdminId == adminId && a.GroupId == groupId && a.IsRestricted, cancellationToken);
 
     public Task SetSubjectRestrictedAsync(Guid adminId, int subjectId, bool restricted, CancellationToken cancellationToken = default) =>
         UpsertSubjectAsync(adminId, subjectId, a => a.IsRestricted = restricted, cancellationToken);
@@ -111,8 +122,19 @@ public class AdminAccessService(IApplicationDbContext db) : IAdminAccessService
 
     public async Task ReplaceRestrictionsAsync(Guid adminId, ReplaceAdminRestrictionsRequest request, CancellationToken cancellationToken = default)
     {
+        var restrictedIds = request.RestrictedSubjectIds.ToHashSet();
+        var existingIds = await db.Subjects.Select(s => s.Id).ToListAsync(cancellationToken);
+        if (restrictedIds.Except(existingIds).Any())
+            throw new NotFoundException("One or more subjects no longer exist.");
+        await ReplacePermissionsAsync(adminId,
+            new ReplaceAdminPermissionsRequest(existingIds.Where(id => !restrictedIds.Contains(id)).ToList(), request.RestrictedGroupIds),
+            cancellationToken);
+    }
+
+    public async Task ReplacePermissionsAsync(Guid adminId, ReplaceAdminPermissionsRequest request, CancellationToken cancellationToken = default)
+    {
         await EnsureAdminAsync(adminId, cancellationToken);
-        var subjectIds = request.RestrictedSubjectIds.ToHashSet();
+        var subjectIds = request.AllowedSubjectIds.ToHashSet();
         var groupIds = request.RestrictedGroupIds.ToHashSet();
         var existingSubjectIds = await db.Subjects.Where(s => subjectIds.Contains(s.Id))
             .Select(s => s.Id).ToListAsync(cancellationToken);
@@ -129,8 +151,8 @@ public class AdminAccessService(IApplicationDbContext db) : IAdminAccessService
             .ToDictionaryAsync(a => a.GroupId, cancellationToken);
         foreach (var access in subjects.Values)
         {
-            access.IsRestricted = subjectIds.Contains(access.SubjectId);
-            if (!access.IsRestricted && !access.IsHidden) db.AdminSubjectAccesses.Remove(access);
+            access.IsRestricted = !subjectIds.Contains(access.SubjectId);
+            if (access.IsRestricted && !access.IsHidden) db.AdminSubjectAccesses.Remove(access);
         }
         foreach (var access in groups.Values)
         {
@@ -138,7 +160,7 @@ public class AdminAccessService(IApplicationDbContext db) : IAdminAccessService
             if (!access.IsRestricted && !access.IsHidden) db.AdminGroupAccesses.Remove(access);
         }
         foreach (var id in subjectIds.Where(id => !subjects.ContainsKey(id)))
-            db.AdminSubjectAccesses.Add(new AdminSubjectAccess { AdminId = adminId, SubjectId = id, IsRestricted = true });
+            db.AdminSubjectAccesses.Add(new AdminSubjectAccess { AdminId = adminId, SubjectId = id, IsRestricted = false });
         foreach (var id in groupIds.Where(id => !groups.ContainsKey(id)))
             db.AdminGroupAccesses.Add(new AdminGroupAccess { AdminId = adminId, GroupId = id, IsRestricted = true });
 
@@ -157,14 +179,14 @@ public class AdminAccessService(IApplicationDbContext db) : IAdminAccessService
 
         if (access == null)
         {
-            access = new AdminSubjectAccess { AdminId = adminId, SubjectId = subjectId };
+            access = new AdminSubjectAccess { AdminId = adminId, SubjectId = subjectId, IsRestricted = true };
             db.AdminSubjectAccesses.Add(access);
         }
 
         mutate(access);
 
-        // Пустую запись (оба флага сняты) не храним.
-        if (!access.IsRestricted && !access.IsHidden)
+        // Запрет без локального скрытия равен отсутствию записи; разрешение сохраняется.
+        if (access.IsRestricted && !access.IsHidden)
             db.AdminSubjectAccesses.Remove(access);
 
         await db.SaveChangesAsync(cancellationToken);

@@ -20,7 +20,7 @@ public class QueueOwnershipTests : IDisposable
     private readonly IQueueNotifier _notifier = Substitute.For<IQueueNotifier>();
 
     private QueueService CreateSut(ApplicationDbContext context, IAdminAccessService? access = null) =>
-        new(context, _notifier, access ?? new AdminAccessService(context),
+        new(context, _notifier, access ?? context.Access(),
             new CreateQueueEventRequestValidator(), new UpdateQueueEventRequestValidator(),
             NullLogger<QueueService>.Instance);
 
@@ -36,6 +36,8 @@ public class QueueOwnershipTests : IDisposable
         secondAdmin.FirstName = "Дмитрий";
         var group = context.Group();
         var subject = context.Subject();
+        context.GrantSubject(firstAdmin, subject);
+        context.GrantSubject(secondAdmin, subject);
         await context.SaveChangesAsync();
         context.LinkGroupSubject(group, subject);
         var firstStudent = context.Student(group, "Первый");
@@ -171,7 +173,7 @@ public class QueueOwnershipTests : IDisposable
     {
         var data = await SeedAsync();
         await using var context = _db.NewContext();
-        var access = new AdminAccessService(context);
+        var access = context.Access();
         if (restrictSubject) await access.SetSubjectRestrictedAsync(data.FirstAdminId, data.SubjectId, true);
         else await access.SetGroupRestrictedAsync(data.FirstAdminId, data.GroupId, true);
 

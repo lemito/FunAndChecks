@@ -150,9 +150,12 @@ public class GroupService(
     public async Task<List<int>> GetSubjectIdsAsync(Guid adminId, int groupId, CancellationToken cancellationToken = default)
     {
         await accessService.EnsureGroupAllowedAsync(adminId, groupId, cancellationToken);
+        var isSuperAdmin = await accessService.IsSuperAdminAsync(adminId, cancellationToken);
         return await db.GroupSubjects
             .Where(gs => gs.GroupId == groupId)
-            .Where(gs => !db.AdminSubjectAccesses.Any(a => a.AdminId == adminId && a.SubjectId == gs.SubjectId && (a.IsRestricted || a.IsHidden)))
+            .Where(gs => isSuperAdmin
+                ? !db.AdminSubjectAccesses.Any(a => a.AdminId == adminId && a.SubjectId == gs.SubjectId && a.IsHidden)
+                : db.AdminSubjectAccesses.Any(a => a.AdminId == adminId && a.SubjectId == gs.SubjectId && !a.IsRestricted && !a.IsHidden))
             .Select(gs => gs.SubjectId)
             .ToListAsync(cancellationToken);
     }

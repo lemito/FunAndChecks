@@ -26,6 +26,7 @@ public partial class Dashboard
     private MudDataGrid<StudentResultRowDto>? _grid;
     private readonly Guid _profileViewInstance = Guid.NewGuid();
     private bool _loading;
+    private bool _showAcceptedTeacherColors;
     private Dictionary<Guid, (int Present, int Absent, int Unmarked)>? _attendance;
     private string AveragePoints => _results?.UserResults is { Count: > 0 } rows
         ? rows.Average(row => row.TotalPoints).ToString("0.##", System.Globalization.CultureInfo.CurrentCulture)
@@ -134,10 +135,13 @@ public partial class Dashboard
     private static string CellText(ResultCellDto? cell) =>
         cell?.Status == SubmissionStatus.Accepted ? "+" : cell?.DisplayValue ?? string.Empty;
 
-    private static string CellStyle(ResultCellDto? cell)
+    private string CellStyle(ResultCellDto? cell)
     {
-        if (cell is null || cell.Status == SubmissionStatus.Accepted || string.IsNullOrWhiteSpace(cell.AdminColor))
+        if (cell is null || string.IsNullOrWhiteSpace(cell.AdminColor))
             return string.Empty;
+
+        if (cell.Status == SubmissionStatus.Accepted)
+            return _showAcceptedTeacherColors ? $"background-color:{cell.AdminColor};color:#000000;border-color:{cell.AdminColor};text-shadow:0 0 3px rgba(255,255,255,.7);" : string.Empty;
 
         // The letter and its teacher's color carry information independently from the theme accent.
         return $"background-color:{cell.AdminColor};color:{Frontend.Shared.UI.ColorUtils.ContrastText(cell.AdminColor)};";

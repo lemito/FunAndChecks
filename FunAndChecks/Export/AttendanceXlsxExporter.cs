@@ -9,7 +9,39 @@ public static class AttendanceXlsxExporter
     public static byte[] Build(AttendanceJournalDto journal)
     {
         using var workbook = new XLWorkbook();
-        var sheet = workbook.Worksheets.Add("Посещаемость");
+        var sheetNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var group in journal.Students.GroupBy(student => student.GroupId))
+        {
+            var sheetName = CreateGroupSheetName(group.Key, group.First().GroupName, sheetNames);
+            PopulateSheet(workbook.Worksheets.Add(sheetName), journal, group);
+        }
+        if (!workbook.Worksheets.Any())
+            PopulateSheet(workbook.Worksheets.Add("Посещаемость"), journal, []);
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
+    }
+
+    private static string CreateGroupSheetName(int groupId, string groupName, HashSet<string> usedNames)
+    {
+        var proposedName = string.IsNullOrWhiteSpace(groupName) ? $"Группа {groupId}" : groupName.Trim();
+        proposedName = new string(proposedName.Select(c => char.IsControl(c) ? '_' : c).ToArray());
+        var baseName = XLHelper.CreateSafeSheetName(proposedName, '_');
+        if (baseName.Equals("History", StringComparison.OrdinalIgnoreCase))
+            baseName = $"Группа {groupId}";
+        var name = baseName;
+        for (var duplicate = 2; !usedNames.Add(name); duplicate++)
+        {
+            var suffix = $" ({duplicate})";
+            name = baseName[..Math.Min(baseName.Length, 31 - suffix.Length)] + suffix;
+        }
+        return name;
+    }
+
+    private static void PopulateSheet(IXLWorksheet sheet, AttendanceJournalDto journal,
+        IEnumerable<AttendanceStudentRowDto> students)
+    {
         var lastColumn = journal.Sessions.Count + 5;
         sheet.Cell(1, 1).Value = journal.SubjectName;
         sheet.Range(1, 1, 1, lastColumn).Merge().Style.Font.SetBold().Font.SetFontSize(16);
@@ -33,7 +65,7 @@ public static class AttendanceXlsxExporter
         header.Style.Font.Bold = true;
         sheet.Row(4).Height = 42;
         var row = 5;
-        foreach (var student in journal.Students)
+        foreach (var student in students)
         {
             sheet.Cell(row, 1).Value = student.FullName;
             sheet.Cell(row, 2).Value = student.GroupName;
@@ -64,8 +96,5 @@ public static class AttendanceXlsxExporter
         sheet.Column(1).Width = 30;
         sheet.Column(2).Width = 20;
         sheet.Columns(3, lastColumn).Width = 20;
-        using var stream = new MemoryStream();
-        workbook.SaveAs(stream);
-        return stream.ToArray();
     }
 }

@@ -34,27 +34,33 @@
     private readonly CancellationTokenSource _life = new();
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _module ??= await JS.InvokeAsync<IJSObjectReference>("import", ProfileMediaModule.Url);
+        if (_disposed) return;
+        var module = _module ?? await JS.InvokeAsync<IJSObjectReference>("import", ProfileMediaModule.Url);
+        if (_disposed) { await module.DisposeAsync(); return; }
+        _module = module;
         if (Media is not null && !_registered)
         {
             _reference ??= DotNetObjectReference.Create(this);
             _registered = true;
-            await _module.InvokeVoidAsync("observeMedia", _element, _reference);
+            await module.InvokeVoidAsync("observeMedia", _element, _reference);
+            if (_disposed) return;
         }
-        else if (_observe && _module is not null)
+        if (_observe)
         {
             _observe = false;
-            await _module.InvokeVoidAsync("refreshMedia", _element, _poster, _url);
+            await module.InvokeVoidAsync("refreshMedia", _element, _poster, _url);
         }
     }
     protected override async Task OnParametersSetAsync()
     {
         if (Media?.Id == _expected) return;
         _expected = Media?.Id; _generation++;
-        await ReleaseAsync(); _registered = false;
+        _registered = false;
+        await ReleaseAsync();
     }
     [JSInvokable] public async Task VisibilityChangedAsync(bool visible)
     {
+        if (_disposed) return;
         _visible = visible;
         if (visible) await VisibleAsync();
         else { await ReleaseAsync(); if (!_disposed) await InvokeAsync(StateHasChanged); }
@@ -77,10 +83,12 @@
     }
     private async Task ReleaseAsync()
     {
-        if (_blob is not null) await _blob.DisposeAsync(); if (_posterBlob is not null) await _posterBlob.DisposeAsync();
+        var blob = _blob; var poster = _posterBlob;
         _blob = _posterBlob = null;
         _url = _poster = null;
         _loaded = null;
+        _observe = true;
+        if (blob is not null) await blob.DisposeAsync(); if (poster is not null) await poster.DisposeAsync();
     }
     public async ValueTask DisposeAsync()
     {

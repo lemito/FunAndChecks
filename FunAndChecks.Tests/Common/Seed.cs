@@ -1,12 +1,26 @@
 using FunAndChecks.Domain.Entities;
 using FunAndChecks.Infrastructure.Identity;
 using FunAndChecks.Infrastructure.Persistence;
+using FunAndChecks.Application.Admins;
+using FunAndChecks.Application.Common.Interfaces;
+using NSubstitute;
 
 namespace FunAndChecks.Tests.Common;
 
 /// <summary>Хелперы для наполнения тестовой БД.</summary>
 public static class Seed
 {
+    public static AdminAccessService Access(this ApplicationDbContext db)
+    {
+        var identity = Substitute.For<IIdentityService>();
+        identity.GetCurrentRolesAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<string>());
+        return new AdminAccessService(db, identity);
+    }
+
+    public static void GrantSubject(this ApplicationDbContext db, Admin admin, Subject subject) =>
+        db.AdminSubjectAccesses.Add(new AdminSubjectAccess { Admin = admin, Subject = subject });
+
     /// <summary>
     /// Профили Student/Admin связаны FK с учётной записью по общему Id —
     /// под SQLite (с включёнными FK) аккаунт обязателен.
