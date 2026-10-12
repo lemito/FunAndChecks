@@ -198,7 +198,26 @@ app.UseRequestLocalization(new RequestLocalizationOptions
     SupportedUICultures = supportedCultures,
 });
 
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate =
+        "HTTP {RequestMethod} {RequestPath} responded {StatusCode} " +
+        "in {Elapsed:0.0000} ms | UserId={UserId} | IP={ClientIp}";
+
+    options.EnrichDiagnosticContext = (diagnosticContext, context) =>
+    {
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        var userId = context.User.Identity?.IsAuthenticated == true
+            ? context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+              ?? context.User.FindFirstValue("sub")
+              ?? "unknown"
+            : "anonymous";
+
+        diagnosticContext.Set("ClientIp", ip);
+        diagnosticContext.Set("UserId", userId);
+    };
+});
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseStatusCodePages(async statusContext =>
 {
