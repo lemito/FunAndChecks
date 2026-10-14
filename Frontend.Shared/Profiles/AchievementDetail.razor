@@ -17,7 +17,7 @@
             {
                 <p class="fc-profile-hint">@ProfileText.T("Получено", "Granted") @Award.GrantedAtUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</p>
                 <p class="fc-profile-hint">@ProfileText.T("Выдал(а):", "Issued by:") @if (Award.IssuedByUserId is { } issuer) { <a class="fc-profile-inline-link" href="@(BasePath + "/profile/" + issuer)" @onclick="() => OpenProfileAsync(issuer)" @onclick:preventDefault="true">@Award.IssuedByName</a> } else { <span>@Award.IssuedByName</span> }</p>
-                @if (_confirmRevoke) { <MudAlert Severity="Severity.Warning">@ProfileText.T("Отозвать эту выдачу? Награда исчезнет из профиля и закреплённых.", "Revoke this award? It will be removed from the profile and pinned achievements.")<div class="mt-3"><MudButton OnClick="() => _confirmRevoke = false" Disabled="@_busy">@ProfileText.T("Отмена", "Cancel")</MudButton><MudButton OnClick="RevokeAsync" Disabled="@_busy" Color="Color.Error">@ProfileText.T("Отозвать", "Revoke")</MudButton></div></MudAlert> }
+                @if (_confirmRevoke && CanRevoke) { <MudAlert Severity="Severity.Warning">@ProfileText.T("Отозвать эту выдачу? Награда исчезнет из профиля и закреплённых.", "Revoke this award? It will be removed from the profile and pinned achievements.")<div class="mt-3"><MudButton OnClick="() => _confirmRevoke = false" Disabled="@_busy">@ProfileText.T("Отмена", "Cancel")</MudButton><MudButton OnClick="RevokeAsync" Disabled="@_busy" Color="Color.Error">@ProfileText.T("Отозвать", "Revoke")</MudButton></div></MudAlert> }
             }
             <div class="fc-profile-section-heading mt-5"><h2>@ProfileText.T("Получатели", "Recipients")</h2><span>@(_recipients?.TotalCount ?? 0)</span></div>
             @if (_recipients is null || _recipients.Items.Count == 0) { <p class="fc-profile-empty">@ProfileText.T("Пока никто не получил эту награду.", "Nobody has received this achievement yet.")</p> }
@@ -29,12 +29,12 @@
         }
     </ChildContent><Actions>
         @if (Award is not null && Mine) { <MudButton OnClick="() => Pin.InvokeAsync(Award)" Disabled="@_busy" Variant="Variant.Outlined">@(Award.PinPosition.HasValue ? ProfileText.T("Убрать из закреплённых", "Unpin") : ProfileText.T("Закрепить", "Pin"))</MudButton> }
-        @if (Award?.CanRevoke == true) { <MudButton OnClick="() => _confirmRevoke = true" Color="Color.Error" Disabled="@_busy">@ProfileText.T("Отозвать", "Revoke")</MudButton> }
+        @if (CanRevoke) { <MudButton OnClick="() => _confirmRevoke = true" Color="Color.Error" Disabled="@_busy">@ProfileText.T("Отозвать", "Revoke")</MudButton> }
         @if (IsAdmin && _achievement?.IsArchived == false) { <MudButton OnClick="() => _grant = true" Color="Color.Primary" Variant="Variant.Filled">@ProfileText.T("Выдать", "Grant")</MudButton> }
         <MudButton OnClick="() => Close.InvokeAsync()" Disabled="@_busy">@ProfileText.T("Закрыть", "Close")</MudButton>
     </Actions>
 </ProfileDialog>
-@if (_grant) { <GrantAchievementDialog Achievement="_achievement" Changed="GrantDoneAsync" Close="() => _grant = false" /> }
+@if (_grant && IsAdmin) { <GrantAchievementDialog Achievement="_achievement" Changed="GrantDoneAsync" Close="() => _grant = false" /> }
 @code {
     [Parameter] public int AchievementId { get; set; }
     [Parameter] public AchievementAwardDto? Award { get; set; }
@@ -44,6 +44,7 @@
     [Parameter] public EventCallback<AchievementAwardDto> Pin { get; set; }
     [Parameter] public EventCallback Changed { get; set; }
     [Parameter] public EventCallback Close { get; set; }
+    private bool CanRevoke => IsAdmin && Award?.CanRevoke == true;
     private AchievementDefinitionDto? _achievement;
     private ProfilePageDto<AchievementRecipientDto>? _recipients;
     private bool _loading = true, _busy, _grant, _confirmRevoke;
@@ -64,7 +65,7 @@
     private async Task GrantDoneAsync() { _grant = false; await LoadAsync(); await Changed.InvokeAsync(); }
     private async Task RevokeAsync()
     {
-        if (Award is null) return; _busy = true; _error = null;
+        if (Award is null || !CanRevoke) return; _busy = true; _error = null;
         try { await Api.RevokeAsync(Award.Id, _life.Token); Snackbar.Add(ProfileText.T("Достижение отозвано", "Achievement revoked"), Severity.Success); await Changed.InvokeAsync(); await Close.InvokeAsync(); }
         catch (ApiException ex) { _error = ex.Message; }
         finally { _busy = false; }

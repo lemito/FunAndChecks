@@ -530,4 +530,9 @@
   <data name="ProfileError_ProcessingMemoryLimit" xml:space="preserve"><value>Обработка превысила лимит памяти. Попробуйте файл меньшего разрешения.</value></data>
   <data name="Dialog_ColorHue" xml:space="preserve"><value>Оттенок</value></data>
   <data name="Dialog_ColorSaturationBrightness" xml:space="preserve"><value>Насыщенность и яркость</value></data>
+  <data name="Monitoring_Title" xml:space="preserve"><value>Мониторинг</value></data>
+  <data name="Monitoring_Opening" xml:space="preserve"><value>Открываем метрики и логи…</value></data>
+  <data name="Monitoring_SuperAdminOnly" xml:space="preserve"><value>Мониторинг доступен только суперадминистраторам.</value></data>
+  <data name="Monitoring_Disabled" xml:space="preserve"><value>Мониторинг не включён на этом сервере.</value></data>
+  <data name="Monitoring_Retry" xml:space="preserve"><value>Повторить</value></data>
 </root>

@@ -1,5 +1,7 @@
 using FunAndChecks.Application.Auth;
 using FunAndChecks.Common;
+using FunAndChecks.Monitoring;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -56,9 +58,13 @@ public class AuthController(IAuthService authService) : ControllerBase
 
     /// <summary>Выход: отзывает refresh-токен.</summary>
     [HttpPost("logout")]
+    [DisableRateLimiting]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout(RefreshRequest request, CancellationToken cancellationToken)
     {
+        // The cookie is scoped to /metrics, so it is not sent to this API path.
+        // Signing out still expires that exact cookie in the browser.
+        await HttpContext.SignOutAsync(MonitoringAuthentication.Scheme);
         await authService.LogoutAsync(request, cancellationToken);
         return NoContent();
     }

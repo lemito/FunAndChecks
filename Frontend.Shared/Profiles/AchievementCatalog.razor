@@ -9,7 +9,7 @@
     @if (_superAdmin) { @if (Management) { <MudButton OnClick="Create" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.Add">@ProfileText.T("Создать", "Create")</MudButton> } else { <MudButton Href="/admin/achievements/manage" Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.Settings">@ProfileText.T("Управление", "Manage")</MudButton> } }
 </div></div>
 <section class="fc-panel fc-profile-catalog-toolbar"><MudTextField T="string" Value="@_query" ValueChanged="QueryAsync" Immediate="true" DebounceInterval="300" Label="@ProfileText.T("Поиск достижений", "Search achievements")" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Search" MaxLength="200" Clearable="true" /><span class="fc-muted">@ProfileText.T("Всего:", "Total:") @_total</span>
-    @if (Management) { <MudCheckBox T="bool" Value="_includeArchived" ValueChanged="ArchivedChangedAsync" Label="@ProfileText.T("Показывать архив", "Include archived")" /> }
+    @if (Management && _superAdmin) { <MudCheckBox T="bool" Value="_includeArchived" ValueChanged="ArchivedChangedAsync" Label="@ProfileText.T("Показывать архив", "Include archived")" /> }
 </section>
 @if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mt-4">@_error <MudButton OnClick="LoadAsync">@ProfileText.T("Повторить", "Retry")</MudButton></MudAlert> }
 @if (_loading) { <div class="fc-loading"><MudProgressCircular Indeterminate="true" /></div> }
@@ -22,9 +22,9 @@ else
     @if (_total > 24) { <MudPagination Count="@((int)Math.Ceiling(_total / 24d))" Selected="_page" SelectedChanged="PageChangedAsync" Class="mt-5" /> }
 }
 @if (_detail is not null) { <AchievementDetail AchievementId="_detail.Id" IsAdmin="_admin" BasePath="@BasePath" Changed="LoadAsync" Close="() => _detail = null" /> }
-@if (_editing) { <AchievementDefinitionEditor Achievement="_edit" Changed="DefinitionDoneAsync" Close="() => _editing = false" /> }
-@if (_grant) { <GrantAchievementDialog Changed="GrantDoneAsync" Close="() => _grant = false" /> }
-@if (_archive is not null)
+@if (_editing && _superAdmin) { <AchievementDefinitionEditor Achievement="_edit" Changed="DefinitionDoneAsync" Close="() => _editing = false" /> }
+@if (_grant && _admin) { <GrantAchievementDialog Changed="GrantDoneAsync" Close="() => _grant = false" /> }
+@if (_archive is not null && _superAdmin)
 {
     <ProfileDialog Title="@(_archive.IsArchived ? ProfileText.T("Вернуть достижение?", "Restore achievement?") : ProfileText.T("Архивировать достижение?", "Archive achievement?"))" Busy="_busy" Close="() => _archive = null"><ChildContent><h3>@_archive.Name</h3><p>@(_archive.IsArchived ? ProfileText.T("Достижение снова станет доступно для выдачи.", "This achievement will be available to grant again.") : ProfileText.T("Новые выдачи станут недоступны. Уже полученные награды сохранятся.", "New awards will be disabled. Existing awards will remain."))</p>@if (_archiveError is not null) { <MudAlert Severity="Severity.Error">@_archiveError</MudAlert> }</ChildContent><Actions><MudButton OnClick="() => _archive = null" Disabled="_busy">@ProfileText.T("Отмена", "Cancel")</MudButton><MudButton OnClick="ArchiveAsync" Disabled="_busy" Variant="Variant.Filled" Color="Color.Primary">@(_archive.IsArchived ? ProfileText.T("Вернуть", "Restore") : ProfileText.T("Архивировать", "Archive"))</MudButton></Actions></ProfileDialog>
 }
@@ -41,7 +41,7 @@ else
     private readonly CancellationTokenSource _life = new();
     protected override async Task OnInitializedAsync()
     {
-        var state = await Authentication.GetAuthenticationStateAsync(); _superAdmin = state.User.IsInRole(Frontend.Shared.Auth.Roles.SuperAdmin); _admin = _superAdmin || state.User.IsInRole(Frontend.Shared.Auth.Roles.Admin);
+        var state = await Authentication.GetAuthenticationStateAsync(); _superAdmin = IsAdminLayout && state.User.IsInRole(Frontend.Shared.Auth.Roles.SuperAdmin); _admin = IsAdminLayout && (_superAdmin || state.User.IsInRole(Frontend.Shared.Auth.Roles.Admin));
         await LoadAsync();
     }
     private async Task QueryAsync(string query) { _query = query ?? ""; _page = 1; await LoadAsync(); }
@@ -50,7 +50,7 @@ else
     private async Task LoadAsync()
     {
         var version = ++_version; _loading = true; _error = null;
-        try { var result = await Api.CatalogAsync(_query, _page, Management && _includeArchived, _life.Token); if (version != _version) return; _items = result.Items; _total = result.TotalCount; }
+        try { var result = await Api.CatalogAsync(_query, _page, Management && _superAdmin && _includeArchived, _life.Token); if (version != _version) return; _items = result.Items; _total = result.TotalCount; }
         catch (ApiException ex) { if (version == _version) _error = ex.Message; }
         catch (OperationCanceledException) when (_life.IsCancellationRequested) { }
         finally { if (version == _version) _loading = false; }

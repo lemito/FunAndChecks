@@ -6,6 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
+using FunAndChecks.Application.Auditing;
+using NSubstitute;
 
 namespace FunAndChecks.Tests.Backups;
 
@@ -153,6 +155,44 @@ public class PgDumpBackupServiceTests : IDisposable
 
     private PgDumpBackupService Service() => new(new ConfigurationBuilder().Build(),
         Options.Create(new BackupOptions { Directory = _directory }), NullLogger<PgDumpBackupService>.Instance);
+
+    [Fact]
+    public async Task Delete_EmitsSafeAuditOnlyAfterDeletion()
+    {
+        Directory.CreateDirectory(_directory);
+        var path = Path.Combine(_directory, "audited.dump");
+        await File.WriteAllTextAsync(path, "private backup contents");
+        var events = new List<AdminAuditEvent>();
+        var writer = Substitute.For<IAdminAuditWriter>();
+        writer.TryWrite(Arg.Any<AdminAuditEvent>()).Returns(call =>
+        {
+            File.Exists(path).Should().BeFalse();
+            events.Add(call.Arg<AdminAuditEvent>());
+            return true;
+        });
+        var audit = new AdminAuditContext(writer);
+        audit.Begin(Guid.NewGuid(), "Super Admin", "SuperAdmin", "backup.delete", "request");
+        var service = new PgDumpBackupService(new ConfigurationBuilder().Build(),
+            Options.Create(new BackupOptions { Directory = _directory }), NullLogger<PgDumpBackupService>.Instance, audit);
+        await service.DeleteAsync("audited.dump");
+        var entry = events.Should().ContainSingle().Which;
+        entry.Before!["fileName"].Should().Be("audited.dump");
+        entry.ObjectType.Should().Be("backup");
+        entry.Outcome.Should().Be("success");
+        System.Text.Json.JsonSerializer.Serialize(entry).Should().NotContain("private backup contents").And.NotContain(_directory);
+    }
+
+    [Fact]
+    public async Task MissingBackup_DoesNotCreateFalseSuccessfulAudit()
+    {
+        var writer = Substitute.For<IAdminAuditWriter>();
+        var audit = new AdminAuditContext(writer);
+        audit.Begin(Guid.NewGuid(), "Super Admin", "SuperAdmin", "backup.delete", "request");
+        var service = new PgDumpBackupService(new ConfigurationBuilder().Build(),
+            Options.Create(new BackupOptions { Directory = _directory }), NullLogger<PgDumpBackupService>.Instance, audit);
+        await FluentActions.Invoking(() => service.DeleteAsync("missing.dump")).Should().ThrowAsync<NotFoundException>();
+        writer.DidNotReceive().TryWrite(Arg.Any<AdminAuditEvent>());
+    }
 
     public void Dispose()
     {

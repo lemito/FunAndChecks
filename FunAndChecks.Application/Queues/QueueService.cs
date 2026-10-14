@@ -307,16 +307,25 @@ public class QueueService(
         if (entry.Student.GroupId is int groupId)
             await accessService.EnsureGroupAllowedAsync(adminId, groupId, cancellationToken);
 
-        // The frontend warns about another reviewer; authorized teachers may
-        // take over. Keep status and current reviewer in one atomic update.
-        Guid? currentAdminId = status == QueueEntryStatus.Checking ? admin.Id : null;
-        var updated = await db.QueueEntries
-            .Where(qu => qu.Id == entry.Id)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(qu => qu.Status, status)
-                .SetProperty(qu => qu.CurrentAdminId, currentAdminId), cancellationToken);
-        if (updated == 0)
-            throw new NotFoundException("Student not found in this queue.");
+        // Read the actual previous status/reviewer in the committing transaction.
+        // An already tracked row from an earlier screen must not supply stale audit values.
+        await db.ExecuteSerializableAsync(async ct =>
+        {
+            var current = await db.QueueEntries.AsNoTracking()
+                .FirstOrDefaultAsync(qu => qu.Id == entry.Id, ct)
+                ?? throw new NotFoundException("Student not found in this queue.");
+            await accessService.EnsureSubjectAllowedAsync(adminId, entry.QueueEvent.SubjectId, ct);
+            if (entry.Student.GroupId is int currentGroupId)
+                await accessService.EnsureGroupAllowedAsync(adminId, currentGroupId, ct);
+
+            var existingTracked = db.QueueEntries.Local.FirstOrDefault(qu => qu.Id == current.Id);
+            if (existingTracked is not null) db.QueueEntries.Entry(existingTracked).State = EntityState.Detached;
+            db.QueueEntries.Attach(current);
+            current.Status = status;
+            current.CurrentAdminId = status == QueueEntryStatus.Checking ? admin.Id : null;
+            await db.SaveChangesAsync(ct);
+            db.QueueEntries.Entry(current).State = EntityState.Detached;
+        }, cancellationToken);
 
         await NotifyBestEffortAsync(
             new QueueEntryUpdateDto(eventId, studentId, status,

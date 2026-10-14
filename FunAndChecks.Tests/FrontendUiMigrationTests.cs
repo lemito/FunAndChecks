@@ -19,6 +19,7 @@ public class FrontendUiMigrationTests
     [InlineData("/admin/profiles/1?returnUrl=/admin", "/legacy/admin")]
     [InlineData("/student/achievements/12", "/legacy/student")]
     [InlineData("/admin/achievements/manage", "/legacy/admin")]
+    [InlineData("/metrics?returnUrl=%2Fmetrics%2Fd%2Fload", "/legacy/admin")]
     public void SwitchVersion_PreservesPageAndParameters(string current, string target) =>
         UiRoutes.OtherVersion(current).Should().Be(target);
 
@@ -44,6 +45,7 @@ public class FrontendUiMigrationTests
         foreach (var route in type.GetCustomAttributes(typeof(RouteAttribute), false).Cast<RouteAttribute>())
         {
             if (route.Template == "/admin/student-accounts") continue; // Legacy is frozen; this is a new feature.
+            if (route.Template == "/metrics") continue; // Monitoring is available only in the modern interface.
             if (route.Template.StartsWith("/admin/profile") || route.Template.StartsWith("/student/profile") ||
                 route.Template.StartsWith("/admin/achievements") || route.Template.StartsWith("/student/achievements")) continue;
             var equivalent = route.Template == "/" ? "/legacy" : "/legacy" + route.Template;

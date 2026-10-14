@@ -57,7 +57,7 @@ else if (_profile is not null)
 }
 @if (_avatarEditor) { <MediaEditor Save="SaveAvatarAsync" Close="() => _avatarEditor = false" /> }
 @if (_award is not null) { <AchievementDetail AchievementId="_award.AchievementId" Award="_award" Mine="_mine" IsAdmin="_admin" BasePath="@BasePath" Pin="TogglePinAsync" Changed="RefreshAwardAsync" Close="() => _award = null" /> }
-@if (_grant && _profile is not null) { <GrantAchievementDialog Recipient="@(new AchievementUserDto(_profile.UserId, _profile.FullName, _profile.GroupName, _profile.IsAdmin))" Changed="GrantDoneAsync" Close="() => _grant = false" /> }
+@if (_grant && _admin && _profile is not null) { <GrantAchievementDialog Recipient="@(new AchievementUserDto(_profile.UserId, _profile.FullName, _profile.GroupName, _profile.IsAdmin))" Changed="GrantDoneAsync" Close="() => _grant = false" /> }
 
 @code {
     [Parameter] public Guid? UserId { get; set; }
@@ -90,7 +90,7 @@ else if (_profile is not null)
             var me = await Me.GetMeAsync(_life.Token);
             var state = await Authentication.GetAuthenticationStateAsync();
             if (version != _loadVersion) return;
-            var admin = state.User.IsInRole(Frontend.Shared.Auth.Roles.Admin) || state.User.IsInRole(Frontend.Shared.Auth.Roles.SuperAdmin);
+            var admin = IsAdminLayout && (state.User.IsInRole(Frontend.Shared.Auth.Roles.Admin) || state.User.IsInRole(Frontend.Shared.Auth.Roles.SuperAdmin));
             var mine = userId is null || userId == me.Id;
             var profile = mine ? await Api.MineAsync(_life.Token) : await Api.GetProfileAsync(userId!.Value, _life.Token);
             if (version != _loadVersion || _life.IsCancellationRequested) return;

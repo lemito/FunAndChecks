@@ -6,12 +6,78 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Data;
 using Npgsql;
+using FunAndChecks.Application.Auditing;
 
 namespace FunAndChecks.Infrastructure.Persistence;
 
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, AdminAuditContext? audit = null)
     : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>(options), IApplicationDbContext
 {
+    private readonly List<AdminAuditEvent> _pendingAudit = [];
+    private Guid? _pendingAuditTransactionId;
+    private bool _pendingAuditWrites;
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+        if (audit is not null) optionsBuilder.AddInterceptors(new AdminAuditTransactionInterceptor(this));
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        var changes = CaptureAudit();
+        var result = base.SaveChanges(acceptAllChangesOnSuccess);
+        RecordSavedAudit(changes, result);
+        return result;
+    }
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        var changes = CaptureAudit();
+        var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        RecordSavedAudit(changes, result);
+        return result;
+    }
+
+    private List<AdminAuditCapture.PendingAuditChange> CaptureAudit()
+    {
+        // A transaction disposed without explicit rollback must not leave publishable snapshots.
+        if (_pendingAuditTransactionId is not null && _pendingAuditTransactionId != Database.CurrentTransaction?.TransactionId)
+            DiscardPendingAudit();
+        if (audit?.Enabled != true) return [];
+        try { return AdminAuditCapture.Capture(this, audit); }
+        catch { AdminAuditDiagnostics.RecordCaptureFailure(); return []; }
+    }
+
+    private void RecordSavedAudit(List<AdminAuditCapture.PendingAuditChange> changes, int savedCount)
+    {
+        if (audit?.Enabled != true || savedCount == 0) return;
+        _pendingAuditWrites = true;
+        _pendingAuditTransactionId = Database.CurrentTransaction?.TransactionId;
+        try
+        {
+            _pendingAudit.AddRange(changes.Select(change => change.Finalize(audit)));
+        }
+        catch { AdminAuditDiagnostics.RecordCaptureFailure(); }
+        if (Database.CurrentTransaction is null) PublishCommittedAudit();
+    }
+
+    internal void PublishCommittedAudit()
+    {
+        if (audit is null) return;
+        if (_pendingAuditWrites) audit.MarkCommittedWrites();
+        foreach (var change in _pendingAudit) audit.Committed(change);
+        _pendingAudit.Clear();
+        _pendingAuditTransactionId = null;
+        _pendingAuditWrites = false;
+    }
+
+    internal void DiscardPendingAudit()
+    {
+        _pendingAudit.Clear();
+        _pendingAuditTransactionId = null;
+        _pendingAuditWrites = false;
+    }
     public DbSet<Student> Students => Set<Student>();
     public DbSet<Admin> Admins => Set<Admin>();
     public DbSet<Group> Groups => Set<Group>();
@@ -56,6 +122,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             {
                 await transaction.RollbackAsync(cancellationToken);
                 ChangeTracker.Clear();
+            }
+            catch
+            {
+                DiscardPendingAudit();
+                throw;
             }
         }
     }

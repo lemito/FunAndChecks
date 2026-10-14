@@ -1,6 +1,7 @@
 using FunAndChecks.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using FunAndChecks.Application.Auditing;
 
 namespace FunAndChecks.Tests.Common;
 
@@ -29,7 +30,7 @@ public sealed class TestDatabase : IDisposable
         context.Database.EnsureCreated();
     }
 
-    public ApplicationDbContext NewContext() => new(_options);
+    public ApplicationDbContext NewContext(AdminAuditContext? audit = null) => new(_options, audit);
 
     public void Dispose() => _connection.Dispose();
 }

@@ -530,4 +530,9 @@
   <data name="ProfileError_ProcessingMemoryLimit" xml:space="preserve"><value>Processing exceeded the memory limit. Try a lower-resolution file.</value></data>
   <data name="Dialog_ColorHue" xml:space="preserve"><value>Hue</value></data>
   <data name="Dialog_ColorSaturationBrightness" xml:space="preserve"><value>Saturation and brightness</value></data>
+  <data name="Monitoring_Title" xml:space="preserve"><value>Monitoring</value></data>
+  <data name="Monitoring_Opening" xml:space="preserve"><value>Opening metrics and logs…</value></data>
+  <data name="Monitoring_SuperAdminOnly" xml:space="preserve"><value>Monitoring is available only to super administrators.</value></data>
+  <data name="Monitoring_Disabled" xml:space="preserve"><value>Monitoring is not enabled on this server.</value></data>
+  <data name="Monitoring_Retry" xml:space="preserve"><value>Try again</value></data>
 </root>

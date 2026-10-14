@@ -16,6 +16,7 @@ public partial class Login
     [Inject] private JwtAuthenticationStateProvider AuthState { get; set; } = null!;
     [Inject] private NavigationManager Nav { get; set; } = null!;
     [Inject] private IStringLocalizer<AppStrings> Loc { get; set; } = null!;
+    [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
 
     private MudForm _form = null!;
     private string _email = string.Empty;
@@ -65,6 +66,10 @@ public partial class Login
     {
         var state = await ((AuthenticationStateProvider)AuthState).GetAuthenticationStateAsync();
         var target = state.User.IsInRole(Roles.Admin) ? "/admin" : "/student";
+        if (!string.IsNullOrEmpty(ReturnUrl) &&
+            (ReturnUrl == "/metrics" || ReturnUrl.StartsWith("/metrics?", StringComparison.Ordinal)) &&
+            !ReturnUrl.Contains('\\') && !ReturnUrl.Any(char.IsControl))
+            target = ReturnUrl;
         Nav.NavigateTo(target);
     }
 

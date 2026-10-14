@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using System.Globalization;
 using System.Security.Claims;
 using FunAndChecks.Application;
+using FunAndChecks.Application.Auditing;
 using FunAndChecks.Application.Common.Interfaces;
 using FunAndChecks.Common;
 using FunAndChecks.Domain.Constants;
@@ -12,6 +13,8 @@ using FunAndChecks.Infrastructure.Identity;
 using FunAndChecks.Infrastructure.Persistence;
 using FunAndChecks.Infrastructure.Persistence.Seeding;
 using FunAndChecks.Middleware;
+using FunAndChecks.Monitoring;
+using FunAndChecks.Observability;
 using FunAndChecks.OpenApi;
 using FunAndChecks.Realtime;
 using HealthChecks.UI.Client;
@@ -25,6 +28,7 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Events;
+using Prometheus;
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -49,6 +53,14 @@ builder.Configuration.AddJsonFile(
 // Слои приложения
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddSingleton<ApiMetrics>();
+builder.Services.Configure<AdminAuditOptions>(builder.Configuration.GetSection("AdminAudit"));
+if (builder.Environment.IsEnvironment("Testing"))
+    builder.Services.PostConfigure<AdminAuditOptions>(options => options.Enabled = false);
+builder.Services.AddSingleton<FileAdminAuditWriter>();
+builder.Services.AddSingleton<IAdminAuditWriter>(services => services.GetRequiredService<FileAdminAuditWriter>());
+builder.Services.AddHostedService(services => services.GetRequiredService<FileAdminAuditWriter>());
+builder.Services.AddScoped<AdminAuditContext>();
 
 // SignalR-нотификаторы — реализация прикладных интерфейсов на уровне Presentation
 builder.Services.AddSignalR();
@@ -112,11 +124,16 @@ builder.Services.AddAuthentication(options =>
                 "You do not have permission to perform this action.", "access.forbidden"),
         };
     });
+builder.Services.AddMonitoringAuthentication(builder.Configuration);
+builder.Services.AddAuthentication()
+    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, MetricsScrapeHandler>(MetricsScrapeHandler.SchemeName, _ => { });
 
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(AuthorizationPolicies.SuperAdmin,
         policy => policy.RequireRole(Roles.SuperAdmin));
+    options.AddPolicy(MetricsScrapeHandler.SchemeName, policy =>
+        policy.AddAuthenticationSchemes(MetricsScrapeHandler.SchemeName).RequireAuthenticatedUser());
 });
 
 // Защита эндпоинтов аутентификации от перебора: лимит по IP.
@@ -189,6 +206,8 @@ var forwardedHeadersOptions = new ForwardedHeadersOptions
 forwardedHeadersOptions.KnownNetworks.Clear();
 forwardedHeadersOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedHeadersOptions);
+app.UseMiddleware<RequestCorrelationMiddleware>();
+app.UseMiddleware<ApiMetricsMiddleware>();
 
 var supportedCultures = new[] { new CultureInfo("en-US"), new CultureInfo("ru-RU") };
 app.UseRequestLocalization(new RequestLocalizationOptions
@@ -216,6 +235,7 @@ app.UseSerilogRequestLogging(options =>
 
         diagnosticContext.Set("ClientIp", ip);
         diagnosticContext.Set("UserId", userId);
+        diagnosticContext.Set("RequestId", context.TraceIdentifier);
     };
 });
 app.UseMiddleware<ExceptionHandlingMiddleware>();
@@ -256,7 +276,7 @@ app.Use(async (context, next) =>
 {
     var endpoint = context.GetEndpoint();
     var isSpaFallback = endpoint?.Metadata.Any(metadata => metadata.GetType().Name == "FallbackMetadata") == true;
-    if (context.Request.Path.StartsWithSegments("/api") && (endpoint is null || isSpaFallback))
+    if ((context.Request.Path.StartsWithSegments("/api") || context.Request.Path.StartsWithSegments("/internal")) && (endpoint is null || isSpaFallback))
     {
         await ApiProblemDetails.WriteAsync(context, StatusCodes.Status404NotFound,
             ApiProblemDetails.DetailForStatus(StatusCodes.Status404NotFound),
@@ -271,9 +291,12 @@ app.UseCors(corsPolicy);
 
 app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<AdminAuditMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapMetrics("/internal/metrics", app.Services.GetRequiredService<ApiMetrics>().Registry)
+    .RequireAuthorization(MetricsScrapeHandler.SchemeName);
 
 app.MapHub<QueueHub>("/apiHub/queueHub");
 app.MapHub<ResultsHub>("/apiHub/resultsHub");

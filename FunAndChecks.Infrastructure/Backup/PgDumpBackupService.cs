@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using FunAndChecks.Application.Auditing;
 
 namespace FunAndChecks.Infrastructure.Backup;
 
@@ -18,7 +19,8 @@ namespace FunAndChecks.Infrastructure.Backup;
 public class PgDumpBackupService(
     IConfiguration configuration,
     IOptions<BackupOptions> options,
-    ILogger<PgDumpBackupService> logger)
+    ILogger<PgDumpBackupService> logger,
+    AdminAuditContext? audit = null)
     : IDatabaseBackupService
 {
     private readonly BackupOptions _options = options.Value;
@@ -70,7 +72,12 @@ public class PgDumpBackupService(
     public Task DeleteAsync(string fileName, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        File.Delete(GetExistingBackupPath(fileName));
+        var path = GetExistingBackupPath(fileName);
+        var size = SafeFileSize(path);
+        File.Delete(path);
+        if (audit?.Enabled == true)
+            audit.Committed(audit.Create("backup", fileName, "success", $"delete: backup {fileName}",
+                before: new Dictionary<string, object?> { ["fileName"] = fileName, ["sizeBytes"] = size }));
         return Task.CompletedTask;
     }
 
@@ -141,6 +148,9 @@ public class PgDumpBackupService(
                 throw new InvalidOperationException("pg_dump did not produce a regular backup file.");
             File.Move(partialPath, filePath);
             success = true;
+            if (audit?.Enabled == true)
+                audit.Committed(audit.Create("backup", fileName, "success", $"create: backup {fileName}",
+                    after: new Dictionary<string, object?> { ["fileName"] = fileName, ["sizeBytes"] = SafeFileSize(filePath) }));
             logger.LogInformation("Database backup created at {FilePath}.", filePath);
             return filePath;
         }
@@ -171,6 +181,12 @@ public class PgDumpBackupService(
     }
 
     private string GetBackupDirectory() => Path.GetFullPath(_options.Directory);
+
+    private static long? SafeFileSize(string path)
+    {
+        try { return new FileInfo(path).Length; }
+        catch { AdminAuditDiagnostics.RecordCaptureFailure(); return null; }
+    }
 
     private string GetExistingBackupPath(string fileName)
     {

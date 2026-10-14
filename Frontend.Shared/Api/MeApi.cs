@@ -7,6 +7,9 @@ namespace Frontend.Shared.Api;
 /// <summary>Эндпоинты текущего пользователя — /api/me.</summary>
 public class MeApi(HttpClient http, IStringLocalizer<AppStrings> loc) : ApiClientBase(http, loc)
 {
+    public Task CreateMonitoringSessionAsync(CancellationToken ct = default) =>
+        PostAsync("api/monitoring/session", ct: ct);
+
     public Task<MeDto> GetMeAsync(CancellationToken ct = default) =>
         GetAsync<MeDto>("api/me", ct);
 

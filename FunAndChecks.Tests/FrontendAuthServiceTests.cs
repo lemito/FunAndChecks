@@ -79,6 +79,24 @@ public class FrontendAuthServiceTests
         js.Calls.Should().BeEmpty();
     }
 
+    [Theory]
+    [InlineData(HttpStatusCode.NoContent)]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    public async Task Logout_RequestsServerCookieRemovalWithoutRefreshTokenAndAlwaysClearsLocalTokens(HttpStatusCode status)
+    {
+        var js = new RecordingJsRuntime();
+        var handler = new LogoutHandler(status);
+        using var http = new HttpClient(handler) { BaseAddress = new Uri("https://localhost") };
+        var sut = new AuthService(http, new TokenStore(js), Substitute.For<IStringLocalizer<AppStrings>>());
+
+        await sut.LogoutAsync();
+
+        handler.Calls.Should().Be(1);
+        handler.Path.Should().Be("/api/auth/logout");
+        js.Calls.Where(call => call.Identifier == "localStorage.removeItem").Select(call => call.Args.Single())
+            .Should().BeEquivalentTo(new object[] { "access_token", "refresh_token" });
+    }
+
     private static AuthService CreateSut(HttpResponseMessage response, RecordingJsRuntime js, IStringLocalizer<AppStrings>? loc = null)
     {
         var http = new HttpClient(new StubHandler(response)) { BaseAddress = new Uri("https://localhost") };
@@ -107,5 +125,17 @@ public class FrontendAuthServiceTests
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(response);
+    }
+
+    private sealed class LogoutHandler(HttpStatusCode status) : HttpMessageHandler
+    {
+        public int Calls { get; private set; }
+        public string? Path { get; private set; }
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Calls++;
+            Path = request.RequestUri!.AbsolutePath;
+            return Task.FromResult(new HttpResponseMessage(status));
+        }
     }
 }

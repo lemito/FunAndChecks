@@ -47,8 +47,8 @@ RUN apt-get update \
     && apt-get update \
     && apt-get install -y --no-install-recommends postgresql-client-17 ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /app/backups /app/media-temp /home/app/.aspnet/DataProtection-Keys \
-    && chown -R app:app /app/backups /app/media-temp /home/app/.aspnet
+    && mkdir -p /app/backups /app/media-temp /app/logs/import /home/app/.aspnet/DataProtection-Keys \
+    && chown -R app:app /app/backups /app/media-temp /app/logs /home/app/.aspnet
 USER app
 
 ENTRYPOINT ["dotnet", "FunAndChecks.dll"]

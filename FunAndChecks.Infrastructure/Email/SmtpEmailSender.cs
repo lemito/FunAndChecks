@@ -19,9 +19,8 @@ public class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpEmailSen
     {
         if (string.IsNullOrWhiteSpace(_options.Host))
         {
-            // Не настроен SMTP (локальная разработка) — не падаем, пишем письмо в лог.
-            logger.LogWarning(
-                "SMTP host is not configured. Skipping email to {To}. Subject: {Subject}. Message: {HtmlBody}", to, subject, htmlBody);
+            // Email bodies can contain verification/reset codes. Never log them.
+            logger.LogWarning("SMTP host is not configured. Email delivery skipped.");
             return;
         }
 

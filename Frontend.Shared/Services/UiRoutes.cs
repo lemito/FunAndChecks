@@ -23,6 +23,9 @@ public static class UiRoutes
 
         if (path.TrimEnd('/').Equals("/admin/student-accounts", StringComparison.OrdinalIgnoreCase))
             return "/legacy/admin/grading" + suffix;
+        if (path.Equals("/metrics", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/metrics/", StringComparison.OrdinalIgnoreCase))
+            return "/legacy/admin";
 
         var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
         if (segments.Length >= 2 && (segments[0] == "admin" || segments[0] == "student") &&

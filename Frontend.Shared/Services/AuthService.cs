@@ -83,8 +83,9 @@ public class AuthService(HttpClient http, TokenStore tokenStore, IStringLocalize
         try
         {
             var refreshToken = await tokenStore.GetRefreshTokenAsync();
-            if (!string.IsNullOrEmpty(refreshToken))
-                await http.PostAsJsonAsync("api/auth/logout", new RefreshRequest(refreshToken));
+            // Even without a local refresh token the server must clear the
+            // dedicated monitoring cookie, which JavaScript cannot access.
+            using var response = await http.PostAsJsonAsync("api/auth/logout", new RefreshRequest(refreshToken ?? ""));
         }
         catch
         {

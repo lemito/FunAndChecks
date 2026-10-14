@@ -6,6 +6,7 @@ using FunAndChecks.Application.Students;
 using FunAndChecks.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using FunAndChecks.Application.Auditing;
 
 namespace FunAndChecks.Application.Submissions;
 
@@ -15,7 +16,8 @@ public class SubmissionService(
     IResultsCacheService cache,
     IResultsNotifier resultsNotifier,
     IValidator<CreateSubmissionRequest> createSubmissionValidator,
-    ILogger<SubmissionService> logger)
+    ILogger<SubmissionService> logger,
+    AdminAuditContext? audit = null)
     : ISubmissionService
 {
     public async Task CreateAsync(Guid adminId, CreateSubmissionRequest request, CancellationToken cancellationToken = default)
@@ -45,7 +47,11 @@ public class SubmissionService(
                     "student.not_enrolled",
                     new Dictionary<string, object?> { ["studentId"] = request.StudentId, ["subjectId"] = task.SubjectId });
 
-            db.Submissions.Add(new Submission
+            var previous = audit?.Enabled == true
+                ? await db.Submissions.AsNoTracking().Where(s => s.StudentId == request.StudentId && s.TaskId == request.TaskId)
+                    .OrderByDescending(s => s.SubmittedAt).ThenByDescending(s => s.Id).FirstOrDefaultAsync(ct)
+                : null;
+            var submission = new Submission
             {
                 StudentId = request.StudentId,
                 TaskId = request.TaskId,
@@ -53,7 +59,9 @@ public class SubmissionService(
                 Comment = request.Comment,
                 AdminId = adminId,
                 SubmittedAt = DateTime.UtcNow,
-            });
+            };
+            audit?.SetPreviousSubmission(submission, previous);
+            db.Submissions.Add(submission);
             await db.SaveChangesAsync(ct);
         }, cancellationToken);
 
