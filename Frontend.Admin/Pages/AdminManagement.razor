@@ -38,7 +38,7 @@
                 {
                     <MudPaper Outlined="true" Class="fc-admin-row mb-3">
                         <div>
-                            <MudText><b>@admin.LastName @admin.FirstName</b></MudText>
+                            <UserChip UserId="admin.Id" Name="@($"{admin.LastName} {admin.FirstName}")" NameClass="fc-bold" />
                             @if (!string.IsNullOrEmpty(admin.Letter))
                             {
                                 <MudChip T="string" Size="Size.Small"

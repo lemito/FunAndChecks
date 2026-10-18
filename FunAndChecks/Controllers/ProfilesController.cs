@@ -17,6 +17,19 @@ public class ProfilesController(IProfileService profiles) : ControllerBase
     public async Task<ActionResult<UserProfileDto>> Get(Guid userId, CancellationToken ct) =>
         Ok(await profiles.GetAsync(User.GetUserId(), userId, ct));
 
+    [HttpGet("api/me/profile/stats")]
+    public async Task<ActionResult<ProfileStatsDto>> MyStats(CancellationToken ct) =>
+        Ok(await profiles.GetStatsAsync(User.GetUserId(), User.GetUserId(), ct));
+
+    [HttpGet("api/profiles/{userId:guid}/stats")]
+    public async Task<ActionResult<ProfileStatsDto>> Stats(Guid userId, CancellationToken ct) =>
+        Ok(await profiles.GetStatsAsync(User.GetUserId(), userId, ct));
+
+    /// <summary>Аватары для списков: ?ids=a&amp;ids=b. В ответе только пользователи с аватаром.</summary>
+    [HttpGet("api/profiles/avatars")]
+    public async Task<ActionResult<IReadOnlyDictionary<Guid, MediaAssetDto>>> Avatars([FromQuery] Guid[] ids, CancellationToken ct) =>
+        Ok(await profiles.GetAvatarsAsync(ids, ct));
+
     [HttpPut("api/me/profile")]
     public async Task<ActionResult<UserProfileDto>> Update(UpdateProfileRequest request, CancellationToken ct) =>
         Ok(await profiles.UpdateAsync(User.GetUserId(), request, ct));

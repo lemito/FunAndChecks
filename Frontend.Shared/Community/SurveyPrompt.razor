@@ -1,0 +1,111 @@
+@implements IDisposable
+@inject SurveyApi Api
+@inject CommunityRealtime Realtime
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+@*
+    Приглашение пройти опрос. Не мешает там, где студент занят (очередь, сам опрос):
+    окно показывается один раз за сессию, дальше — ненавязчивая плашка. Опрос без права
+    отложить остаётся окном, но тоже не перекрывает живую очередь.
+*@
+@if (_current is not null && !Suppressed)
+{
+    if (ShowModal)
+    {
+        <Frontend.Shared.Profiles.ProfileDialog Title="@_current.Title" Class="fc-survey-prompt" Busy="_busy" Close="DismissAsync">
+            <ChildContent>
+                <MudIcon Icon="@Icons.Material.Outlined.Poll" Class="fc-survey-prompt-icon" />
+                <p class="fc-muted">
+                    @(_current.SubjectName is { } subject ? CommunityText.T($"Опрос по предмету «{subject}». ", $"A survey about “{subject}”. ") : "")
+                    @CommunityText.Questions(_current.QuestionCount)
+                    @if (_current.ClosesAtUtc is { } closes) { @CommunityText.T($" Открыт до {closes.ToLocalTime():g}.", $" Open until {closes.ToLocalTime():g}.") }
+                </p>
+                @if (_current.IsAnonymous) { <p class="fc-chip accent"><MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Size="Size.Small" />@CommunityText.T("Анонимно: преподаватели не увидят, кто что ответил", "Anonymous: teachers will not see who answered what")</p> }
+                @if (!_current.CanSnooze) { <p class="fc-muted">@CommunityText.T("Этот опрос нужно пройти, чтобы продолжить.", "Please complete this survey to continue.")</p> }
+            </ChildContent>
+            <Actions>
+                @if (_current.CanSnooze) { <MudButton Disabled="_busy" OnClick="SnoozeAsync">@CommunityText.T($"Напомнить через {_current.SnoozeHours} ч", $"Remind me in {_current.SnoozeHours} h")</MudButton> }
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Open">@CommunityText.T("Пройти сейчас", "Take it now")</MudButton>
+            </Actions>
+        </Frontend.Shared.Profiles.ProfileDialog>
+    }
+    else
+    {
+        <div class="fc-survey-banner" role="status">
+            <MudIcon Icon="@Icons.Material.Outlined.Poll" Size="Size.Small" />
+            <span>@CommunityText.T($"Ждёт ответа опрос «{_current.Title}»", $"A survey is waiting: “{_current.Title}”")</span>
+            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="Open">@CommunityText.T("Пройти", "Take it")</MudButton>
+            @if (_current.CanSnooze) { <MudButton Size="Size.Small" Disabled="_busy" OnClick="SnoozeAsync">@CommunityText.T("Позже", "Later")</MudButton> }
+        </div>
+    }
+}
+
+@code {
+    private PendingSurveyDto? _current;
+    private bool _busy;
+    // Какие опросы уже показывались окном в этой вкладке — повторно только плашкой.
+    private static readonly HashSet<int> ShownThisSession = [];
+
+    private string Path => new Uri(Nav.Uri).AbsolutePath;
+
+    /// <summary>На странице опросов и в живой очереди приглашение не показываем вовсе.</summary>
+    private bool Suppressed => Path.StartsWith("/student/surveys", StringComparison.OrdinalIgnoreCase) ||
+                               Path.StartsWith("/student/queues/", StringComparison.OrdinalIgnoreCase);
+
+    private bool ShowModal => _current is not null && (!_current.CanSnooze || _modalPinned);
+    private bool _modalPinned;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Realtime.SurveysChanged += Changed;
+        Nav.LocationChanged += Moved;
+        await Realtime.EnsureStartedAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var next = (await Api.PendingAsync()).FirstOrDefault();
+            if (next?.Id != _current?.Id) _modalPinned = next is not null && !ShownThisSession.Contains(next.Id);
+            _current = next;
+            if (_current is not null && !Suppressed) ShownThisSession.Add(_current.Id);
+        }
+        catch (ApiException) { /* Не мешаем работе, если опросы недоступны. */ }
+    }
+
+    private void Changed() => InvokeAsync(async () => { await LoadAsync(); StateHasChanged(); });
+
+    // Возврат со страницы опроса: он мог быть пройден. Остальные переходы — без запроса.
+    private void Moved(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs args)
+    {
+        _modalPinned = false;
+        if (_current is null || Suppressed) InvokeAsync(StateHasChanged);
+        else Changed();
+    }
+
+    private void Open() => Nav.NavigateTo($"/student/surveys/{_current!.Id}");
+
+    /// <summary>Закрыть окно (крестик/Escape): для откладываемого опроса — остаться плашкой.</summary>
+    private Task DismissAsync()
+    {
+        if (_current?.CanSnooze == true) _modalPinned = false;
+        return Task.CompletedTask;
+    }
+
+    private async Task SnoozeAsync()
+    {
+        _busy = true;
+        try { await Api.SnoozeAsync(_current!.Id); await LoadAsync(); }
+        catch (ApiException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _busy = false; }
+    }
+
+    public void Dispose()
+    {
+        Realtime.SurveysChanged -= Changed;
+        Nav.LocationChanged -= Moved;
+    }
+}

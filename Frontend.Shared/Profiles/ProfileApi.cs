@@ -11,6 +11,10 @@ public class ProfileApi(HttpClient http, IStringLocalizer<AppStrings> loc) : Api
     public event Action? ProfileChanged;
     public Task<UserProfileDto> MineAsync(CancellationToken ct = default) => GetAsync<UserProfileDto>("api/me/profile", ct);
     public Task<UserProfileDto> GetProfileAsync(Guid userId, CancellationToken ct = default) => GetAsync<UserProfileDto>($"api/profiles/{userId}", ct);
+    public Task<ProfileStatsDto> StatsAsync(Guid? userId, CancellationToken ct = default) =>
+        GetAsync<ProfileStatsDto>(userId is Guid id ? $"api/profiles/{id}/stats" : "api/me/profile/stats", ct);
+    public Task<Dictionary<Guid, MediaDto>> AvatarsAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default) =>
+        GetAsync<Dictionary<Guid, MediaDto>>("api/profiles/avatars?" + string.Join("&", ids.Select(id => $"ids={id}")), ct);
     public async Task<UserProfileDto> SaveProfileAsync(UpdateProfileRequest request, CancellationToken ct = default) { var profile = await PutAsync<UserProfileDto>("api/me/profile", request, ct); ProfileChanged?.Invoke(); return profile; }
     public async Task SetAvatarAsync(MediaSelection selection, CancellationToken ct = default) { await PostAsync("api/me/avatar", new { mediaSessionId = selection.SessionId, media = selection.Media }, ct); ProfileChanged?.Invoke(); }
     public async Task RemoveAvatarAsync(CancellationToken ct = default) { await DeleteAsync("api/me/avatar", ct); ProfileChanged?.Invoke(); }

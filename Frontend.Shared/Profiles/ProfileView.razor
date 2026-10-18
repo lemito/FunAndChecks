@@ -2,7 +2,6 @@
 @using System.Globalization
 @implements IDisposable
 @inject ProfileApi Api
-@inject MeApi Me
 @inject AuthenticationStateProvider Authentication
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
@@ -11,7 +10,7 @@
 
 <PageTitle>@(_profile?.FullName ?? ProfileText.T("Личный кабинет", "Profile"))</PageTitle>
 <div class="fc-page-heading"><div>
-    @if (!_mine) { <a class="fc-profile-back" href="@ReturnPath">← @ProfileText.T("К таблице результатов", "Back to results")</a> }
+    @if (!_mine) { <a class="fc-profile-back" href="@ReturnPath">← @ProfileText.T("Назад", "Back")</a> }
     <MudText Typo="Typo.h4">@(_mine ? ProfileText.T("Мой кабинет", "My profile") : ProfileText.T("Профиль пользователя", "User profile"))</MudText>
     <MudText Class="fc-muted">@ProfileText.T("Немного о себе и о том, что уже получилось.", "A little about you and what you have achieved.")</MudText>
 </div>@if (_admin && _profile is not null) { <MudButton OnClick="() => _grant = true" Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.EmojiEvents">@ProfileText.T("Выдать достижение", "Grant achievement")</MudButton> }</div>
@@ -39,7 +38,27 @@ else if (_profile is not null)
             <section class="fc-panel fc-profile-section"><h2>@ProfileText.T("О себе", "About me")</h2><p class="fc-profile-bio">@(string.IsNullOrWhiteSpace(_profile.AboutMe) ? ProfileText.T("Пользователь пока не добавил описание.", "This user has not added a description yet.") : _profile.AboutMe)</p>
                 <div class="fc-profile-links">@if (_profile.GitHubUrl is not null) { <a href="@_profile.GitHubUrl" target="_blank" rel="noopener noreferrer">↗ GitHub</a> }@if (_profile.PortfolioUrl is not null) { <a href="@_profile.PortfolioUrl" target="_blank" rel="noopener noreferrer">↗ @ProfileText.T("Портфолио", "Portfolio")</a> }</div>
             </section>
-            @if (_mine) { <section class="fc-panel fc-profile-section"><h2>@ProfileText.T("Продолжить работу", "Continue learning")</h2><div class="fc-profile-quick-links"><a href="@BasePath">@ProfileText.T("Результаты", "Results") →</a><a href="@(BasePath + "/queues")">@ProfileText.T("Очереди", "Queues") →</a><a href="@(BasePath + "/achievements")">@ProfileText.T("Каталог достижений", "Achievement catalog") →</a></div></section> }
+            @if (_stats is not null)
+            {
+                <section class="fc-panel fc-profile-section fc-profile-stats"><h2>@ProfileText.T("Активность", "Activity")</h2>
+                    @if (_stats.Detailed && _stats.Subjects.Count > 0)
+                    {
+                        @foreach (var subject in _stats.Subjects)
+                        {
+                            <div class="fc-profile-progress"><div><span>@subject.Name</span><small>@subject.AcceptedTasks / @subject.TotalTasks · @subject.Points / @subject.MaxPoints @ProfileText.T("б.", "pts")</small></div>
+                                <div class="fc-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="@subject.TotalTasks" aria-valuenow="@subject.AcceptedTasks"><span style="width:@(subject.TotalTasks == 0 ? 0 : 100 * subject.AcceptedTasks / subject.TotalTasks)%"></span></div></div>
+                        }
+                    }
+                    <dl class="fc-profile-numbers">
+                        @if (_stats.Attendance is { } attendance) { <div><dt>@ProfileText.T("Посещаемость", "Attendance")</dt><dd>@(100 * attendance.Present / Math.Max(1, attendance.Marked))%</dd></div> }
+                        <div><dt>@ProfileText.T("Темы на форуме", "Forum topics")</dt><dd>@_stats.ForumTopics</dd></div>
+                        <div><dt>@ProfileText.T("Сообщения", "Messages")</dt><dd>@_stats.ForumPosts</dd></div>
+                        @if (!_profile.IsAdmin) { <div><dt>@ProfileText.T("Пройдено опросов", "Surveys done")</dt><dd>@_stats.SurveysCompleted</dd></div> }
+                    </dl>
+                    @if (!_stats.Detailed && !_profile.IsAdmin) { <p class="fc-profile-hint">@ProfileText.T("Учебный прогресс видят сам студент и его преподаватели.", "Academic progress is visible to the student and their teachers.")</p> }
+                </section>
+            }
+            @if (_mine) { <section class="fc-panel fc-profile-section"><h2>@ProfileText.T("Продолжить работу", "Continue learning")</h2><div class="fc-profile-quick-links"><a href="@BasePath">@ProfileText.T("Результаты", "Results") →</a><a href="@(BasePath + "/queues")">@ProfileText.T("Очереди", "Queues") →</a><a href="@(BasePath + "/achievements")">@ProfileText.T("Каталог достижений", "Achievement catalog") →</a><a href="@(BasePath + "/forum")">@ProfileText.T("Форум", "Forum") →</a></div></section> }
         </div>
     </div>
 }
@@ -66,6 +85,7 @@ else if (_profile is not null)
     private string BasePath => IsAdminLayout ? "/admin" : "/student";
     private string ReturnPath => ReturnUrl is { Length: > 0 } value && value.StartsWith('/') && !value.StartsWith("//") && !value.Contains('\\') ? value : ResultsNavigation.ReturnUrl;
     private UserProfileDto? _profile;
+    private ProfileStatsDto? _stats;
     private AchievementAwardDto? _award;
     private bool _mine, _admin, _loading = true, _edit, _avatarEditor, _grant, _busy;
     private string? _error, _editError, _about, _github, _portfolio;
@@ -77,7 +97,7 @@ else if (_profile is not null)
     {
         if (_routeInitialized && _routeUserId == UserId && _routeAdminLayout == IsAdminLayout) return;
         _routeInitialized = true; _routeUserId = UserId; _routeAdminLayout = IsAdminLayout; _routeGeneration++;
-        _award = null; _grant = _edit = _avatarEditor = _busy = false; _profile = null;
+        _award = null; _grant = _edit = _avatarEditor = _busy = false; _profile = null; _stats = null;
         _about = _github = _portfolio = _editError = null; Dirty.MarkClean();
         await LoadAsync();
     }
@@ -87,18 +107,27 @@ else if (_profile is not null)
         _loading = true; _error = null;
         try
         {
-            var me = await Me.GetMeAsync(_life.Token);
+            // Свой ли это профиль — по токену: /api/me падает у аккаунта без учебной записи.
             var state = await Authentication.GetAuthenticationStateAsync();
             if (version != _loadVersion) return;
+            Guid.TryParse(state.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var viewerId);
             var admin = IsAdminLayout && (state.User.IsInRole(Frontend.Shared.Auth.Roles.Admin) || state.User.IsInRole(Frontend.Shared.Auth.Roles.SuperAdmin));
-            var mine = userId is null || userId == me.Id;
+            var mine = userId is null || userId == viewerId;
+            // Статистика необязательна и грузится параллельно с профилем; её ошибка профиль не ломает.
+            var statsTask = StatsOrNullAsync(mine ? null : userId);
             var profile = mine ? await Api.MineAsync(_life.Token) : await Api.GetProfileAsync(userId!.Value, _life.Token);
+            var stats = await statsTask;
             if (version != _loadVersion || _life.IsCancellationRequested) return;
-            _admin = admin; _mine = mine; _profile = profile;
+            _admin = admin; _mine = mine; _profile = profile; _stats = stats;
         }
         catch (ApiException ex) { if (version == _loadVersion) _error = ex.Message; }
         catch (OperationCanceledException) when (_life.IsCancellationRequested) { }
         finally { if (version == _loadVersion) _loading = false; }
+    }
+    private async Task<ProfileStatsDto?> StatsOrNullAsync(Guid? userId)
+    {
+        try { return await Api.StatsAsync(userId, _life.Token); }
+        catch (ApiException) { return null; }
     }
     private void Edit() { _about = _profile!.AboutMe; _github = _profile.GitHubUrl; _portfolio = _profile.PortfolioUrl; _editError = null; _edit = true; }
     private void CancelEdit() { _edit = false; Dirty.MarkClean(); }

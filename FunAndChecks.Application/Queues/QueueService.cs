@@ -289,6 +289,40 @@ public class QueueService(
             new QueueEntryUpdateDto(eventId, studentId, QueueEntryStatus.Waiting, null), cancellationToken);
     }
 
+    public async Task LeaveAsync(int eventId, Guid studentId, CancellationToken cancellationToken = default)
+    {
+        var entry = await db.QueueEntries.FirstOrDefaultAsync(e => e.QueueEventId == eventId && e.StudentId == studentId, cancellationToken)
+                    ?? throw new NotFoundException("You are not in this queue.", "queue.not_joined");
+        if (entry.Status is QueueEntryStatus.Checking or QueueEntryStatus.Finished)
+            throw new ConflictException("You cannot leave a queue while being checked or after finishing.", "queue.leave_unavailable");
+        db.QueueEntries.Remove(entry);
+        await db.SaveChangesAsync(cancellationToken);
+        await NotifyBestEffortAsync(new QueueEntryUpdateDto(eventId, studentId, QueueEntryStatus.Finished, null), cancellationToken);
+    }
+
+    public async Task<List<QueueEventDto>> GetMyEventsAsync(Guid studentId, bool includePast, CancellationToken cancellationToken = default)
+    {
+        var threshold = DateTime.UtcNow - ActiveEventGracePeriod;
+        var events = await db.QueueEvents.AsNoTracking()
+            .Where(qe => includePast || qe.EventDateTime > threshold)
+            .Where(qe => qe.Participants.Any(p => p.StudentId == studentId))
+            .OrderBy(qe => qe.EventDateTime)
+            .Select(qe => new { qe.Id })
+            .ToListAsync(cancellationToken);
+        var result = new List<QueueEventDto>(events.Count);
+        foreach (var queueEvent in events)
+        {
+            var details = await GetDetailsAsync(queueEvent.Id, null, cancellationToken);
+            var waiting = details.Participants.Where(p => p.Status == QueueEntryStatus.Waiting)
+                .OrderByDescending(p => p.TotalPoints).ThenBy(p => p.JoinedAt).ToList();
+            var me = details.Participants.FirstOrDefault(p => p.StudentId == studentId);
+            var position = waiting.FindIndex(p => p.StudentId == studentId);
+            result.Add(new QueueEventDto(details.EventId, details.EventName, details.EventDateTime, details.AllowSelfJoin,
+                details.SubjectName, me?.Status, position >= 0 ? position + 1 : null, waiting.Count));
+        }
+        return result;
+    }
+
     public async Task UpdateParticipantStatusAsync(
         int eventId, Guid studentId, Guid adminId, QueueEntryStatus status,
         CancellationToken cancellationToken = default)

@@ -1,5 +1,6 @@
 using FunAndChecks.Application.Common.Interfaces;
 using FunAndChecks.Domain.Constants;
+using FunAndChecks.Infrastructure.Files;
 using FunAndChecks.Infrastructure.Identity;
 using FunAndChecks.Infrastructure.Persistence;
 using FunAndChecks.Infrastructure.Workers;
@@ -71,7 +72,8 @@ public class TestWebAppFactory : WebApplicationFactory<Program>
             services.RemoveAll<UnconfirmedAccountCleanupService>();
             var cleanupWorkers = services
                 .Where(d => d.ServiceType == typeof(IHostedService) &&
-                            d.ImplementationType == typeof(UnconfirmedAccountCleanupService))
+                            (d.ImplementationType == typeof(UnconfirmedAccountCleanupService) ||
+                             d.ImplementationType == typeof(AttachmentCleanupService)))
                 .ToList();
             foreach (var worker in cleanupWorkers)
                 services.Remove(worker);

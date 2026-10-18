@@ -303,6 +303,12 @@ public class IdentityService(
             where membership.UserId == userId && role.Name != null
             select role.Name!).ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<Guid>> GetUserIdsInRoleAsync(string role, CancellationToken cancellationToken = default) =>
+        await (from membership in dbContext.UserRoles.AsNoTracking()
+            join r in dbContext.Roles.AsNoTracking() on membership.RoleId equals r.Id
+            where r.Name == role
+            select membership.UserId).Distinct().ToListAsync(cancellationToken);
+
     public Task<ProfileAccountInfo?> GetProfileAccountAsync(Guid userId, CancellationToken cancellationToken = default) =>
         EligibleProfiles().Where(p => p.UserId == userId)
             .Select(p => new ProfileAccountInfo(p.UserId, p.FirstName, p.LastName, p.GroupName, p.IsAdmin))

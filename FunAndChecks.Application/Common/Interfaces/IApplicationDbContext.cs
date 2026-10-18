@@ -29,6 +29,22 @@ public interface IApplicationDbContext
     DbSet<AchievementDefinition> AchievementDefinitions { get; }
     DbSet<AchievementAward> AchievementAwards { get; }
     DbSet<PinnedAchievement> PinnedAchievements { get; }
+    DbSet<Attachment> Attachments { get; }
+    DbSet<Notification> Notifications { get; }
+    DbSet<ForumTopic> ForumTopics { get; }
+    DbSet<ForumPost> ForumPosts { get; }
+    DbSet<ForumReaction> ForumReactions { get; }
+    DbSet<ForumTopicRead> ForumTopicReads { get; }
+    DbSet<ForumSubscription> ForumSubscriptions { get; }
+    DbSet<ForumReport> ForumReports { get; }
+    DbSet<ForumBan> ForumBans { get; }
+    DbSet<Survey> Surveys { get; }
+    DbSet<SurveyTargetGroup> SurveyTargetGroups { get; }
+    DbSet<SurveyQuestion> SurveyQuestions { get; }
+    DbSet<SurveyOption> SurveyOptions { get; }
+    DbSet<SurveyResponse> SurveyResponses { get; }
+    DbSet<SurveyAnswer> SurveyAnswers { get; }
+    DbSet<SurveyParticipation> SurveyParticipations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

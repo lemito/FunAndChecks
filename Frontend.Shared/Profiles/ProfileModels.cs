@@ -10,6 +10,9 @@ public record AchievementDefinitionDto(int Id, string Name, string Description, 
 public record AchievementRecipientDto(Guid UserId, string FullName, string? GroupName, bool IsAdmin, DateTime GrantedAtUtc);
 public record AchievementUserDto(Guid UserId, string FullName, string? GroupName, bool IsAdmin);
 public record ProfilePageDto<T>(List<T> Items, int TotalCount, int Page, int PageSize);
+public record SubjectProgressDto(int SubjectId, string Name, int AcceptedTasks, int TotalTasks, int Points, int MaxPoints);
+public record AttendanceSummaryDto(int Present, int Absent, int Marked);
+public record ProfileStatsDto(bool Detailed, List<SubjectProgressDto> Subjects, AttendanceSummaryDto? Attendance, int ForumTopics, int ForumPosts, int SurveysCompleted);
 public record UpdateProfileRequest(string? AboutMe, string? GitHubUrl, string? PortfolioUrl, List<int> PinnedAwardIds);
 public record SaveAchievementRequest(string Name, string Description, Guid? MediaSessionId, MediaRenderRequest? Media, bool RemoveImage = false);
 

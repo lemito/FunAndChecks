@@ -23,13 +23,7 @@ public partial class Login
     private string _password = string.Empty;
     private string? _error;
     private bool _emailNotConfirmed;
-    private bool _busy;
-
-    private async Task HandleKeyDownAsync(KeyboardEventArgs e)
-    {
-        if (e.Key is "Enter" or "NumpadEnter")
-            await SubmitAsync();
-    }
+    private bool _busy, _showPassword, _sharedComputer;
 
     private async Task SubmitAsync()
     {
@@ -45,7 +39,7 @@ public partial class Login
             _error = null;
             _emailNotConfirmed = false;
 
-            var result = await Auth.LoginAsync(new Models.LoginRequest(_email.Trim(), _password));
+            var result = await Auth.LoginAsync(new Models.LoginRequest(_email.Trim(), _password), _sharedComputer);
             if (!result.Success)
             {
                 _error = result.Error;
@@ -65,12 +59,21 @@ public partial class Login
     private async Task RedirectByRoleAsync()
     {
         var state = await ((AuthenticationStateProvider)AuthState).GetAuthenticationStateAsync();
-        var target = state.User.IsInRole(Roles.Admin) ? "/admin" : "/student";
-        if (!string.IsNullOrEmpty(ReturnUrl) &&
-            (ReturnUrl == "/metrics" || ReturnUrl.StartsWith("/metrics?", StringComparison.Ordinal)) &&
-            !ReturnUrl.Contains('\\') && !ReturnUrl.Any(char.IsControl))
-            target = ReturnUrl;
-        Nav.NavigateTo(target);
+        var home = state.User.IsInRole(Roles.Admin) ? "/admin" : "/student";
+        Nav.NavigateTo(SafeReturnUrl(ReturnUrl, home) ?? home);
+    }
+
+    /// <summary>
+    /// Возврат после входа — только на страницы своего кабинета или мониторинг,
+    /// чтобы ссылка вида /login?returnUrl=//evil.example не уводила с сайта.
+    /// </summary>
+    public static string? SafeReturnUrl(string? returnUrl, string home)
+    {
+        if (string.IsNullOrEmpty(returnUrl) || !returnUrl.StartsWith('/') || returnUrl.StartsWith("//", StringComparison.Ordinal) ||
+            returnUrl.Contains('\\') || returnUrl.Any(char.IsControl))
+            return null;
+        var path = returnUrl.Split('?', '#')[0];
+        return path == "/metrics" || path == home || path.StartsWith(home + "/", StringComparison.Ordinal) ? returnUrl : null;
     }
 
     private void GoToConfirm() =>

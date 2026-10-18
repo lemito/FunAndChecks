@@ -70,15 +70,16 @@ services:
     command:
       - >-
         mkdir -p /app/logs/import &&
-        chown -R app:app /app/backups /app/media-temp /app/logs /home/app/.aspnet/DataProtection-Keys /var/lib/alloy &&
+        chown -R app:app /app/backups /app/media-temp /app/attachments /app/logs /home/app/.aspnet/DataProtection-Keys /var/lib/alloy &&
         chmod 750 /app/logs /app/logs/import &&
-        chmod 700 /app/media-temp /home/app/.aspnet/DataProtection-Keys &&
+        chmod 700 /app/media-temp /app/attachments /home/app/.aspnet/DataProtection-Keys &&
         chown -R 472:472 /var/lib/grafana &&
         chown -R 65534:65534 /prometheus &&
         chown -R 10001:10001 /loki
     volumes:
       - backups:/app/backups
       - media-temp:/app/media-temp
+      - attachments-data:/app/attachments
       - dataprotection-keys:/home/app/.aspnet/DataProtection-Keys
       - app-logs:/app/logs
       - alloy-data:/var/lib/alloy
@@ -119,6 +120,8 @@ services:
       - Backup__Directory=/app/backups
       # Только временные исходники редактора; готовые аватары и значки хранятся в БД.
       - ProfileMedia__TemporaryDirectory=/app/media-temp
+      # Файлы форума (в БД — только метаданные). Входят в бэкап как *.attachments.zip.
+      - Attachments__RootDirectory=/app/attachments
       # Разрешённые источники для CORS в проде (через запятую отображаются как массив).
       - Cors__AllowedOrigins__0=https://${APP_DOMAIN}
       - Monitoring__Enabled=true
@@ -144,6 +147,7 @@ services:
       # Том для дампов БД (ручка POST /api/admin/backup).
       - backups:/app/backups
       - media-temp:/app/media-temp
+      - attachments-data:/app/attachments
       - app-logs:/app/logs
     networks:
       - default
@@ -298,6 +302,7 @@ volumes:
   maildkim:
   backups:
   media-temp:
+  attachments-data:
   app-logs:
   grafana-data:
   prometheus-data:

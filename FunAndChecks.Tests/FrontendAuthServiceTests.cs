@@ -36,6 +36,29 @@ public class FrontendAuthServiceTests
         [
             ("localStorage.setItem", new object[] { "access_token", "at-123" }),
             ("localStorage.setItem", new object[] { "refresh_token", "rt-456" }),
+            ("sessionStorage.removeItem", new object[] { "access_token" }),
+            ("sessionStorage.removeItem", new object[] { "refresh_token" }),
+        ]);
+    }
+
+    [Fact]
+    public async Task LoginAsync_SharedComputer_KeepsTokensOnlyForTheTab()
+    {
+        var js = new RecordingJsRuntime();
+        var sut = CreateSut(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""{"accessToken":"at-1","refreshToken":"rt-1"}""", Encoding.UTF8, "application/json"),
+        }, js);
+
+        var result = await sut.LoginAsync(new LoginRequest("a@b.c", "pwd"), sharedComputer: true);
+
+        result.Success.Should().BeTrue();
+        js.Calls.Should().BeEquivalentTo(
+        [
+            ("sessionStorage.setItem", new object[] { "access_token", "at-1" }),
+            ("sessionStorage.setItem", new object[] { "refresh_token", "rt-1" }),
+            ("localStorage.removeItem", new object[] { "access_token" }),
+            ("localStorage.removeItem", new object[] { "refresh_token" }),
         ]);
     }
 

@@ -66,6 +66,8 @@ builder.Services.AddScoped<AdminAuditContext>();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IQueueNotifier, QueueNotifier>();
 builder.Services.AddScoped<IResultsNotifier, ResultsNotifier>();
+builder.Services.AddScoped<IUserNotifier, UserNotifier>();
+builder.Services.AddScoped<IForumNotifier, ForumNotifier>();
 
 // Настройки JWT из appsettings (секция "Jwt")
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -154,6 +156,18 @@ builder.Services.AddRateLimiter(options =>
             {
                 PermitLimit = 20,
                 Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+    // Форум и загрузки: по пользователю, чтобы общий NAT аудитории не делил один бакет.
+    options.AddPolicy(RateLimitPolicies.ForumWrite, httpContext =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                          ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 6,
                 QueueLimit = 0,
             }));
 });
@@ -289,8 +303,9 @@ app.Use(async (context, next) =>
 
 app.UseCors(corsPolicy);
 
-app.UseRateLimiter();
+// Лимитер после аутентификации: политика форума делит бакеты по пользователю.
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseMiddleware<AdminAuditMiddleware>();
 app.UseAuthorization();
 
@@ -300,6 +315,8 @@ app.MapMetrics("/internal/metrics", app.Services.GetRequiredService<ApiMetrics>(
 
 app.MapHub<QueueHub>("/apiHub/queueHub");
 app.MapHub<ResultsHub>("/apiHub/resultsHub");
+app.MapHub<NotificationsHub>("/apiHub/notificationsHub");
+app.MapHub<ForumHub>("/apiHub/forumHub");
 
 // Миграции и сидинг при старте (в тестовой среде БД готовит сам тест-хост).
 if (!app.Environment.IsEnvironment("Testing"))

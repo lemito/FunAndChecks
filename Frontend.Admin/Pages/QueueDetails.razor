@@ -24,11 +24,35 @@ else if (_details is not null)
         </MudChip>
     </div>
 
+    @if (_loadError is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-3">@Loc["QueueDetails_Stale"] <MudLink OnClick="LoadAsync">@Loc["QueueDetails_Retry"]</MudLink></MudAlert>
+    }
+
     <div class="fc-stats fc-queue-stats">
-        <div class="fc-stat"><span>@Loc["Queue_StatusWaiting"]</span><strong>@_participants.Count(p => p.Status == QueueEntryStatus.Waiting)</strong></div>
-        <div class="fc-stat"><span>@Loc["Queue_StatusChecking"]</span><strong class="fc-semantic-info">@_participants.Count(p => p.Status == QueueEntryStatus.Checking)</strong></div>
-        <div class="fc-stat"><span>@Loc["Queue_StatusSkipped"]</span><strong class="fc-semantic-error">@_participants.Count(p => p.Status == QueueEntryStatus.Skipped)</strong></div>
-        <div class="fc-stat"><span>@Loc["Queue_StatusFinished"]</span><strong class="fc-semantic-success">@_participants.Count(p => p.Status == QueueEntryStatus.Finished)</strong></div>
+        <div class="fc-stat"><span>@Loc["Queue_StatusWaiting"]</span><strong>@StatCount(QueueEntryStatus.Waiting)</strong></div>
+        <div class="fc-stat"><span>@Loc["Queue_StatusChecking"]</span><strong class="fc-semantic-info">@StatCount(QueueEntryStatus.Checking)</strong></div>
+        <div class="fc-stat"><span>@Loc["Queue_StatusSkipped"]</span><strong class="fc-semantic-error">@StatCount(QueueEntryStatus.Skipped)</strong></div>
+        <div class="fc-stat"><span>@Loc["Queue_StatusFinished"]</span><strong class="fc-semantic-success">@StatCount(QueueEntryStatus.Finished)</strong></div>
+    </div>
+
+    <div class="fc-panel fc-queue-next">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.SkipNext" OnClick="TakeNextAsync"
+                   Disabled="@(NextWaiting() is null)">@Loc["QueueDetails_TakeNext"]</MudButton>
+        @if (Groups.Count > 1)
+        {
+            <div class="fc-queue-groups" role="group" aria-label="@Loc["QueueDetails_Groups"]">
+                <span class="fc-muted">@Loc["QueueDetails_Groups"]:</span>
+                @foreach (var (group, count) in Groups)
+                {
+                    var hidden = _hiddenGroups.Contains(group);
+                    <button type="button" class="fc-queue-group-toggle @(hidden ? "hidden" : "")" aria-pressed="@(!hidden)" @onclick="() => ToggleGroupAsync(group)">
+                        <MudIcon Icon="@(hidden ? Icons.Material.Outlined.VisibilityOff : Icons.Material.Outlined.Visibility)" Size="Size.Small" />@group <small>@count</small>
+                    </button>
+                }
+                @if (_hiddenGroups.Count > 0) { <MudLink OnClick="ShowAllGroupsAsync" Class="fc-queue-groups-reset">@Loc["QueueDetails_ShowAllGroups"]</MudLink> }
+            </div>
+        }
     </div>
 
     @if (_participants.Any(p => p.Status == QueueEntryStatus.Checking))
@@ -66,14 +90,15 @@ else if (_details is not null)
             {
                 <article class="fc-queue-person @QueueClass(p.Status)">
                     <div class="fc-queue-person-identity">
-                        <span class="fc-student-name" style="@QueueStyles.NameStyle(p.StudentColor)">@p.LastName @p.FirstName</span>
+                        <UserChip UserId="p.StudentId" Name="@($"{p.LastName} {p.FirstName}")" NameClass="fc-student-name" NameStyle="@QueueStyles.NameStyle(p.StudentColor)" Compact="true" />
                         <MudText Typo="Typo.caption" Class="fc-muted">@p.GroupName · @p.JoinedAt.ToLocalTime().ToString("t")</MudText>
                         @if (!p.CanManage) { <MudText Typo="Typo.caption" Class="fc-semantic-warning">@Loc["Common_GradingRestricted"]</MudText> }
                     </div>
                     <div class="fc-queue-person-score"><strong>@p.TotalPoints</strong><span>@Loc["Common_PointsAbbr"]</span></div>
                     <div class="fc-queue-person-status"><MudChip T="string" Color="@StatusColor(p.Status)" Size="Size.Small" Variant="Variant.Text">@QueueStyles.StatusText(p.Status, p.CheckingByAdminName, Loc)</MudChip></div>
-                    <div class="fc-queue-person-action"><MudButton Variant="@(IsReadOnly(p) ? Variant.Outlined : Variant.Filled)" Color="Color.Primary" Disabled="@(!p.CanManage)"
-                        OnClick="@(() => OpenStudentAsync(p))" StartIcon="@(IsReadOnly(p) ? Icons.Material.Outlined.Visibility : Icons.Material.Outlined.Assignment)">@Loc[IsReadOnly(p) ? "QueueDetails_View" : "QueueDetails_Review"]</MudButton></div>
+                    @{ var viewOnly = IsReadOnly(p) || p.Status is QueueEntryStatus.Finished or QueueEntryStatus.Skipped; }
+                    <div class="fc-queue-person-action"><MudButton Variant="@(viewOnly ? Variant.Outlined : Variant.Filled)" Color="Color.Primary" Disabled="@(!p.CanManage)"
+                        OnClick="@(() => OpenStudentAsync(p))" StartIcon="@(viewOnly ? Icons.Material.Outlined.Visibility : Icons.Material.Outlined.Assignment)">@Loc[viewOnly ? "QueueDetails_View" : "QueueDetails_Review"]</MudButton></div>
                 </article>
             }
         </section>

@@ -190,3 +190,13 @@
     .fc-attendance-workflow > .mud-icon-root { display: none; }
     .fc-attendance-create-date { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Две массовые кнопки переклички стоят рядом и не растягиваются как текстовый блок. */
+.fc-attendance .attendance-bulk > .attendance-bulk-actions { flex: 0 1 auto; display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Массовое добавление задач и копирование из другого предмета. */
+.fc-management-bulk { margin: 4px 0 16px; }
+.fc-management-bulk summary { cursor: pointer; font-size: 13px; color: var(--mud-palette-primary); padding: 6px 0; }
+.fc-management-bulk-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.fc-management-bulk-actions > .mud-input-control { max-width: 280px; }
+.fc-recent-comments { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 10px; font-size: 12px; }

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using FunAndChecks.Application.Auditing;
+using FunAndChecks.Infrastructure.Files;
 
 namespace FunAndChecks.Infrastructure.Backup;
 
@@ -20,9 +21,11 @@ public class PgDumpBackupService(
     IConfiguration configuration,
     IOptions<BackupOptions> options,
     ILogger<PgDumpBackupService> logger,
-    AdminAuditContext? audit = null)
+    AdminAuditContext? audit = null,
+    IOptions<AttachmentStorageOptions>? attachments = null)
     : IDatabaseBackupService
 {
+    internal const string AttachmentsSuffix = ".attachments.zip";
     private readonly BackupOptions _options = options.Value;
 
     public Task<IReadOnlyList<BackupFileDto>> ListAsync(CancellationToken cancellationToken = default)
@@ -152,6 +155,7 @@ public class PgDumpBackupService(
                 audit.Committed(audit.Create("backup", fileName, "success", $"create: backup {fileName}",
                     after: new Dictionary<string, object?> { ["fileName"] = fileName, ["sizeBytes"] = SafeFileSize(filePath) }));
             logger.LogInformation("Database backup created at {FilePath}.", filePath);
+            await ArchiveAttachmentsAsync(fileName, cancellationToken);
             return filePath;
         }
         finally
@@ -182,6 +186,59 @@ public class PgDumpBackupService(
 
     private string GetBackupDirectory() => Path.GetFullPath(_options.Directory);
 
+    /// <summary>
+    /// Файлы форума лежат не в БД, поэтому рядом с дампом кладётся их архив с тем же именем.
+    /// Ошибка архива не отменяет готовый дамп, но пишется в лог.
+    /// </summary>
+    private async Task ArchiveAttachmentsAsync(string dumpFileName, CancellationToken cancellationToken)
+    {
+        if (attachments is null) return;
+        var source = Path.GetFullPath(attachments.Value.RootDirectory);
+        if (!Directory.Exists(source)) return;
+        var archiveName = dumpFileName[..^".dump".Length] + AttachmentsSuffix;
+        try
+        {
+            var size = await CreateAttachmentsArchiveAsync(source, Path.Combine(GetBackupDirectory(), archiveName), cancellationToken);
+            if (audit?.Enabled == true)
+                audit.Committed(audit.Create("backup", archiveName, "success", $"create: backup {archiveName}",
+                    after: new Dictionary<string, object?> { ["fileName"] = archiveName, ["sizeBytes"] = size }));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            logger.LogError(ex, "Database backup {FileName} was created, but attachments could not be archived.", dumpFileName);
+        }
+    }
+
+    /// <summary>Пакует каталог вложений во временный файл и публикует его переименованием.</summary>
+    internal static async Task<long> CreateAttachmentsArchiveAsync(string sourceDirectory, string archivePath, CancellationToken cancellationToken)
+    {
+        var partial = archivePath + ".partial";
+        try
+        {
+            await using (var stream = new FileStream(partial, FileMode.CreateNew, FileAccess.Write, FileShare.None, 64 * 1024, true))
+            await using (var archive = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Create))
+            {
+                foreach (var file in Directory.EnumerateFiles(sourceDirectory, "*", SearchOption.AllDirectories))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    // Недописанные загрузки (*.part) в архив не попадают.
+                    if (file.EndsWith(".part", StringComparison.OrdinalIgnoreCase) || !IsRegularFile(new FileInfo(file))) continue;
+                    var entryName = Path.GetRelativePath(sourceDirectory, file).Replace('\\', '/');
+                    var entry = archive.CreateEntry(entryName, System.IO.Compression.CompressionLevel.NoCompression);
+                    await using var input = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, true);
+                    await using var output = await entry.OpenAsync(cancellationToken);
+                    await input.CopyToAsync(output, cancellationToken);
+                }
+            }
+            File.Move(partial, archivePath);
+            return new FileInfo(archivePath).Length;
+        }
+        finally
+        {
+            if (File.Exists(partial)) File.Delete(partial);
+        }
+    }
+
     private static long? SafeFileSize(string path)
     {
         try { return new FileInfo(path).Length; }
@@ -192,7 +249,7 @@ public class PgDumpBackupService(
     {
         if (!IsValidFileName(fileName))
             throw new ValidationException([
-                new ValidationFailure(nameof(fileName), "A backup file name ending in .dump is required.")
+                new ValidationFailure(nameof(fileName), "A backup file name ending in .dump or .attachments.zip is required.")
                 {
                     ErrorCode = "backup_file_name_invalid",
                 },
@@ -211,8 +268,8 @@ public class PgDumpBackupService(
 
     private static bool IsValidFileName(string? fileName) =>
         !string.IsNullOrWhiteSpace(fileName) && fileName.Length <= 255 &&
-        fileName.Length > ".dump".Length &&
-        fileName.EndsWith(".dump", StringComparison.OrdinalIgnoreCase) &&
+        ((fileName.Length > ".dump".Length && fileName.EndsWith(".dump", StringComparison.OrdinalIgnoreCase)) ||
+         (fileName.Length > AttachmentsSuffix.Length && fileName.EndsWith(AttachmentsSuffix, StringComparison.OrdinalIgnoreCase))) &&
         !fileName.Any(character => char.IsControl(character) || character is '/' or '\\' or ':' or '<' or '>' or '"' or '|' or '?' or '*');
 
     private static bool IsRegularFile(FileInfo file) =>

@@ -3,12 +3,14 @@ using FunAndChecks.Application.Common.Exceptions;
 using FunAndChecks.Application.Common.Interfaces;
 using FunAndChecks.Domain.Constants;
 using FunAndChecks.Domain.Entities;
+using FunAndChecks.Domain.Enums;
+using FunAndChecks.Application.Notifications;
 using Microsoft.EntityFrameworkCore;
 
 namespace FunAndChecks.Application.Profiles;
 
 public class AchievementService(IApplicationDbContext db, IIdentityService identity, IProfileMediaProcessor processor,
-    IValidator<UpsertAchievementRequest> validator) : IAchievementService
+    IValidator<UpsertAchievementRequest> validator, INotificationService? notifications = null) : IAchievementService
 {
     public async Task<AchievementPageDto> GetAsync(string? query, int page, int pageSize, bool includeArchived, CancellationToken ct = default)
     {
@@ -146,6 +148,9 @@ public class AchievementService(IApplicationDbContext db, IIdentityService ident
         var awardedDefinition = await RequireDefinitionAsync(id, ct);
         var image = await ProfileService.MediaMetadata(db.ProfileMediaAssets.Where(a => a.AchievementDefinitionId == id))
             .SingleOrDefaultAsync(ct);
+        if (notifications is not null)
+            await notifications.NotifyAsync([request.UserId], new(NotificationType.AchievementGranted, awardedDefinition.Name,
+                award!.IssuedByName, "profile"), ct);
         return new(award!.Id, id, awardedDefinition.Name, awardedDefinition.Description, image,
             award.GrantedAtUtc, award.IssuedByUserId, award.IssuedByName, null, true);
     }

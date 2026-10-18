@@ -38,6 +38,12 @@ internal static class AdminAuditCapture
             [typeof(PinnedAchievement)] = ("pinned_achievement", ["UserId", "Position", "AchievementAwardId"]),
             [typeof(ApplicationUser)] = ("account", ["Id", "Email", "EmailConfirmed", "LockoutEnd", "PreferredCulture"]),
             [typeof(IdentityUserRole<Guid>)] = ("account_role", ["UserId", "RoleId"]),
+            // Форум и опросы: модерация и настройки, без текстов сообщений и ответов.
+            [typeof(ForumTopic)] = ("forum_topic", ["Id", "SubjectId", "Title", "IsPinned", "IsClosed", "IsAnnouncement", "IsDeleted", "DeletedById"]),
+            [typeof(ForumPost)] = ("forum_post", ["Id", "TopicId", "AuthorId", "IsPinned", "IsDeleted", "DeletedById"]),
+            [typeof(ForumBan)] = ("forum_ban", ["UserId", "UntilUtc", "Reason", "CreatedById"]),
+            [typeof(ForumReport)] = ("forum_report", ["Id", "PostId", "ResolvedById", "ResolvedAtUtc"]),
+            [typeof(Survey)] = ("survey", ["Id", "Title", "SubjectId", "Status", "IsAnonymous", "TriggerType", "TriggerThreshold", "OpensAtUtc", "ClosesAtUtc"]),
         };
 
     public static List<PendingAuditChange> Capture(DbContext db, AdminAuditContext context)

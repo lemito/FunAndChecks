@@ -20,7 +20,7 @@ public class AuthService(HttpClient http, TokenStore tokenStore, IStringLocalize
 {
     public Task<string?> GetTokenAsync() => tokenStore.GetTokenAsync();
 
-    public Task<AuthResult> LoginAsync(LoginRequest request) =>
+    public Task<AuthResult> LoginAsync(LoginRequest request, bool sharedComputer = false) =>
         ApiClientBase.GuardAsync(async () =>
         {
             var response = await http.PostAsJsonAsync("api/auth/login", request);
@@ -34,7 +34,7 @@ public class AuthService(HttpClient http, TokenStore tokenStore, IStringLocalize
             if (string.IsNullOrEmpty(auth?.AccessToken) || string.IsNullOrEmpty(auth.RefreshToken))
                 return new AuthResult(false, loc["Auth_EmptyTokensError"]);
 
-            await tokenStore.SetTokensAsync(auth.AccessToken, auth.RefreshToken);
+            await tokenStore.SetTokensAsync(auth.AccessToken, auth.RefreshToken, sharedComputer);
             return AuthResult.Ok;
         }, loc);
 

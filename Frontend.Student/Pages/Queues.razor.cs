@@ -1,3 +1,4 @@
+using Frontend.Shared.UI;
 using Frontend.Shared.Api;
 using Frontend.Shared.Models;
 using Frontend.Shared.Resources;
@@ -17,6 +18,22 @@ public partial class Queues : IAsyncDisposable
     [Inject] private NavigationManager Nav { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<AppStrings> Loc { get; set; } = null!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication { get; set; } = null!;
+
+    /// <summary>Открытая очередь — в адресе: «назад» в браузере и обновление страницы её не теряют.</summary>
+    [Parameter] public int? EventId { get; set; }
+    private Guid? _myId;
+
+    private QueueParticipantDto? MyEntry => _participants.FirstOrDefault(p => p.StudentId == _myId);
+
+    /// <summary>Ожидающие в порядке вызова: больше баллов — раньше, при равенстве — кто раньше записался.</summary>
+    private List<QueueParticipantDto> Waiting => _participants.Where(p => p.Status == QueueEntryStatus.Waiting)
+        .OrderByDescending(p => p.TotalPoints).ThenBy(p => p.JoinedAt).ToList();
+
+    private int? MyPosition => Waiting.FindIndex(p => p.StudentId == _myId) is var index and >= 0 ? index + 1 : null;
+
+    private IEnumerable<QueueParticipantDto> Ordered => _participants.OrderBy(x => QueueStyles.StatusOrder(x.Status))
+        .ThenByDescending(x => x.TotalPoints).ThenBy(x => x.JoinedAt);
 
     private List<QueueEventDto> _myEvents = [];
     private List<QueueEventDto> _availableEvents = [];
@@ -32,7 +49,32 @@ public partial class Queues : IAsyncDisposable
     private long _colorRevision;
     private readonly Dictionary<Guid, (long Revision, string? Color)> _latestColorChanges = [];
 
-    protected override async Task OnInitializedAsync() => await LoadAllAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await Authentication.GetAuthenticationStateAsync()).User;
+        if (Guid.TryParse(user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id)) _myId = id;
+    }
+
+    private int? _shownEvent = -1;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_shownEvent == EventId) return;
+        _shownEvent = EventId;
+        if (EventId is int eventId)
+        {
+            _loading = true;
+            await ViewQueueAsync(eventId);
+            // Очередь по ссылке не открылась (удалена, нет доступа) — показываем список, а не пустую страницу.
+            if (_details is null) await LoadAllAsync();
+            _loading = false;
+        }
+        else
+        {
+            await CloseDetailsAsync();
+            await LoadAllAsync();
+        }
+    }
 
     private async Task OnShowPastChangedAsync(bool value)
     {
@@ -68,7 +110,8 @@ public partial class Queues : IAsyncDisposable
         {
             await QueuesApi.JoinAsync(eventId);
             Snackbar.Add(Loc["StudentQueues_Joined"], Severity.Success);
-            await LoadAllAsync();
+            // Сразу в очередь: студенту важно видеть своё место, а не список событий.
+            Nav.NavigateTo($"/student/queues/{eventId}");
         }
         catch (ApiException ex)
         {
@@ -181,7 +224,26 @@ public partial class Queues : IAsyncDisposable
         }
     }
 
-    private async Task BackToList()
+    private void BackToList() => Nav.NavigateTo("/student/queues");
+
+    private void Open(int eventId) => Nav.NavigateTo($"/student/queues/{eventId}");
+
+    private async Task LeaveAsync()
+    {
+        if (_viewedEventId is not int eventId) return;
+        try
+        {
+            await QueuesApi.LeaveAsync(eventId);
+            Snackbar.Add(Loc["StudentQueues_Left"], Severity.Success);
+            BackToList();
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task CloseDetailsAsync()
     {
         _viewedEventId = null;
         _details = null;

@@ -103,7 +103,7 @@ public class AttendanceService(IApplicationDbContext db, IAdminAccessService acc
         await access.EnsureGroupsAllowedAsync(adminId, records.Select(r => r.GroupId), ct);
         // Проверяем весь пакет до изменений; при конфликте не сохраняется ни одна отметка.
         if (records.Any(r => r.Version != expected[r.StudentId] || r.Status != AttendanceStatus.Unmarked)) throw ChangedException();
-        foreach (var record in records) ApplyMark(record, adminId, AttendanceStatus.Absent);
+        foreach (var record in records) ApplyMark(record, adminId, request.Status);
         await SaveMarksAsync(ct);
     }
 

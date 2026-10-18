@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Frontend.Shared.Services;
 
-/// <summary>Appearance preferences for the new interface, independent of the legacy theme.</summary>
+/// <summary>Appearance preferences: theme, accent and density.</summary>
 public sealed partial class DashboardAppearanceService(IJSRuntime js)
 {
     public record AccentPreset(string Key, string Dark, string Light);

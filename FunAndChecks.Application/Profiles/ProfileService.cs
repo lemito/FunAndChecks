@@ -1,4 +1,5 @@
 using FluentValidation;
+using FunAndChecks.Application.Admins;
 using FunAndChecks.Application.Common.Exceptions;
 using FunAndChecks.Application.Common.Interfaces;
 using FunAndChecks.Domain.Constants;
@@ -8,8 +9,66 @@ using Microsoft.EntityFrameworkCore;
 namespace FunAndChecks.Application.Profiles;
 
 public class ProfileService(IApplicationDbContext db, IIdentityService identity, IProfileMediaProcessor processor,
-    IValidator<UpdateProfileRequest> validator) : IProfileService
+    IValidator<UpdateProfileRequest> validator, IAdminAccessService? adminAccess = null) : IProfileService
 {
+    internal const int MaxAvatarBatch = 100;
+
+    public async Task<IReadOnlyDictionary<Guid, MediaAssetDto>> GetAvatarsAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct = default)
+    {
+        var ids = userIds.Distinct().ToList();
+        if (ids.Count > MaxAvatarBatch) throw new ValidationException($"Request at most {MaxAvatarBatch} avatars at once.");
+        if (ids.Count == 0) return new Dictionary<Guid, MediaAssetDto>();
+        var visible = await identity.GetProfileAccountsAsync(ids, ct);
+        var allowed = visible.Keys.ToList();
+        return await db.ProfileMediaAssets.AsNoTracking()
+            .Where(a => a.UserProfileId.HasValue && allowed.Contains(a.UserProfileId.Value))
+            .Select(a => new { UserId = a.UserProfileId!.Value, Media = new MediaAssetDto(a.Id, a.ContentType, a.Width, a.Height,
+                a.DurationSeconds, a.IsAnimated, a.PosterData.Length > 0) })
+            .ToDictionaryAsync(a => a.UserId, a => a.Media, ct);
+    }
+
+    public async Task<ProfileStatsDto> GetStatsAsync(Guid viewerId, Guid userId, CancellationToken ct = default)
+    {
+        var account = await RequireAccountAsync(userId, ct);
+        var forumTopics = await db.ForumTopics.CountAsync(t => t.AuthorId == userId && !t.IsDeleted, ct);
+        var forumPosts = await db.ForumPosts.CountAsync(p => p.AuthorId == userId && !p.IsDeleted && !p.Topic.IsDeleted, ct);
+        var surveys = await db.SurveyParticipations.CountAsync(p => p.UserId == userId &&
+            p.Status == FunAndChecks.Domain.Enums.SurveyParticipationStatus.Completed, ct);
+        var student = account.IsAdmin ? null : await db.Students.AsNoTracking().Where(s => s.Id == userId)
+            .Select(s => new { s.GroupId }).SingleOrDefaultAsync(ct);
+        if (student is null || !await CanSeeProgressAsync(viewerId, userId, ct))
+            return new(false, [], null, forumTopics, forumPosts, surveys);
+
+        var subjects = student.GroupId is int groupId
+            ? await db.GroupSubjects.AsNoTracking().Where(gs => gs.GroupId == groupId)
+                .Select(gs => new { gs.Subject.Id, gs.Subject.Name, Tasks = gs.Subject.Tasks.Count, Max = gs.Subject.Tasks.Sum(t => t.MaxPoints) })
+                .OrderBy(s => s.Name).ToListAsync(ct)
+            : [];
+        var stats = await FunAndChecks.Application.Submissions.SubmissionStats.ForStudentAsync(db, userId,
+            subjects.Select(s => s.Id).ToList(), ct);
+        var progress = subjects.Select(s =>
+        {
+            var row = stats.GetValueOrDefault(s.Id);
+            return new SubjectProgressDto(s.Id, s.Name, row?.AcceptedTasks ?? 0, s.Tasks, row?.Points ?? 0, s.Max);
+        }).ToList();
+        var marks = await db.AttendanceRecords.AsNoTracking()
+            .Where(r => r.StudentId == userId && r.Status != FunAndChecks.Domain.Enums.AttendanceStatus.Unmarked)
+            .GroupBy(r => r.Status).Select(g => new { g.Key, Count = g.Count() }).ToListAsync(ct);
+        var present = marks.Where(m => m.Key == FunAndChecks.Domain.Enums.AttendanceStatus.Present).Sum(m => m.Count);
+        var absent = marks.Where(m => m.Key == FunAndChecks.Domain.Enums.AttendanceStatus.Absent).Sum(m => m.Count);
+        return new(true, progress, present + absent == 0 ? null : new(present, absent, present + absent), forumTopics, forumPosts, surveys);
+    }
+
+    private async Task<bool> CanSeeProgressAsync(Guid viewerId, Guid userId, CancellationToken ct)
+    {
+        if (viewerId == userId) return true;
+        if (adminAccess is null) return false;
+        var roles = await identity.GetCurrentRolesAsync(viewerId, ct);
+        if (!roles.Contains(Roles.Admin) && !roles.Contains(Roles.SuperAdmin)) return false;
+        try { await adminAccess.EnsureStudentAllowedAsync(viewerId, userId, ct); return true; }
+        catch (ForbiddenException) { return false; }
+    }
+
     public async Task<UserProfileDto> GetAsync(Guid viewerId, Guid userId, CancellationToken ct = default)
     {
         var account = await RequireAccountAsync(userId, ct);

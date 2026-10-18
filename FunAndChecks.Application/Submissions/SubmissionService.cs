@@ -4,9 +4,11 @@ using FunAndChecks.Application.Common.Exceptions;
 using FunAndChecks.Application.Common.Interfaces;
 using FunAndChecks.Application.Students;
 using FunAndChecks.Domain.Entities;
+using FunAndChecks.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using FunAndChecks.Application.Auditing;
+using FunAndChecks.Application.Surveys;
 
 namespace FunAndChecks.Application.Submissions;
 
@@ -17,7 +19,8 @@ public class SubmissionService(
     IResultsNotifier resultsNotifier,
     IValidator<CreateSubmissionRequest> createSubmissionValidator,
     ILogger<SubmissionService> logger,
-    AdminAuditContext? audit = null)
+    AdminAuditContext? audit = null,
+    ISurveyService? surveys = null)
     : ISubmissionService
 {
     public async Task CreateAsync(Guid adminId, CreateSubmissionRequest request, CancellationToken cancellationToken = default)
@@ -78,6 +81,45 @@ public class SubmissionService(
         {
             logger.LogWarning(ex, "Submission committed, but results notification failed for subject {SubjectId}.", task.SubjectId);
         }
+
+        // Сдача могла открыть опрос «после N сдач» — клиент студента перечитает список (best-effort внутри).
+        if (surveys is not null) await surveys.NotifySubmissionAsync(request.StudentId, task.SubjectId, cancellationToken);
+    }
+
+    /// <summary>Сколько времени после отметки её можно отменить без следа в истории.</summary>
+    public static readonly TimeSpan UndoWindow = TimeSpan.FromMinutes(10);
+
+    public async Task<SubmissionStatus> UndoLatestAsync(Guid adminId, Guid studentId, int taskId, CancellationToken cancellationToken = default)
+    {
+        var task = await db.Tasks.FindAsync([taskId], cancellationToken)
+                   ?? throw new NotFoundException($"Task with ID {taskId} not found.");
+        await accessService.EnsureSubjectAllowedAsync(adminId, task.SubjectId, cancellationToken);
+        await accessService.EnsureStudentAllowedAsync(adminId, studentId, cancellationToken);
+
+        var current = SubmissionStatus.NotSubmitted;
+        await db.ExecuteSerializableAsync(async ct =>
+        {
+            var attempts = await db.Submissions.Where(s => s.StudentId == studentId && s.TaskId == taskId)
+                .OrderByDescending(s => s.SubmittedAt).ThenByDescending(s => s.Id).Take(2).ToListAsync(ct);
+            var latest = attempts.FirstOrDefault();
+            if (latest is null || latest.AdminId != adminId || latest.SubmittedAt < DateTime.UtcNow - UndoWindow)
+                throw new ConflictException("Only your own mark from the last few minutes can be undone.", "submission.undo_unavailable");
+            db.Submissions.Remove(latest);
+            await db.SaveChangesAsync(ct);
+            current = attempts.Count > 1 ? attempts[1].Status : SubmissionStatus.NotSubmitted;
+        }, cancellationToken);
+
+        cache.Invalidate(task.SubjectId);
+        try
+        {
+            await resultsNotifier.ResultUpdatedAsync(task.SubjectId,
+                new ResultUpdateDto(studentId, taskId, current.ToString()), cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Submission undo committed, but results notification failed for subject {SubjectId}.", task.SubjectId);
+        }
+        return current;
     }
 
     public async Task<List<SubmissionLogDto>> GetLogAsync(Guid adminId, Guid studentId, int taskId, CancellationToken cancellationToken = default)

@@ -40,7 +40,7 @@ else
         {
             <article class="fc-grading-row" @key="account.Id">
                 <div class="fc-grading-identity">
-                    <MudText Typo="Typo.subtitle2">@Name(account)</MudText>
+                    <MudText Typo="Typo.subtitle2">@if (account.HasStudentProfile && account.IsActive && account.EmailConfirmed) { <UserChip UserId="account.Id" Name="@Name(account)" Compact="true" /> } else { @Name(account) }</MudText>
                     <MudText Typo="Typo.caption" Class="fc-muted">@account.Email</MudText>
                     <MudText Typo="Typo.caption" Class="fc-muted">@(account.GroupName ?? Text("Без группы", "No group"))</MudText>
                 </div>

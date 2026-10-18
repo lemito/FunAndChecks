@@ -3,6 +3,7 @@ using FunAndChecks.Application.Profiles;
 using FunAndChecks.Infrastructure.Backup;
 using FunAndChecks.Infrastructure.Caching;
 using FunAndChecks.Infrastructure.Email;
+using FunAndChecks.Infrastructure.Files;
 using FunAndChecks.Infrastructure.Identity;
 using FunAndChecks.Infrastructure.Persistence;
 using FunAndChecks.Infrastructure.Persistence.Seeding;
@@ -63,6 +64,11 @@ public static class DependencyInjection
         services.AddSingleton<FfmpegProfileMediaProcessor>();
         services.AddSingleton<IProfileMediaProcessor>(sp => sp.GetRequiredService<FfmpegProfileMediaProcessor>());
         services.AddHostedService<MediaSessionCleanupService>();
+
+        services.Configure<AttachmentStorageOptions>(configuration.GetSection(AttachmentStorageOptions.SectionName));
+        services.AddSingleton<IFileStorage, LocalDiskFileStorage>();
+        services.AddSingleton<IAttachmentUrlSigner, HmacAttachmentUrlSigner>();
+        services.AddHostedService<AttachmentCleanupService>();
 
         services.AddSingleton<IResultsCacheService, ResultsCacheService>();
         services.AddMemoryCache();

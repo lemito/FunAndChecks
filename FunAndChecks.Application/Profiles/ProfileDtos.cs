@@ -43,3 +43,14 @@ public record ProfileAccountInfo(Guid UserId, string FirstName, string LastName,
 }
 
 public record MediaFileDto(byte[] Data, string ContentType);
+
+public record SubjectProgressDto(int SubjectId, string Name, int AcceptedTasks, int TotalTasks, int Points, int MaxPoints);
+
+public record AttendanceSummaryDto(int Present, int Absent, int Marked);
+
+/// <summary>
+/// Активность на профиле. Учебный прогресс (<see cref="Detailed"/>) видят только владелец
+/// и преподаватель с доступом к группе; остальным — только активность на форуме.
+/// </summary>
+public record ProfileStatsDto(bool Detailed, IReadOnlyList<SubjectProgressDto> Subjects, AttendanceSummaryDto? Attendance,
+    int ForumTopics, int ForumPosts, int SurveysCompleted);

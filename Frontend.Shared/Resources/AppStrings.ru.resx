@@ -535,4 +535,155 @@
   <data name="Monitoring_SuperAdminOnly" xml:space="preserve"><value>Мониторинг доступен только суперадминистраторам.</value></data>
   <data name="Monitoring_Disabled" xml:space="preserve"><value>Мониторинг не включён на этом сервере.</value></data>
   <data name="Monitoring_Retry" xml:space="preserve"><value>Повторить</value></data>
+  <data name="Dialog_Undo" xml:space="preserve"><value>Отменить</value></data>
+  <data name="Dialog_MarkUndone" xml:space="preserve"><value>Отметка отменена</value></data>
+  <data name="Dialog_TaskAccepted" xml:space="preserve"><value>«{0}» зачтено</value></data>
+  <data name="Dialog_TaskRework" xml:space="preserve"><value>«{0}» — на доработку</value></data>
+  <data name="Dialog_FinishAndNext" xml:space="preserve"><value>Завершить и следующий</value></data>
+  <data name="Dialog_TakeForReview" xml:space="preserve"><value>Взять на проверку</value></data>
+  <data name="Dialog_HistoryLoadError" xml:space="preserve"><value>Не удалось загрузить историю.</value></data>
+  <data name="Dialog_GradesAutosaved" xml:space="preserve"><value>Оценки сохранены</value></data>
+  <data name="Dialog_GradeSaving" xml:space="preserve"><value>Сохраняется при выходе из поля</value></data>
+  <data name="QueueDetails_TakeNext" xml:space="preserve"><value>Взять следующего</value></data>
+  <data name="QueueDetails_NoNext" xml:space="preserve"><value>В видимых группах никто не ждёт.</value></data>
+  <data name="QueueDetails_Groups" xml:space="preserve"><value>Группы</value></data>
+  <data name="QueueDetails_ShowAllGroups" xml:space="preserve"><value>Показать все</value></data>
+  <data name="QueueDetails_HiddenGroups" xml:space="preserve"><value>скрыто: {0}</value></data>
+  <data name="QueueDetails_Stale" xml:space="preserve"><value>Проблема со связью — показан последний загруженный список. Повторяем…</value></data>
+  <data name="QueueDetails_Retry" xml:space="preserve"><value>Повторить</value></data>
+  <data name="Common_ConfirmDeleteTitle" xml:space="preserve"><value>Удалить?</value></data>
+  <data name="Common_ConfirmDeleteText" xml:space="preserve"><value>Удалить «{0}»? Это нельзя отменить.</value></data>
+  <data name="Nav_Attendance" xml:space="preserve"><value>Посещаемость</value></data>
+  <data name="Dashboard_CellAction" xml:space="preserve"><value>Открыть студента на этой задаче</value></data>
+  <data name="Dashboard_AttendanceCounts" xml:space="preserve"><value>присутствий: {0} · пропусков: {1}</value></data>
+  <data name="Dashboard_AttendanceUnmarked" xml:space="preserve"><value>Не отмечено: {0}</value></data>
+  <data name="Dashboard_TotalPoints" xml:space="preserve"><value>Σ</value></data>
+  <data name="Grading_ManageAccounts" xml:space="preserve"><value>Управление аккаунтами</value></data>
+  <data name="Grading_Progress" xml:space="preserve"><value>зачтено {0}/{1}</value></data>
+  <data name="Grading_ProgressWithRework" xml:space="preserve"><value>зачтено {0}/{1}, на доработке {2}</value></data>
+  <data name="Attendance_RollCallTitle" xml:space="preserve"><value>Перекличка · посещаемость</value></data>
+  <data name="Attendance_SessionLoadError" xml:space="preserve"><value>Не удалось загрузить занятие.</value></data>
+  <data name="Attendance_BackToJournal" xml:space="preserve"><value>Вернуться к журналу</value></data>
+  <data name="Attendance_Journal" xml:space="preserve"><value>Журнал посещаемости</value></data>
+  <data name="Attendance_RollCall" xml:space="preserve"><value>ПЕРЕКЛИЧКА</value></data>
+  <data name="Attendance_MoscowTime" xml:space="preserve"><value>Москва</value></data>
+  <data name="Attendance_Refresh" xml:space="preserve"><value>Обновить</value></data>
+  <data name="Attendance_AddStudent" xml:space="preserve"><value>Добавить студента</value></data>
+  <data name="Attendance_DisabledInfo" xml:space="preserve"><value>Учёт по предмету выключен. Журнал доступен для просмотра; включить учёт можно на странице посещаемости.</value></data>
+  <data name="Attendance_Present" xml:space="preserve"><value>Есть</value></data>
+  <data name="Attendance_Absent" xml:space="preserve"><value>Нет</value></data>
+  <data name="Attendance_Unmarked" xml:space="preserve"><value>Не отмечены</value></data>
+  <data name="Attendance_AddTitle" xml:space="preserve"><value>Добавить в состав занятия</value></data>
+  <data name="Attendance_AddHint" xml:space="preserve"><value>Для студентов, зарегистрировавшихся после создания занятия. Начальная отметка — «Не отмечен».</value></data>
+  <data name="Attendance_Student" xml:space="preserve"><value>Студент</value></data>
+  <data name="Attendance_Add" xml:space="preserve"><value>Добавить</value></data>
+  <data name="Attendance_NoCandidates" xml:space="preserve"><value>Новых подтверждённых студентов в доступных группах занятия нет.</value></data>
+  <data name="Attendance_SearchLabel" xml:space="preserve"><value>Фамилия или группа</value></data>
+  <data name="Attendance_OnlyUnmarked" xml:space="preserve"><value>Только не отмеченные</value></data>
+  <data name="Attendance_Saving" xml:space="preserve"><value>Сохраняем…</value></data>
+  <data name="Attendance_NotSaved" xml:space="preserve"><value>Изменение не сохранено</value></data>
+  <data name="Attendance_SavedInstantly" xml:space="preserve"><value>Отметки сохраняются сразу</value></data>
+  <data name="Attendance_TeacherDeleted" xml:space="preserve"><value>Преподаватель удалён</value></data>
+  <data name="Attendance_GroupForbidden" xml:space="preserve"><value>Изменение отметок этой группы вам запрещено</value></data>
+  <data name="Attendance_MarkPresentLabel" xml:space="preserve"><value>Отметить {0}: присутствовал</value></data>
+  <data name="Attendance_MarkAbsentLabel" xml:space="preserve"><value>Отметить {0}: отсутствовал</value></data>
+  <data name="Attendance_PresentShort" xml:space="preserve"><value>Есть</value></data>
+  <data name="Attendance_AbsentShort" xml:space="preserve"><value>Нет</value></data>
+  <data name="Attendance_ResetMark" xml:space="preserve"><value>Сбросить в «Не отмечен»</value></data>
+  <data name="Attendance_ResetMarkLabel" xml:space="preserve"><value>Сбросить отметку {0}</value></data>
+  <data name="Attendance_EmptySession" xml:space="preserve"><value>В занятии пока нет студентов</value></data>
+  <data name="Attendance_AllMarked" xml:space="preserve"><value>Все отметки выставлены или студенты не найдены</value></data>
+  <data name="Attendance_EmptyHint" xml:space="preserve"><value>Измените фильтр или добавьте студента в состав занятия.</value></data>
+  <data name="Attendance_FinishTitle" xml:space="preserve"><value>Завершить перекличку</value></data>
+  <data name="Attendance_FinishHint" xml:space="preserve"><value>Отметить разом всех оставшихся доступных студентов занятия. Поиск и фильтры на это действие не влияют.</value></data>
+  <data name="Attendance_MarkRemainingPresent" xml:space="preserve"><value>Отметить оставшихся присутствующими ({0})</value></data>
+  <data name="Attendance_MarkRemainingAbsent" xml:space="preserve"><value>Отметить оставшихся отсутствующими ({0})</value></data>
+  <data name="Attendance_RemainingPresentConfirm" xml:space="preserve"><value>Отметить присутствующими {0} студентов? Уже выставленные отметки сохранятся.</value></data>
+  <data name="Attendance_RemainingAbsentConfirm" xml:space="preserve"><value>Отметить отсутствующими {0} студентов? Уже выставленные отметки сохранятся.</value></data>
+  <data name="Attendance_MarksSet" xml:space="preserve"><value>Выставлено отметок: {0}.</value></data>
+  <data name="Attendance_StudentAdded" xml:space="preserve"><value>Студент добавлен. Отметка пока не выставлена.</value></data>
+  <data name="CommentDialog_CtrlEnter" xml:space="preserve"><value>Ctrl+Enter — отправить</value></data>
+  <data name="CommentDialog_Recent" xml:space="preserve"><value>Недавние</value></data>
+  <data name="Management_TasksBulkLabel" xml:space="preserve"><value>Вставьте несколько задач: по одной в строке, «название;баллы»</value></data>
+  <data name="Management_TasksBulkAdd" xml:space="preserve"><value>Добавить все</value></data>
+  <data name="Management_TasksBulkAdded" xml:space="preserve"><value>Добавлено задач: {0}</value></data>
+  <data name="Management_TasksBulkInvalid" xml:space="preserve"><value>Строка {0}: нужно «название;баллы», баллы от 0 до 1000</value></data>
+  <data name="Management_CopyTasksFrom" xml:space="preserve"><value>Скопировать задачи из…</value></data>
+  <data name="Management_TasksCopied" xml:space="preserve"><value>Скопировано задач: {0}</value></data>
+  <data name="Management_InvalidDate" xml:space="preserve"><value>Введите дату и время в формате {0}.</value></data>
+  <data name="StudentQueues_MyPlace" xml:space="preserve"><value>Ваше место: {0} из {1}</value></data>
+  <data name="StudentQueues_OrderHint" xml:space="preserve"><value>Порядок: больше баллов — раньше, при равенстве — кто раньше записался.</value></data>
+  <data name="StudentQueues_Leave" xml:space="preserve"><value>Выйти из очереди</value></data>
+  <data name="StudentQueues_Left" xml:space="preserve"><value>Вы вышли из очереди</value></data>
+  <data name="StudentStatus_Title" xml:space="preserve"><value>Где вы сейчас</value></data>
+  <data name="StudentStatus_Accepted" xml:space="preserve"><value>Зачтено</value></data>
+  <data name="StudentStatus_Points" xml:space="preserve"><value>Баллы</value></data>
+  <data name="StudentStatus_Rework" xml:space="preserve"><value>На доработке</value></data>
+  <data name="StudentStatus_NoRework" xml:space="preserve"><value>Нечего переделывать</value></data>
+  <data name="StudentStatus_NextQueue" xml:space="preserve"><value>Ближайшая очередь</value></data>
+  <data name="StudentStatus_NoQueue" xml:space="preserve"><value>Вы не записаны ни в одну очередь.</value></data>
+  <data name="StudentStatus_FindQueue" xml:space="preserve"><value>Найти очередь</value></data>
+  <data name="StudentStatus_AllLogs" xml:space="preserve"><value>Вся история</value></data>
+  <data name="Results_ToastAccepted" xml:space="preserve"><value>«{0}» зачтено</value></data>
+  <data name="Results_ToastRework" xml:space="preserve"><value>«{0}» отправлено на доработку</value></data>
+  <data name="Results_ToastOpen" xml:space="preserve"><value>Открыть</value></data>
+  <data name="AttendanceJournal_PageTitle" xml:space="preserve"><value>Посещаемость · журнал</value></data>
+  <data name="AttendanceJournal_Eyebrow" xml:space="preserve"><value>УЧЕБНЫЙ ЖУРНАЛ</value></data>
+  <data name="AttendanceJournal_Intro" xml:space="preserve"><value>Создайте событие, выберите группы и отметьте каждого студента.</value></data>
+  <data name="AttendanceJournal_Download" xml:space="preserve"><value>Скачать XLSX</value></data>
+  <data name="AttendanceJournal_Create" xml:space="preserve"><value>Создать событие переклички</value></data>
+  <data name="AttendanceJournal_AllGroups" xml:space="preserve"><value>Все группы</value></data>
+  <data name="AttendanceJournal_From" xml:space="preserve"><value>С даты</value></data>
+  <data name="AttendanceJournal_To" xml:space="preserve"><value>По дату</value></data>
+  <data name="AttendanceJournal_Show" xml:space="preserve"><value>Показать</value></data>
+  <data name="AttendanceJournal_Enabled" xml:space="preserve"><value>Учитывать посещаемость по предмету</value></data>
+  <data name="AttendanceJournal_EnabledHint" xml:space="preserve"><value>Выключение сохраняет журнал. Даты и время занятий: Москва (UTC+3).</value></data>
+  <data name="AttendanceJournal_NewTitle" xml:space="preserve"><value>Новое событие переклички</value></data>
+  <data name="AttendanceJournal_NewHint" xml:space="preserve"><value>Список подтверждённых студентов выбранных групп будет сохранён на момент создания.</value></data>
+  <data name="AttendanceJournal_Name" xml:space="preserve"><value>Название (необязательно)</value></data>
+  <data name="AttendanceJournal_Groups" xml:space="preserve"><value>Группы события</value></data>
+  <data name="AttendanceJournal_Date" xml:space="preserve"><value>Дата</value></data>
+  <data name="AttendanceJournal_Time" xml:space="preserve"><value>Время (Москва)</value></data>
+  <data name="AttendanceJournal_NoGroups" xml:space="preserve"><value>Сначала свяжите предмет с доступной группой в разделе «Управление».</value></data>
+  <data name="AttendanceJournal_CreateOpen" xml:space="preserve"><value>Создать и открыть перекличку</value></data>
+  <data name="AttendanceJournal_View" xml:space="preserve"><value>Вид посещаемости</value></data>
+  <data name="AttendanceJournal_Events" xml:space="preserve"><value>События переклички</value></data>
+  <data name="AttendanceJournal_ChooseSubject" xml:space="preserve"><value>Выберите предмет</value></data>
+  <data name="AttendanceJournal_ChooseSubjectHint" xml:space="preserve"><value>Здесь появится журнал посещаемости.</value></data>
+  <data name="AttendanceJournal_DisabledInfo" xml:space="preserve"><value>Учёт выключен. Включите его, чтобы создавать занятия и ставить отметки. Существующая история доступна для просмотра и скачивания.</value></data>
+  <data name="AttendanceJournal_NoSessions" xml:space="preserve"><value>Пока нет учтённых занятий</value></data>
+  <data name="AttendanceJournal_NoSessionsHint" xml:space="preserve"><value>Добавьте занятие, когда понадобится провести перекличку. Остальные занятия не считаются пропусками.</value></data>
+  <data name="AttendanceJournal_PresentCount" xml:space="preserve"><value>Посещений</value></data>
+  <data name="AttendanceJournal_AbsentCount" xml:space="preserve"><value>Пропусков</value></data>
+  <data name="AttendanceJournal_UnmarkedCount" xml:space="preserve"><value>Не отмечено</value></data>
+  <data name="AttendanceJournal_Step1" xml:space="preserve"><value>Создать событие</value></data>
+  <data name="AttendanceJournal_Step2" xml:space="preserve"><value>Отметить «Есть / Нет»</value></data>
+  <data name="AttendanceJournal_Step3" xml:space="preserve"><value>Посмотреть журнал</value></data>
+  <data name="AttendanceJournal_Footnote" xml:space="preserve"><value>Учёт ведётся только для созданных событий. Занятия без переклички не считаются пропусками. Счётчики учитывают выбранную группу и период.</value></data>
+  <data name="AttendanceJournal_Search" xml:space="preserve"><value>Поиск студента</value></data>
+  <data name="AttendanceJournal_OnlyMissing" xml:space="preserve"><value>Есть невыставленные отметки</value></data>
+  <data name="AttendanceJournal_SortAbsences" xml:space="preserve"><value>По числу пропусков</value></data>
+  <data name="AttendanceJournal_NotIncluded" xml:space="preserve"><value>не включён</value></data>
+  <data name="AttendanceJournal_TableLabel" xml:space="preserve"><value>Журнал посещаемости, горизонтальная прокрутка</value></data>
+  <data name="AttendanceJournal_NoStudents" xml:space="preserve"><value>Студенты не найдены. Измените фильтр или добавьте студентов в занятие.</value></data>
+  <data name="AttendanceJournal_History" xml:space="preserve"><value>История за выбранный период</value></data>
+  <data name="AttendanceJournal_CloseHistory" xml:space="preserve"><value>Закрыть историю</value></data>
+  <data name="AttendanceJournal_Continue" xml:space="preserve"><value>Продолжить перекличку</value></data>
+  <data name="AttendanceJournal_OpenList" xml:space="preserve"><value>Открыть список</value></data>
+  <data name="AttendanceJournal_NotIncludedLong" xml:space="preserve"><value>Не включён в занятие</value></data>
+  <data name="AttendanceJournal_Caption" xml:space="preserve"><value>занятий: {0}. Нажмите на дату для переклички, на имя — для истории. XLSX содержит всю выбранную группу за этот период.</value></data>
+  <data name="AttendanceJournal_AllTime" xml:space="preserve"><value>весь период</value></data>
+  <data name="AttendanceJournal_Start" xml:space="preserve"><value>начало</value></data>
+  <data name="AttendanceJournal_Onwards" xml:space="preserve"><value>сегодня и далее</value></data>
+  <data name="AttendanceJournal_TurnedOn" xml:space="preserve"><value>Учёт посещаемости включён.</value></data>
+  <data name="AttendanceJournal_TurnedOff" xml:space="preserve"><value>Учёт выключен, история сохранена.</value></data>
+  <data name="MyAttendance_PageTitle" xml:space="preserve"><value>Моя посещаемость</value></data>
+  <data name="MyAttendance_Eyebrow" xml:space="preserve"><value>МОЯ ИСТОРИЯ</value></data>
+  <data name="MyAttendance_Subtitle" xml:space="preserve"><value>Только занятия, на которых преподаватель ведёт учёт.</value></data>
+  <data name="MyAttendance_Empty" xml:space="preserve"><value>Пока нет отметок</value></data>
+  <data name="MyAttendance_EmptyHint" xml:space="preserve"><value>Занятия без учёта посещаемости не считаются пропусками.</value></data>
+  <data name="MyAttendance_History" xml:space="preserve"><value>История занятий</value></data>
+  <data name="MyAttendance_Updated" xml:space="preserve"><value>отметка обновлена</value></data>
+  <data name="Login_SharedComputer" xml:space="preserve"><value>Чужой компьютер — не запоминать вход</value></data>
+  <data name="Login_SharedComputerHint" xml:space="preserve"><value>Вход пропадёт, когда вкладка закроется; в новой вкладке нужно будет войти снова.</value></data>
 </root>

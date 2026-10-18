@@ -87,6 +87,9 @@ public interface IIdentityService
     /// <summary>Current database roles, independent of potentially stale token claims.</summary>
     Task<IReadOnlyCollection<string>> GetCurrentRolesAsync(Guid userId, CancellationToken cancellationToken = default);
 
+    /// <summary>Accounts currently holding the role in the database.</summary>
+    Task<IReadOnlyCollection<Guid>> GetUserIdsInRoleAsync(string role, CancellationToken cancellationToken = default);
+
     /// <summary>Confirmed active student or administrator; never exposes account email.</summary>
     Task<FunAndChecks.Application.Profiles.ProfileAccountInfo?> GetProfileAccountAsync(Guid userId,
         CancellationToken cancellationToken = default);

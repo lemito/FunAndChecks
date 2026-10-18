@@ -99,6 +99,22 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<AchievementDefinition> AchievementDefinitions => Set<AchievementDefinition>();
     public DbSet<AchievementAward> AchievementAwards => Set<AchievementAward>();
     public DbSet<PinnedAchievement> PinnedAchievements => Set<PinnedAchievement>();
+    public DbSet<Attachment> Attachments => Set<Attachment>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<ForumTopic> ForumTopics => Set<ForumTopic>();
+    public DbSet<ForumPost> ForumPosts => Set<ForumPost>();
+    public DbSet<ForumReaction> ForumReactions => Set<ForumReaction>();
+    public DbSet<ForumTopicRead> ForumTopicReads => Set<ForumTopicRead>();
+    public DbSet<ForumSubscription> ForumSubscriptions => Set<ForumSubscription>();
+    public DbSet<ForumReport> ForumReports => Set<ForumReport>();
+    public DbSet<ForumBan> ForumBans => Set<ForumBan>();
+    public DbSet<Survey> Surveys => Set<Survey>();
+    public DbSet<SurveyTargetGroup> SurveyTargetGroups => Set<SurveyTargetGroup>();
+    public DbSet<SurveyQuestion> SurveyQuestions => Set<SurveyQuestion>();
+    public DbSet<SurveyOption> SurveyOptions => Set<SurveyOption>();
+    public DbSet<SurveyResponse> SurveyResponses => Set<SurveyResponse>();
+    public DbSet<SurveyAnswer> SurveyAnswers => Set<SurveyAnswer>();
+    public DbSet<SurveyParticipation> SurveyParticipations => Set<SurveyParticipation>();
 
     public async Task ExecuteSerializableAsync(Func<CancellationToken, Task> action, CancellationToken cancellationToken = default)
     {

@@ -10,6 +10,10 @@ using FunAndChecks.Application.Students;
 using FunAndChecks.Application.Subjects;
 using FunAndChecks.Application.Submissions;
 using FunAndChecks.Application.Profiles;
+using FunAndChecks.Application.Attachments;
+using FunAndChecks.Application.Forum;
+using FunAndChecks.Application.Notifications;
+using FunAndChecks.Application.Surveys;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FunAndChecks.Application;
@@ -35,6 +39,13 @@ public static class DependencyInjection
         services.AddScoped<IAttendanceService, AttendanceService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IAchievementService, AchievementService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IAttachmentService, AttachmentService>();
+        services.AddScoped<IForumAccess, ForumAccess>();
+        services.AddScoped<IForumService, ForumService>();
+        services.AddScoped<IForumModerationService, ForumModerationService>();
+        services.AddScoped<ISurveyService, SurveyService>();
+        services.AddScoped<ISurveyAdminService, SurveyAdminService>();
 
         return services;
     }

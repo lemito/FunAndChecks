@@ -11,7 +11,6 @@ COPY ["Frontend/Frontend.csproj", "Frontend/"]
 COPY ["Frontend.Shared/Frontend.Shared.csproj", "Frontend.Shared/"]
 COPY ["Frontend.Admin/Frontend.Admin.csproj", "Frontend.Admin/"]
 COPY ["Frontend.Student/Frontend.Student.csproj", "Frontend.Student/"]
-COPY ["Frontend.Legacy/Frontend.Legacy.csproj", "Frontend.Legacy/"]
 
 # Восстанавливаем NuGet-пакеты
 RUN dotnet restore "FunAndChecks/FunAndChecks.csproj"
@@ -25,7 +24,6 @@ COPY ["Frontend/", "Frontend/"]
 COPY ["Frontend.Shared/", "Frontend.Shared/"]
 COPY ["Frontend.Admin/", "Frontend.Admin/"]
 COPY ["Frontend.Student/", "Frontend.Student/"]
-COPY ["Frontend.Legacy/", "Frontend.Legacy/"]
 
 # Публикуем основной API проект
 RUN dotnet publish "FunAndChecks/FunAndChecks.csproj" -c Release -o /app/publish /p:UseAppHost=false
@@ -47,8 +45,8 @@ RUN apt-get update \
     && apt-get update \
     && apt-get install -y --no-install-recommends postgresql-client-17 ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /app/backups /app/media-temp /app/logs/import /home/app/.aspnet/DataProtection-Keys \
-    && chown -R app:app /app/backups /app/media-temp /app/logs /home/app/.aspnet
+    && mkdir -p /app/backups /app/media-temp /app/attachments /app/logs/import /home/app/.aspnet/DataProtection-Keys \
+    && chown -R app:app /app/backups /app/media-temp /app/attachments /app/logs /home/app/.aspnet
 USER app
 
 ENTRYPOINT ["dotnet", "FunAndChecks.dll"]

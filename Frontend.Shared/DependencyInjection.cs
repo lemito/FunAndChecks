@@ -1,6 +1,7 @@
 using Frontend.Shared.Api;
 using Frontend.Shared.Services;
 using Frontend.Shared.Profiles;
+using Frontend.Shared.Community;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -28,9 +29,14 @@ public static class DependencyInjection
         services.AddScoped<FileDownloader>();
         services.AddScoped<CultureService>();
         services.AddScoped<UnsavedChangesTracker>();
+        services.AddScoped<ConfirmService>();
+        services.AddScoped<CurrentSubject>();
         services.AddScoped<ResultsNavigationState>();
         services.AddScoped<ProfileApi>();
         services.AddScoped<ProfileMediaCache>();
+        services.AddScoped<AvatarDirectory>();
+        services.AddScoped<CommunityRealtime>();
+        services.AddScoped<ForumListState>();
 
         services.AddAuthorizationCore();
         services.AddScoped<JwtAuthenticationStateProvider>();
@@ -56,6 +62,9 @@ public static class DependencyInjection
         services.AddScoped<AdminsApi>();
         services.AddScoped<BackupApi>();
         services.AddScoped<AttendanceApi>();
+        services.AddScoped<NotificationApi>();
+        services.AddScoped<ForumApi>();
+        services.AddScoped<SurveyApi>();
 
         return services;
     }

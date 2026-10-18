@@ -41,7 +41,7 @@ public class UserAccountService(IApplicationDbContext db, IIdentityService ident
         {
             try
             {
-                // Existing clients reload the complete queue on this event, including legacy.
+                // Clients reload the complete queue on this event.
                 // The finished hint closes the deleted entry without adding a second wire protocol.
                 await queueNotifier.QueueEntryUpdatedAsync(
                     new QueueEntryUpdateDto(eventId, userId, QueueEntryStatus.Finished, null), cancellationToken);

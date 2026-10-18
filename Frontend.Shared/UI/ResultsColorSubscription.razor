@@ -13,6 +13,8 @@
 @code {
     [Parameter] public int SubjectId { get; set; }
     [Parameter] public EventCallback<IReadOnlyList<StudentColorUpdateDto>> OnColorsUpdated { get; set; }
+    /// <summary>Чья-то отметка по задаче изменилась (сервер шлёт после каждой сдачи и отмены).</summary>
+    [Parameter] public EventCallback<ResultUpdateDto> OnResultUpdated { get; set; }
 
     private readonly SemaphoreSlim _subscriptionLock = new(1, 1);
     private readonly CancellationTokenSource _lifetime = new();
@@ -77,6 +79,11 @@
                     _latestChanges[update.StudentId] = ++_colorRevision;
                     await OnColorsUpdated.InvokeAsync(new[] { update });
                 }
+            }));
+            hub.On<ResultUpdateDto>("ResultUpdated", update => InvokeAsync(async () =>
+            {
+                if (IsCurrent(hub, subjectId) && OnResultUpdated.HasDelegate)
+                    await OnResultUpdated.InvokeAsync(update);
             }));
             hub.Reconnected += async _ =>
             {

@@ -19,6 +19,7 @@ public partial class Dashboard
     [Inject] private IStringLocalizer<AppStrings> Loc { get; set; } = null!;
     [Inject] private IDialogService Dialogs { get; set; } = null!;
     [Inject] private ResultsNavigationState ProfileReturn { get; set; } = null!;
+    [Inject] private CurrentSubject CurrentSubject { get; set; } = null!;
 
     private List<SubjectDto> _subjects = [];
     private SubjectDto? _selectedSubject;
@@ -32,25 +33,72 @@ public partial class Dashboard
         ? rows.Average(row => row.TotalPoints).ToString("0.##", System.Globalization.CultureInfo.CurrentCulture)
         : "—";
 
-    private string HistoryLabel(StudentResultRowDto row, TaskHeaderDto task) =>
-        $"{row.FullName}, {task.TaskName}: {Loc[row.Results.GetValueOrDefault(task.TaskId)?.Status == SubmissionStatus.Accepted ? "Task_StatusAccepted" : "Task_StatusRejected"]}, {Loc["Dialog_History"]}";
+    private int _acceptedCount, _reworkCount;
 
-    private async Task OpenHistoryAsync(StudentResultRowDto row, TaskHeaderDto task)
+    private string CellLabel(StudentResultRowDto row, TaskHeaderDto task)
     {
-        if (_results is null || row.Results.GetValueOrDefault(task.TaskId)?.Status is not
-            (SubmissionStatus.Accepted or SubmissionStatus.Rejected))
+        var status = row.Results.GetValueOrDefault(task.TaskId)?.Status switch
+        {
+            SubmissionStatus.Accepted => "Task_StatusAccepted",
+            SubmissionStatus.Rejected => "Task_StatusRejected",
+            _ => "Task_StatusNotSubmitted",
+        };
+        return $"{row.FullName}, {task.TaskName}: {Loc[status]}. {Loc["Dashboard_CellAction"]}";
+    }
+
+    /// <summary>
+    /// Клик по ячейке открывает студента сразу на этой задаче (с историей): зачесть или вернуть
+    /// можно здесь же, без перехода в «Оценивание» и повторного выбора предмета.
+    /// </summary>
+    private async Task OpenStudentAsync(StudentResultRowDto row, TaskHeaderDto task)
+    {
+        if (_results is null)
             return;
 
-        var parameters = new DialogParameters<ResultHistoryDialog>
+        var parameters = new DialogParameters<Frontend.Admin.Dialogs.StudentInteractionDialog>
         {
-            { dialog => dialog.StudentId, row.StudentId },
-            { dialog => dialog.StudentName, row.FullName },
-            { dialog => dialog.TaskId, task.TaskId },
-            { dialog => dialog.TaskName, task.TaskName },
-            { dialog => dialog.BeforeProfileNavigate, EventCallback.Factory.Create(this, RememberResultsAsync) },
+            { x => x.StudentId, row.StudentId },
+            { x => x.StudentName, row.FullName },
+            { x => x.GroupName, row.GroupName },
+            { x => x.SubjectId, _results.SubjectId },
+            { x => x.FocusTaskId, task.TaskId },
+            { x => x.StudentColor, row.StudentColor },
         };
-        await Dialogs.ShowAsync<ResultHistoryDialog>(Loc["Dialog_History"], parameters,
-            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small, CloseButton = true });
+        var dialog = await Dialogs.ShowAsync<Frontend.Admin.Dialogs.StudentInteractionDialog>(row.FullName, parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        if (await dialog.Result is { Canceled: false })
+            await RefreshResultsAsync();
+    }
+
+    private CancellationTokenSource? _liveRefresh;
+
+    /// <summary>Отметки других преподавателей появляются без ручного обновления; пачка событий — один запрос.</summary>
+    private async Task OnResultUpdatedAsync(ResultUpdateDto update)
+    {
+        _liveRefresh?.Cancel();
+        var refresh = _liveRefresh = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(400, refresh.Token);
+            await RefreshResultsAsync();
+            StateHasChanged();
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    /// <summary>Перечитывает таблицу без спиннера: сортировка, фильтры и прокрутка остаются на месте.</summary>
+    private async Task RefreshResultsAsync()
+    {
+        if (_results is null) return;
+        try { SetResults(await Results.GetSubjectResultsAsync(_results.SubjectId)); }
+        catch (ApiException ex) { Snackbar.Add(string.Format(Loc["Common_LoadResultsError"], ex.Message), Severity.Error); }
+    }
+
+    private void SetResults(SubjectResultsDto? results)
+    {
+        _results = results;
+        _acceptedCount = results?.UserResults.Sum(r => r.Results.Values.Count(c => c.Status == SubmissionStatus.Accepted)) ?? 0;
+        _reworkCount = results?.UserResults.Sum(r => r.Results.Values.Count(c => c.Status == SubmissionStatus.Rejected)) ?? 0;
     }
 
     protected override async Task OnInitializedAsync()
@@ -59,7 +107,9 @@ public partial class Dashboard
         {
             await ProfileReturn.InitializeAsync();
             _subjects = await Me.GetVisibleSubjectsAsync();
-            if (ProfileReturn.Subject("/admin") is int id && _subjects.FirstOrDefault(s => s.Id == id) is { } subject)
+            // Возврат из профиля важнее общего выбора: он восстанавливает и фильтры таблицы.
+            var id = ProfileReturn.Subject("/admin") ?? await CurrentSubject.PickAsync(_subjects.Select(s => s.Id));
+            if (_subjects.FirstOrDefault(s => s.Id == id) is { } subject)
                 await OnSubjectSelectedAsync(subject);
         }
         catch (ApiException ex)
@@ -75,14 +125,18 @@ public partial class Dashboard
 
         _selectedSubject = subject;
         ProfileReturn.SelectSubject("/admin", subject.Id);
+        await CurrentSubject.SetAsync(subject.Id);
         _loading = true;
-        _results = null;
+        SetResults(null);
         _attendance = null;
 
         try
         {
-            _results = await Results.GetSubjectResultsAsync(subject.Id);
-            var journal = await Attendance.GetJournalAsync(subject.Id);
+            // Таблица и журнал независимы — запрашиваем параллельно.
+            var resultsTask = Results.GetSubjectResultsAsync(subject.Id);
+            var journalTask = Attendance.GetJournalAsync(subject.Id);
+            SetResults(await resultsTask);
+            var journal = await journalTask;
             if (journal.Enabled || journal.Sessions.Count > 0)
                 _attendance = journal.Students.GroupBy(s => s.StudentId).ToDictionary(g => g.Key,
                     g => (g.Sum(s => s.Present), g.Sum(s => s.Absent), g.Sum(s => s.Unmarked)));
@@ -121,7 +175,7 @@ public partial class Dashboard
     private void UpdateStudentColors(IReadOnlyList<StudentColorUpdateDto> updates)
     {
         if (_results is not null)
-            _results = _results with { UserResults = StudentColorRows.Apply(_results.UserResults, updates) };
+            SetResults(_results with { UserResults = StudentColorRows.Apply(_results.UserResults, updates) });
     }
 
     private static string FioStyle(string? color)

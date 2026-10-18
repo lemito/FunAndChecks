@@ -5,10 +5,10 @@ const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../Frontend/wwwroot/js/dashboard-bootstrap.js'), 'utf8');
 
-function bootstrap({ languages = ['en-US'], stored = null, blocked = false, legacy = false, captions = {}, fetchFails = false } = {}) {
+function bootstrap({ languages = ['en-US'], stored = null, blocked = false, captions = {}, fetchFails = false } = {}) {
     const storage = new Map(stored ? [['culture_preference', stored]] : []);
     const window = {};
-    const document = { documentElement: { dataset: { uiVersion: legacy ? 'legacy' : 'dashboard' } } };
+    const document = { documentElement: { dataset: {} } };
     const localStorage = {
         getItem: key => { if (blocked) throw Error('Blocked'); return storage.get(key) ?? null; },
         setItem: (key, value) => { if (blocked) throw Error('Blocked'); storage.set(key, value); }
@@ -36,11 +36,6 @@ test('blocked storage still allows device culture and manual change without relo
     assert.equal(app.culturePreference.set('en-US'), false);
     assert.equal(app.document.documentElement.lang, 'en-US');
     assert.equal(app.culturePreference.set('invalid'), false);
-});
-test('legacy retains previous secondary-language detection without auto-saving', () => {
-    const app = bootstrap({ languages: ['en-US', 'ru-RU'], legacy: true });
-    assert.equal(app.culturePreference.get(), 'ru-RU');
-    assert.equal(app.storage.size, 0);
 });
 test('captions accept only nonempty resource strings, stable within the page', async () => {
     const app = bootstrap({ captions: { 'ru-RU': [null, 42, '', '  строка  '] } });

@@ -535,4 +535,155 @@
   <data name="Monitoring_SuperAdminOnly" xml:space="preserve"><value>Monitoring is available only to super administrators.</value></data>
   <data name="Monitoring_Disabled" xml:space="preserve"><value>Monitoring is not enabled on this server.</value></data>
   <data name="Monitoring_Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Dialog_Undo" xml:space="preserve"><value>Undo</value></data>
+  <data name="Dialog_MarkUndone" xml:space="preserve"><value>Mark undone</value></data>
+  <data name="Dialog_TaskAccepted" xml:space="preserve"><value>“{0}” accepted</value></data>
+  <data name="Dialog_TaskRework" xml:space="preserve"><value>“{0}” sent for rework</value></data>
+  <data name="Dialog_FinishAndNext" xml:space="preserve"><value>Finish &amp; next</value></data>
+  <data name="Dialog_TakeForReview" xml:space="preserve"><value>Take for review</value></data>
+  <data name="Dialog_HistoryLoadError" xml:space="preserve"><value>Could not load the history.</value></data>
+  <data name="Dialog_GradesAutosaved" xml:space="preserve"><value>Grades saved</value></data>
+  <data name="Dialog_GradeSaving" xml:space="preserve"><value>Saved on leaving the field</value></data>
+  <data name="QueueDetails_TakeNext" xml:space="preserve"><value>Take next</value></data>
+  <data name="QueueDetails_NoNext" xml:space="preserve"><value>Nobody is waiting in the visible groups.</value></data>
+  <data name="QueueDetails_Groups" xml:space="preserve"><value>Groups</value></data>
+  <data name="QueueDetails_ShowAllGroups" xml:space="preserve"><value>Show all</value></data>
+  <data name="QueueDetails_HiddenGroups" xml:space="preserve"><value>{0} hidden</value></data>
+  <data name="QueueDetails_Stale" xml:space="preserve"><value>Connection problem — showing the last loaded list. Retrying…</value></data>
+  <data name="QueueDetails_Retry" xml:space="preserve"><value>Retry</value></data>
+  <data name="Common_ConfirmDeleteTitle" xml:space="preserve"><value>Delete?</value></data>
+  <data name="Common_ConfirmDeleteText" xml:space="preserve"><value>Delete “{0}”? This cannot be undone.</value></data>
+  <data name="Nav_Attendance" xml:space="preserve"><value>Attendance</value></data>
+  <data name="Dashboard_CellAction" xml:space="preserve"><value>Open the student on this task</value></data>
+  <data name="Dashboard_AttendanceCounts" xml:space="preserve"><value>{0} present · {1} absent</value></data>
+  <data name="Dashboard_AttendanceUnmarked" xml:space="preserve"><value>Not marked: {0}</value></data>
+  <data name="Dashboard_TotalPoints" xml:space="preserve"><value>Total</value></data>
+  <data name="Grading_ManageAccounts" xml:space="preserve"><value>Manage accounts</value></data>
+  <data name="Grading_Progress" xml:space="preserve"><value>accepted {0}/{1}</value></data>
+  <data name="Grading_ProgressWithRework" xml:space="preserve"><value>accepted {0}/{1}, rework {2}</value></data>
+  <data name="Attendance_RollCallTitle" xml:space="preserve"><value>Roll call · attendance</value></data>
+  <data name="Attendance_SessionLoadError" xml:space="preserve"><value>Could not load the class.</value></data>
+  <data name="Attendance_BackToJournal" xml:space="preserve"><value>Back to the journal</value></data>
+  <data name="Attendance_Journal" xml:space="preserve"><value>Attendance journal</value></data>
+  <data name="Attendance_RollCall" xml:space="preserve"><value>ROLL CALL</value></data>
+  <data name="Attendance_MoscowTime" xml:space="preserve"><value>Moscow time</value></data>
+  <data name="Attendance_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Attendance_AddStudent" xml:space="preserve"><value>Add student</value></data>
+  <data name="Attendance_DisabledInfo" xml:space="preserve"><value>Attendance is turned off for this subject. The journal is read-only; turn it on on the attendance page.</value></data>
+  <data name="Attendance_Present" xml:space="preserve"><value>Present</value></data>
+  <data name="Attendance_Absent" xml:space="preserve"><value>Absent</value></data>
+  <data name="Attendance_Unmarked" xml:space="preserve"><value>Not marked</value></data>
+  <data name="Attendance_AddTitle" xml:space="preserve"><value>Add to this class</value></data>
+  <data name="Attendance_AddHint" xml:space="preserve"><value>For students who registered after the class was created. They start as “not marked”.</value></data>
+  <data name="Attendance_Student" xml:space="preserve"><value>Student</value></data>
+  <data name="Attendance_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Attendance_NoCandidates" xml:space="preserve"><value>No new confirmed students in this class's groups.</value></data>
+  <data name="Attendance_SearchLabel" xml:space="preserve"><value>Last name or group</value></data>
+  <data name="Attendance_OnlyUnmarked" xml:space="preserve"><value>Only not marked</value></data>
+  <data name="Attendance_Saving" xml:space="preserve"><value>Saving…</value></data>
+  <data name="Attendance_NotSaved" xml:space="preserve"><value>A change was not saved</value></data>
+  <data name="Attendance_SavedInstantly" xml:space="preserve"><value>Marks are saved instantly</value></data>
+  <data name="Attendance_TeacherDeleted" xml:space="preserve"><value>Teacher deleted</value></data>
+  <data name="Attendance_GroupForbidden" xml:space="preserve"><value>You may not change marks for this group</value></data>
+  <data name="Attendance_MarkPresentLabel" xml:space="preserve"><value>Mark {0} present</value></data>
+  <data name="Attendance_MarkAbsentLabel" xml:space="preserve"><value>Mark {0} absent</value></data>
+  <data name="Attendance_PresentShort" xml:space="preserve"><value>Present</value></data>
+  <data name="Attendance_AbsentShort" xml:space="preserve"><value>Absent</value></data>
+  <data name="Attendance_ResetMark" xml:space="preserve"><value>Reset to “not marked”</value></data>
+  <data name="Attendance_ResetMarkLabel" xml:space="preserve"><value>Reset the mark of {0}</value></data>
+  <data name="Attendance_EmptySession" xml:space="preserve"><value>There are no students in this class yet</value></data>
+  <data name="Attendance_AllMarked" xml:space="preserve"><value>Everyone is marked or nobody matches the filter</value></data>
+  <data name="Attendance_EmptyHint" xml:space="preserve"><value>Change the filter or add a student to the class.</value></data>
+  <data name="Attendance_FinishTitle" xml:space="preserve"><value>Finish the roll call</value></data>
+  <data name="Attendance_FinishHint" xml:space="preserve"><value>Mark all remaining students you can manage at once. Search and filters do not limit this action.</value></data>
+  <data name="Attendance_MarkRemainingPresent" xml:space="preserve"><value>Mark remaining present ({0})</value></data>
+  <data name="Attendance_MarkRemainingAbsent" xml:space="preserve"><value>Mark remaining absent ({0})</value></data>
+  <data name="Attendance_RemainingPresentConfirm" xml:space="preserve"><value>Mark {0} students present? Existing marks are kept.</value></data>
+  <data name="Attendance_RemainingAbsentConfirm" xml:space="preserve"><value>Mark {0} students absent? Existing marks are kept.</value></data>
+  <data name="Attendance_MarksSet" xml:space="preserve"><value>Marks set: {0}.</value></data>
+  <data name="Attendance_StudentAdded" xml:space="preserve"><value>Student added. The mark is not set yet.</value></data>
+  <data name="CommentDialog_CtrlEnter" xml:space="preserve"><value>Ctrl+Enter — send</value></data>
+  <data name="CommentDialog_Recent" xml:space="preserve"><value>Recent</value></data>
+  <data name="Management_TasksBulkLabel" xml:space="preserve"><value>Paste several tasks: one per line, “name;points”</value></data>
+  <data name="Management_TasksBulkAdd" xml:space="preserve"><value>Add all</value></data>
+  <data name="Management_TasksBulkAdded" xml:space="preserve"><value>Tasks added: {0}</value></data>
+  <data name="Management_TasksBulkInvalid" xml:space="preserve"><value>Line {0}: expected “name;points” with points from 0 to 1000</value></data>
+  <data name="Management_CopyTasksFrom" xml:space="preserve"><value>Copy tasks from…</value></data>
+  <data name="Management_TasksCopied" xml:space="preserve"><value>Copied tasks: {0}</value></data>
+  <data name="Management_InvalidDate" xml:space="preserve"><value>Enter the date and time as {0}.</value></data>
+  <data name="StudentQueues_MyPlace" xml:space="preserve"><value>You are #{0} of {1} waiting</value></data>
+  <data name="StudentQueues_OrderHint" xml:space="preserve"><value>Order: more points first, then who joined earlier.</value></data>
+  <data name="StudentQueues_Leave" xml:space="preserve"><value>Leave the queue</value></data>
+  <data name="StudentQueues_Left" xml:space="preserve"><value>You left the queue</value></data>
+  <data name="StudentStatus_Title" xml:space="preserve"><value>Where you are</value></data>
+  <data name="StudentStatus_Accepted" xml:space="preserve"><value>Accepted</value></data>
+  <data name="StudentStatus_Points" xml:space="preserve"><value>Points</value></data>
+  <data name="StudentStatus_Rework" xml:space="preserve"><value>Needs rework</value></data>
+  <data name="StudentStatus_NoRework" xml:space="preserve"><value>Nothing to redo</value></data>
+  <data name="StudentStatus_NextQueue" xml:space="preserve"><value>Next queue</value></data>
+  <data name="StudentStatus_NoQueue" xml:space="preserve"><value>You are not in any queue.</value></data>
+  <data name="StudentStatus_FindQueue" xml:space="preserve"><value>Find a queue</value></data>
+  <data name="StudentStatus_AllLogs" xml:space="preserve"><value>All feedback</value></data>
+  <data name="Results_ToastAccepted" xml:space="preserve"><value>“{0}” accepted</value></data>
+  <data name="Results_ToastRework" xml:space="preserve"><value>“{0}” sent back for rework</value></data>
+  <data name="Results_ToastOpen" xml:space="preserve"><value>Open</value></data>
+  <data name="AttendanceJournal_PageTitle" xml:space="preserve"><value>Attendance · journal</value></data>
+  <data name="AttendanceJournal_Eyebrow" xml:space="preserve"><value>CLASS JOURNAL</value></data>
+  <data name="AttendanceJournal_Intro" xml:space="preserve"><value>Create a class, choose groups and mark every student.</value></data>
+  <data name="AttendanceJournal_Download" xml:space="preserve"><value>Download XLSX</value></data>
+  <data name="AttendanceJournal_Create" xml:space="preserve"><value>Create a roll call</value></data>
+  <data name="AttendanceJournal_AllGroups" xml:space="preserve"><value>All groups</value></data>
+  <data name="AttendanceJournal_From" xml:space="preserve"><value>From</value></data>
+  <data name="AttendanceJournal_To" xml:space="preserve"><value>To</value></data>
+  <data name="AttendanceJournal_Show" xml:space="preserve"><value>Show</value></data>
+  <data name="AttendanceJournal_Enabled" xml:space="preserve"><value>Track attendance for this subject</value></data>
+  <data name="AttendanceJournal_EnabledHint" xml:space="preserve"><value>Turning it off keeps the journal. Class times are Moscow time (UTC+3).</value></data>
+  <data name="AttendanceJournal_NewTitle" xml:space="preserve"><value>New roll call</value></data>
+  <data name="AttendanceJournal_NewHint" xml:space="preserve"><value>The confirmed students of the chosen groups are saved at creation time.</value></data>
+  <data name="AttendanceJournal_Name" xml:space="preserve"><value>Name (optional)</value></data>
+  <data name="AttendanceJournal_Groups" xml:space="preserve"><value>Groups</value></data>
+  <data name="AttendanceJournal_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="AttendanceJournal_Time" xml:space="preserve"><value>Time (Moscow)</value></data>
+  <data name="AttendanceJournal_NoGroups" xml:space="preserve"><value>First link the subject to a group on the Management page.</value></data>
+  <data name="AttendanceJournal_CreateOpen" xml:space="preserve"><value>Create and open the roll call</value></data>
+  <data name="AttendanceJournal_View" xml:space="preserve"><value>Attendance view</value></data>
+  <data name="AttendanceJournal_Events" xml:space="preserve"><value>Roll calls</value></data>
+  <data name="AttendanceJournal_ChooseSubject" xml:space="preserve"><value>Choose a subject</value></data>
+  <data name="AttendanceJournal_ChooseSubjectHint" xml:space="preserve"><value>The attendance journal will appear here.</value></data>
+  <data name="AttendanceJournal_DisabledInfo" xml:space="preserve"><value>Tracking is off. Turn it on to create classes and mark students. Existing history can be viewed and downloaded.</value></data>
+  <data name="AttendanceJournal_NoSessions" xml:space="preserve"><value>No tracked classes yet</value></data>
+  <data name="AttendanceJournal_NoSessionsHint" xml:space="preserve"><value>Add a class when you need a roll call. Other classes are not counted as absences.</value></data>
+  <data name="AttendanceJournal_PresentCount" xml:space="preserve"><value>Present</value></data>
+  <data name="AttendanceJournal_AbsentCount" xml:space="preserve"><value>Absent</value></data>
+  <data name="AttendanceJournal_UnmarkedCount" xml:space="preserve"><value>Not marked</value></data>
+  <data name="AttendanceJournal_Step1" xml:space="preserve"><value>Create a class</value></data>
+  <data name="AttendanceJournal_Step2" xml:space="preserve"><value>Mark present / absent</value></data>
+  <data name="AttendanceJournal_Step3" xml:space="preserve"><value>Review the journal</value></data>
+  <data name="AttendanceJournal_Footnote" xml:space="preserve"><value>Only created classes are tracked; classes without a roll call are not absences. Counters follow the chosen group and period.</value></data>
+  <data name="AttendanceJournal_Search" xml:space="preserve"><value>Find a student</value></data>
+  <data name="AttendanceJournal_OnlyMissing" xml:space="preserve"><value>Has unmarked classes</value></data>
+  <data name="AttendanceJournal_SortAbsences" xml:space="preserve"><value>Sort by absences</value></data>
+  <data name="AttendanceJournal_NotIncluded" xml:space="preserve"><value>not in the class</value></data>
+  <data name="AttendanceJournal_TableLabel" xml:space="preserve"><value>Attendance journal, scrolls horizontally</value></data>
+  <data name="AttendanceJournal_NoStudents" xml:space="preserve"><value>No students found. Change the filter or add students to the class.</value></data>
+  <data name="AttendanceJournal_History" xml:space="preserve"><value>History for the chosen period</value></data>
+  <data name="AttendanceJournal_CloseHistory" xml:space="preserve"><value>Close history</value></data>
+  <data name="AttendanceJournal_Continue" xml:space="preserve"><value>Continue the roll call</value></data>
+  <data name="AttendanceJournal_OpenList" xml:space="preserve"><value>Open the list</value></data>
+  <data name="AttendanceJournal_NotIncludedLong" xml:space="preserve"><value>Not in this class</value></data>
+  <data name="AttendanceJournal_Caption" xml:space="preserve"><value>{0} classes. Click a date for the roll call, a name for history. XLSX contains the whole chosen group for this period.</value></data>
+  <data name="AttendanceJournal_AllTime" xml:space="preserve"><value>all time</value></data>
+  <data name="AttendanceJournal_Start" xml:space="preserve"><value>start</value></data>
+  <data name="AttendanceJournal_Onwards" xml:space="preserve"><value>today onwards</value></data>
+  <data name="AttendanceJournal_TurnedOn" xml:space="preserve"><value>Attendance tracking is on.</value></data>
+  <data name="AttendanceJournal_TurnedOff" xml:space="preserve"><value>Tracking is off; history is kept.</value></data>
+  <data name="MyAttendance_PageTitle" xml:space="preserve"><value>My attendance</value></data>
+  <data name="MyAttendance_Eyebrow" xml:space="preserve"><value>MY HISTORY</value></data>
+  <data name="MyAttendance_Subtitle" xml:space="preserve"><value>Only classes where the teacher tracks attendance.</value></data>
+  <data name="MyAttendance_Empty" xml:space="preserve"><value>No marks yet</value></data>
+  <data name="MyAttendance_EmptyHint" xml:space="preserve"><value>Classes without attendance tracking are not absences.</value></data>
+  <data name="MyAttendance_History" xml:space="preserve"><value>Class history</value></data>
+  <data name="MyAttendance_Updated" xml:space="preserve"><value>mark updated</value></data>
+  <data name="Login_SharedComputer" xml:space="preserve"><value>Shared computer — do not remember me</value></data>
+  <data name="Login_SharedComputerHint" xml:space="preserve"><value>You will be signed out when this tab is closed; a new tab asks to sign in again.</value></data>
 </root>
