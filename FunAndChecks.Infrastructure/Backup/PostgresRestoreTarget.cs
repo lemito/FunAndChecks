@@ -41,7 +41,7 @@ public sealed class RestoreStepException(string code, string message, Exception?
 /// Восстановление через pg_restore → psql. pg_restore превращает дамп в SQL-скрипт, psql выполняет его
 /// одной транзакцией после пролога, удаляющего все объекты схемы public. Так из БД пропадают и таблицы,
 /// которых нет в старом дампе (иначе последующие миграции упали бы на «already exists»), а любая ошибка
-/// откатывает всё целиком.
+/// откатывает всё целиком: COMMIT отправляется, только когда pg_restore отдал дамп без ошибок.
 /// </summary>
 public sealed partial class PostgresRestoreTarget(
     IConfiguration configuration,
@@ -51,7 +51,17 @@ public sealed partial class PostgresRestoreTarget(
 {
     private readonly BackupOptions _options = options.Value;
 
-    /// <summary>Пролог: удалить все пользовательские объекты схемы public (кроме объектов расширений).</summary>
+    /// <summary>Начало транзакции восстановления; NOTICE о каскадном удалении не засоряют текст ошибки.</summary>
+    internal const string BeginTransactionSql = "BEGIN;\nSET LOCAL client_min_messages = warning;\n";
+
+    /// <summary>Дописывается в конец скрипта, только если pg_restore выдал дамп целиком.</summary>
+    internal const string CommitSql = "\nCOMMIT;\n";
+
+    /// <summary>
+    /// Пролог: удалить все пользовательские объекты схемы public (кроме объектов расширений).
+    /// Объекты с внутренней зависимостью (deptype 'i', например identity-последовательности) напрямую
+    /// удалить нельзя — они уходят вместе с владельцем.
+    /// </summary>
     internal const string DropPublicObjectsSql = """
         DO $restore$
         DECLARE r record;
@@ -60,7 +70,7 @@ public sealed partial class PostgresRestoreTarget(
                 SELECT c.oid, c.relname, c.relkind FROM pg_class c
                 JOIN pg_namespace n ON n.oid = c.relnamespace
                 WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'f', 'S')
-                  AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = c.oid AND d.deptype = 'e')
+                  AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = c.oid AND d.deptype IN ('e', 'i'))
             LOOP
                 EXECUTE format(CASE r.relkind
                         WHEN 'v' THEN 'DROP VIEW IF EXISTS public.%I CASCADE'
@@ -73,7 +83,7 @@ public sealed partial class PostgresRestoreTarget(
                 SELECT p.oid::regprocedure AS signature FROM pg_proc p
                 JOIN pg_namespace n ON n.oid = p.pronamespace
                 WHERE n.nspname = 'public'
-                  AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype = 'e')
+                  AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype IN ('e', 'i'))
             LOOP
                 EXECUTE format('DROP ROUTINE IF EXISTS %s CASCADE', r.signature);
             END LOOP;
@@ -82,7 +92,7 @@ public sealed partial class PostgresRestoreTarget(
                 JOIN pg_namespace n ON n.oid = t.typnamespace
                 WHERE n.nspname = 'public' AND t.typtype IN ('e', 'd', 'c', 'r', 'm')
                   AND (t.typrelid = 0 OR EXISTS (SELECT 1 FROM pg_class c WHERE c.oid = t.typrelid AND c.relkind = 'c'))
-                  AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = t.oid AND d.deptype = 'e')
+                  AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = t.oid AND d.deptype IN ('e', 'i'))
             LOOP
                 EXECUTE format('DROP TYPE IF EXISTS public.%I CASCADE', r.typname);
             END LOOP;
@@ -164,7 +174,7 @@ public sealed partial class PostgresRestoreTarget(
 
         using var psql = new Process { StartInfo = StartInfo(_options.PsqlPath, csb,
         [
-            "--no-psqlrc", "--quiet", "--single-transaction", "--set=ON_ERROR_STOP=1",
+            "--no-psqlrc", "--quiet", "--set=ON_ERROR_STOP=1",
             $"--host={csb.Host}", $"--port={(csb.Port == 0 ? 5432 : csb.Port)}", $"--username={csb.Username}",
             "--no-password", $"--dbname={csb.Database}", "--file=-",
         ]) };
@@ -182,17 +192,31 @@ public sealed partial class PostgresRestoreTarget(
                 // Вывод psql (результаты SELECT set_config и т.п.) не нужен, но его надо вычитывать — иначе зависнет.
                 var psqlOutput = psql.StandardOutput.BaseStream.CopyToAsync(Stream.Null, cancellationToken);
 
+                // Транзакцию открываем сами, а COMMIT дописываем только после успешного pg_restore: с --single-transaction
+                // psql фиксирует всё полученное, как только кончится вход, и оборванный дамп оставил бы БД пустой.
+                var psqlExitedEarly = false;
                 try
                 {
                     var input = psql.StandardInput.BaseStream;
-                    await input.WriteAsync(Encoding.UTF8.GetBytes(DropPublicObjectsSql), cancellationToken);
+                    await input.WriteAsync(Encoding.UTF8.GetBytes(BeginTransactionSql + DropPublicObjectsSql), cancellationToken);
                     await restore.StandardOutput.BaseStream.CopyToAsync(input, cancellationToken);
+                    await restore.WaitForExitAsync(cancellationToken);
+                    if (restore.ExitCode == 0)
+                        await input.WriteAsync(Encoding.UTF8.GetBytes(CommitSql), cancellationToken);
                     await input.FlushAsync(cancellationToken);
                 }
-                catch (IOException) { /* psql завершился раньше — причину покажет его код выхода и stderr. */ }
+                catch (IOException)
+                {
+                    // psql завершился раньше — причину покажет его код выхода и stderr. pg_restore больше никто
+                    // не читает: без Kill он повис бы на записи в переполненный канал.
+                    psqlExitedEarly = true;
+                    Kill(restore);
+                }
                 finally
                 {
-                    psql.StandardInput.Close();
+                    // Конец входа без COMMIT: psql отключается, и сервер откатывает транзакцию.
+                    try { psql.StandardInput.Close(); }
+                    catch (IOException) { psqlExitedEarly = true; }
                 }
 
                 await restore.WaitForExitAsync(cancellationToken);
@@ -201,13 +225,12 @@ public sealed partial class PostgresRestoreTarget(
                 var restoreError = await restoreErrors;
                 var psqlError = await psqlErrors;
 
-                if (restore.ExitCode != 0)
+                if (!psqlExitedEarly && restore.ExitCode != 0)
                 {
-                    // psql получил неполный скрипт, но транзакция без COMMIT откатилась.
                     logger.LogError("pg_restore exited with code {Code}: {Error}", restore.ExitCode, restoreError);
                     throw new RestoreStepException("restore.database_failed", $"pg_restore failed (exit code {restore.ExitCode}). {restoreError}");
                 }
-                if (psql.ExitCode != 0)
+                if (psqlExitedEarly || psql.ExitCode != 0)
                 {
                     logger.LogError("psql exited with code {Code}: {Error}", psql.ExitCode, psqlError);
                     throw new RestoreStepException("restore.database_failed", $"psql failed (exit code {psql.ExitCode}). {psqlError}");
