@@ -17,50 +17,30 @@
                 else
                 {
                     <div class="fc-interaction-task-list">
-                        @foreach (var task in _tasks)
+                        @foreach (var task in _tasks.Where(t => t.TaskGroupId is null))
                         {
-                            var saving = _savingTasks.Contains(task.Id);
-                            <article id="task-@task.Id" class="fc-task-card @TaskStatusClass(task.Status) @(task.Id == FocusTaskId ? "fc-task-focused" : "")" @key="task.Id">
-                                <div class="fc-task-card-heading">
-                                    <div><MudText Typo="Typo.subtitle2">@task.Name</MudText><MudText Typo="Typo.caption" Class="fc-muted">@task.MaxPoints @Loc["Common_PointsAbbr"]</MudText></div>
-                                    @if (saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" /> }
-                                    else { <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@StatusColor(task.Status)">@StatusText(task.Status)</MudChip> }
-                                </div>
-                                <div class="fc-task-actions">
-                                    @if (!ReadOnly)
-                                    {
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success" Disabled="@(saving || task.Status == SubmissionStatus.Accepted)"
-                                                   StartIcon="@Icons.Material.Outlined.Check" OnClick="@(() => SubmitAsync(task, SubmissionStatus.Accepted))">@Loc["Dialog_Accepted"]</MudButton>
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" Disabled="saving"
-                                                   StartIcon="@Icons.Material.Outlined.History" OnClick="@(() => ReworkAsync(task))">@Loc["Dialog_Rework"]</MudButton>
-                                    }
-                                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Outlined.History"
-                                               OnClick="@(() => ToggleHistoryAsync(task.Id))">
-                                        @(_openHistory.Contains(task.Id) ? Loc["Dialog_HideHistory"] : Loc["Dialog_History"])
-                                    </MudButton>
-                                </div>
-                                @if (_openHistory.Contains(task.Id))
+                            @TaskCard(task)
+                        }
+                        @* Группы свёрнуты: преподаватель раскрывает нужную; группа с FocusTaskId раскрыта сразу. *@
+                        @foreach (var group in _tasks.Where(t => t.TaskGroupId is not null).GroupBy(t => t.TaskGroupId!.Value))
+                        {
+                            var open = _openGroups.Contains(group.Key);
+                            var accepted = group.Where(t => t.Status == SubmissionStatus.Accepted).ToList();
+                            var rework = group.Count(t => t.Status == SubmissionStatus.Rejected);
+                            <section class="fc-task-group @(open ? "fc-task-group-open" : "")" @key="@($"group-{group.Key}")">
+                                <button type="button" class="fc-task-group-header" aria-expanded="@(open ? "true" : "false")" @onclick="@(() => ToggleGroupAsync(group.Key))">
+                                    <MudIcon Icon="@(open ? Icons.Material.Outlined.ExpandMore : Icons.Material.Outlined.ChevronRight)" Size="Size.Small" />
+                                    <span class="fc-task-group-name">@group.First().TaskGroupName</span>
+                                    @if (rework > 0) { <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Warning">@Loc["TaskGroup_ReworkCount", rework]</MudChip> }
+                                    <span class="fc-task-group-progress @(accepted.Count == group.Count() ? "fc-task-group-done" : "")">@Loc["TaskGroup_Progress", accepted.Count, group.Count(), accepted.Sum(t => t.MaxPoints), group.Sum(t => t.MaxPoints)]</span>
+                                </button>
+                                @if (open)
                                 {
-                                    <div class="fc-task-history">
-                                        @if (_historyErrors.Contains(task.Id)) { <MudText Typo="Typo.caption" Class="fc-semantic-error">@Loc["Dialog_HistoryLoadError"] <MudLink OnClick="@(() => LoadHistoryAsync(task.Id))">@Loc["QueueDetails_Retry"]</MudLink></MudText> }
-                                        else if (!_history.TryGetValue(task.Id, out var log)) { <MudProgressLinear Indeterminate="true" /> }
-                                        else if (log.Count == 0) { <MudText Typo="Typo.caption" Class="fc-muted">@Loc["Dialog_NoSubmissions"]</MudText> }
-                                        else
-                                        {
-                                            @foreach (var entry in log)
-                                            {
-                                                <div class="fc-task-history-entry">
-                                                    <span class="fc-teacher-letter" style="@(string.IsNullOrWhiteSpace(entry.Admin.Color) ? "" : $"background:{entry.Admin.Color};color:{ColorUtils.ContrastText(entry.Admin.Color)};")">@(entry.Admin.Letter ?? entry.Admin.FirstName.FirstOrDefault().ToString())</span>
-                                                    <div>
-                                                        <div class="fc-task-history-meta"><strong><ProfileLink UserId="entry.Admin.Id">@entry.Admin.FullName</ProfileLink></strong><time datetime="@entry.SubmittedAt.ToString("O")">@entry.SubmittedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</time><MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@StatusColor(entry.Status)">@StatusText(entry.Status)</MudChip></div>
-                                                        @if (!string.IsNullOrWhiteSpace(entry.Comment)) { <MudText Typo="Typo.body2" Class="fc-task-comment">@entry.Comment</MudText> }
-                                                    </div>
-                                                </div>
-                                            }
-                                        }
+                                    <div class="fc-task-group-body">
+                                        @foreach (var task in group) { @TaskCard(task) }
                                     </div>
                                 }
-                            </article>
+                            </section>
                         }
                     </div>
                 }
@@ -135,3 +115,52 @@
         </div>
     </DialogActions>
 </MudDialog>
+
+@code {
+    /// <summary>Карточка задачи: одинакова для задач без группы и внутри раскрытой группы.</summary>
+    private RenderFragment TaskCard(TaskWithStatusDto task)
+    {
+        var saving = _savingTasks.Contains(task.Id);
+        return @<article id="task-@task.Id" class="fc-task-card @TaskStatusClass(task.Status) @(task.Id == FocusTaskId ? "fc-task-focused" : "")" @key="task.Id">
+                <div class="fc-task-card-heading">
+                    <div><MudText Typo="Typo.subtitle2">@task.Name</MudText><MudText Typo="Typo.caption" Class="fc-muted">@task.MaxPoints @Loc["Common_PointsAbbr"]</MudText></div>
+                    @if (saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" /> }
+                    else { <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@StatusColor(task.Status)">@StatusText(task.Status)</MudChip> }
+                </div>
+                <div class="fc-task-actions">
+                    @if (!ReadOnly)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success" Disabled="@(saving || task.Status == SubmissionStatus.Accepted)"
+                                   StartIcon="@Icons.Material.Outlined.Check" OnClick="@(() => SubmitAsync(task, SubmissionStatus.Accepted))">@Loc["Dialog_Accepted"]</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" Disabled="saving"
+                                   StartIcon="@Icons.Material.Outlined.History" OnClick="@(() => ReworkAsync(task))">@Loc["Dialog_Rework"]</MudButton>
+                    }
+                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Outlined.History"
+                               OnClick="@(() => ToggleHistoryAsync(task.Id))">
+                        @(_openHistory.Contains(task.Id) ? Loc["Dialog_HideHistory"] : Loc["Dialog_History"])
+                    </MudButton>
+                </div>
+                @if (_openHistory.Contains(task.Id))
+                {
+                    <div class="fc-task-history">
+                        @if (_historyErrors.Contains(task.Id)) { <MudText Typo="Typo.caption" Class="fc-semantic-error">@Loc["Dialog_HistoryLoadError"] <MudLink OnClick="@(() => LoadHistoryAsync(task.Id))">@Loc["QueueDetails_Retry"]</MudLink></MudText> }
+                        else if (!_history.TryGetValue(task.Id, out var log)) { <MudProgressLinear Indeterminate="true" /> }
+                        else if (log.Count == 0) { <MudText Typo="Typo.caption" Class="fc-muted">@Loc["Dialog_NoSubmissions"]</MudText> }
+                        else
+                        {
+                            @foreach (var entry in log)
+                            {
+                                <div class="fc-task-history-entry">
+                                    <span class="fc-teacher-letter" style="@(string.IsNullOrWhiteSpace(entry.Admin.Color) ? "" : $"background:{entry.Admin.Color};color:{ColorUtils.ContrastText(entry.Admin.Color)};")">@(entry.Admin.Letter ?? entry.Admin.FirstName.FirstOrDefault().ToString())</span>
+                                    <div>
+                                        <div class="fc-task-history-meta"><strong><ProfileLink UserId="entry.Admin.Id">@entry.Admin.FullName</ProfileLink></strong><time datetime="@entry.SubmittedAt.ToString("O")">@entry.SubmittedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</time><MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@StatusColor(entry.Status)">@StatusText(entry.Status)</MudChip></div>
+                                        @if (!string.IsNullOrWhiteSpace(entry.Comment)) { <MudText Typo="Typo.body2" Class="fc-task-comment">@entry.Comment</MudText> }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </article>;
+    }
+}

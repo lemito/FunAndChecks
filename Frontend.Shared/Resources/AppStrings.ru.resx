@@ -697,4 +697,56 @@
   <data name="StudentQueues_LeaveTitle" xml:space="preserve"><value>Выйти из очереди?</value></data>
   <data name="StudentQueues_LeaveText" xml:space="preserve"><value>Место будет потеряно: при повторной записи вы встанете по баллам и новому времени записи.</value></data>
   <data name="Dialog_TabAchievements" xml:space="preserve"><value>Достижения</value></data>
+  <data name="TaskGroup_None" xml:space="preserve"><value>Без группы</value></data>
+  <data name="TaskGroup_Progress" xml:space="preserve"><value>принято {0}/{1} · {2}/{3} б.</value></data>
+  <data name="TaskGroup_ReworkCount" xml:space="preserve"><value>на доработке: {0}</value></data>
+  <data name="Management_TaskGroupsTitle" xml:space="preserve"><value>Группы задач ({0})</value></data>
+  <data name="Management_TaskGroupsHint" xml:space="preserve"><value>Группы необязательны. В окне проверки задачи группы свёрнуты под её заголовком; задачи без группы показываются первыми.</value></data>
+  <data name="Management_TaskGroupNameLabel" xml:space="preserve"><value>Новая группа</value></data>
+  <data name="Management_TaskGroupLabel" xml:space="preserve"><value>Группа</value></data>
+  <data name="Management_TaskGroupForNewHint" xml:space="preserve"><value>Применяется и к пачке, и к набору</value></data>
+  <data name="Management_ColTaskCount" xml:space="preserve"><value>Задач</value></data>
+  <data name="Management_TaskGroupCreated" xml:space="preserve"><value>Группа задач создана</value></data>
+  <data name="Management_TaskGroupDeleted" xml:space="preserve"><value>Группа удалена, её задачи остались без группы</value></data>
+  <data name="Error_TaskGroupNameTaken" xml:space="preserve"><value>Группа задач с таким названием уже есть в этом предмете.</value></data>
+  <data name="Error_TaskGroupInvalid" xml:space="preserve"><value>Группа задач не относится к этому предмету.</value></data>
+  <data name="Maintenance_RestoreTitle" xml:space="preserve"><value>Восстановление из бэкапа</value></data>
+  <data name="Maintenance_RestoreHint" xml:space="preserve"><value>Загрузите бэкап с компьютера (.dump и при желании парный .attachments.zip) или нажмите «Восстановить» у бэкапа в списке. Перед восстановлением текущие данные автоматически сохраняются в бэкап.</value></data>
+  <data name="Maintenance_RestoreDumpLabel" xml:space="preserve"><value>Дамп базы (.dump)</value></data>
+  <data name="Maintenance_RestoreArchiveLabel" xml:space="preserve"><value>Архив вложений (.attachments.zip, необязательно)</value></data>
+  <data name="Maintenance_RestoreUpload" xml:space="preserve"><value>Загрузить бэкап</value></data>
+  <data name="Maintenance_RestoreUploaded" xml:space="preserve"><value>Бэкап загружен</value></data>
+  <data name="Maintenance_RestoreTooLarge" xml:space="preserve"><value>Файлы слишком большие: предел — {0}.</value></data>
+  <data name="Maintenance_Restore" xml:space="preserve"><value>Восстановить</value></data>
+  <data name="Maintenance_RestoreLabel" xml:space="preserve"><value>Восстановить из бэкапа: {0}</value></data>
+  <data name="Maintenance_RestoreConfirmTitle" xml:space="preserve"><value>Восстановить из бэкапа?</value></data>
+  <data name="Maintenance_RestoreConfirmText" xml:space="preserve"><value>Все текущие данные будут заменены содержимым бэкапа: изменения, сделанные после его создания, пропадут. Перед этим автоматически создаётся бэкап текущего состояния. Пока идёт восстановление, сервис недоступен всем.</value></data>
+  <data name="Maintenance_RestoreConfirmFile" xml:space="preserve"><value>Бэкап:</value></data>
+  <data name="Maintenance_RestoreConfirmWord" xml:space="preserve"><value>ВОССТАНОВИТЬ</value></data>
+  <data name="Maintenance_RestoreConfirmPrompt" xml:space="preserve"><value>Введите {0} для подтверждения</value></data>
+  <data name="Maintenance_RestoreRunning" xml:space="preserve"><value>Восстановление из {0}…</value></data>
+  <data name="Maintenance_RestoreSucceeded" xml:space="preserve"><value>Восстановлено из {0}.</value></data>
+  <data name="Maintenance_RestoreFailed" xml:space="preserve"><value>Не удалось восстановить из {0}.</value></data>
+  <data name="Maintenance_RestoreDone" xml:space="preserve"><value>Восстановление завершено</value></data>
+  <data name="Maintenance_RestoreSafetyBackup" xml:space="preserve"><value>Бэкап предыдущего состояния:</value></data>
+  <data name="Maintenance_RestoreRelogin" xml:space="preserve"><value>Сессии восстановлены вместе с данными — войдите заново.</value></data>
+  <data name="Maintenance_RestoreReloginButton" xml:space="preserve"><value>Войти заново</value></data>
+  <data name="Maintenance_RestoreDetails" xml:space="preserve"><value>Подробности</value></data>
+  <data name="Maintenance_RestoreInProgress" xml:space="preserve"><value>Идёт восстановление базы из бэкапа. Повторите через минуту.</value></data>
+  <data name="Maintenance_RestoreInvalidDump" xml:space="preserve"><value>Файл не является дампом базы в формате pg_dump custom (.dump).</value></data>
+  <data name="Maintenance_RestoreInvalidArchive" xml:space="preserve"><value>Файл вложений не является корректным zip-архивом.</value></data>
+  <data name="Maintenance_RestoreStepValidating" xml:space="preserve"><value>Проверка бэкапа…</value></data>
+  <data name="Maintenance_RestoreStepSafetyBackup" xml:space="preserve"><value>Сохранение текущих данных…</value></data>
+  <data name="Maintenance_RestoreStepDatabase" xml:space="preserve"><value>Восстановление базы…</value></data>
+  <data name="Maintenance_RestoreStepMigrating" xml:space="preserve"><value>Обновление схемы базы…</value></data>
+  <data name="Maintenance_RestoreStepAttachments" xml:space="preserve"><value>Восстановление вложений форума…</value></data>
+  <data name="Maintenance_RestoreErrorInvalidDump" xml:space="preserve"><value>Файл не является бэкапом базы FunAndChecks. Данные не изменены.</value></data>
+  <data name="Maintenance_RestoreErrorNewerSchema" xml:space="preserve"><value>Бэкап сделан более новой версией приложения — сначала обновите приложение. Данные не изменены.</value></data>
+  <data name="Maintenance_RestoreErrorSafetyBackup" xml:space="preserve"><value>Не удалось сохранить текущие данные, поэтому восстановление отменено. Данные не изменены.</value></data>
+  <data name="Maintenance_RestoreErrorTools" xml:space="preserve"><value>На сервере недоступны утилиты PostgreSQL (pg_restore, psql). Данные не изменены.</value></data>
+  <data name="Maintenance_RestoreErrorDatabase" xml:space="preserve"><value>Не удалось восстановить базу: транзакция откачена, данные не изменены.</value></data>
+  <data name="Maintenance_RestoreErrorMigration" xml:space="preserve"><value>База восстановлена, но обновить её схему не удалось. Проверьте логи сервера; бэкап предыдущего состояния есть в списке.</value></data>
+  <data name="Maintenance_RestoreErrorGeneric" xml:space="preserve"><value>Восстановление не удалось. Проверьте логи сервера.</value></data>
+  <data name="Maintenance_RestoreWarningNoAttachments" xml:space="preserve"><value>У бэкапа нет архива вложений: файлы форума оставлены как есть.</value></data>
+  <data name="Maintenance_RestoreWarningAttachments" xml:space="preserve"><value>База восстановлена, но вложения форума восстановить не удалось. Проверьте логи сервера.</value></data>
 </root>

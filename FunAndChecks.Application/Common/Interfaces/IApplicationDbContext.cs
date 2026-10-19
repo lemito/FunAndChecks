@@ -14,6 +14,7 @@ public interface IApplicationDbContext
     DbSet<Group> Groups { get; }
     DbSet<Subject> Subjects { get; }
     DbSet<CourseTask> Tasks { get; }
+    DbSet<TaskGroup> TaskGroups { get; }
     DbSet<Submission> Submissions { get; }
     DbSet<QueueEvent> QueueEvents { get; }
     DbSet<QueueEntry> QueueEntries { get; }

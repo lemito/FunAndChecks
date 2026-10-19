@@ -31,7 +31,13 @@ public partial class Management
     // ----- Мутабельные модели строк для inline-редактирования таблиц -----
     private sealed class SubjectRow { public int Id; public string Name = ""; public bool AttendanceEnabled; }
     private sealed class GroupRow { public int Id; public string Name = ""; }
-    private sealed class TaskRow { public int Id; public string Name = ""; public string Description = ""; public int MaxPoints; }
+    private sealed class TaskRow
+    {
+        public int Id; public string Name = ""; public string Description = ""; public int MaxPoints; public int? TaskGroupId;
+        /// <summary>Значение для MudSelect: 0 — «без группы».</summary>
+        public int GroupSelection { get => TaskGroupId ?? 0; set => TaskGroupId = value == 0 ? null : value; }
+    }
+    private sealed class TaskGroupRow { public int Id; public string Name = ""; public int TaskCount; }
     private sealed class ComponentRow { public int Id; public string Name = ""; public int MinPoints; public int MaxPoints; }
 
     private sealed class QueueRow
@@ -59,6 +65,7 @@ public partial class Management
     private List<SubjectRow> _subjects = [];
     private List<GroupRow> _groups = [];
     private List<TaskRow> _tasks = [];
+    private List<TaskGroupRow> _taskGroups = [];
     private List<ComponentRow> _components = [];
     private List<QueueRow> _queues = [];
     private bool _loading = true;
@@ -95,13 +102,10 @@ public partial class Management
     private int? _taskSubjectId;
     private int? _componentSubjectId;
 
-    // Очередь — форма создания.
+    // Очередь — предмет, с которым открывается форма создания (сама форма — общий QueueCreateForm).
     private int? _queueSubjectId;
-    private string _queueName = "";
-    private DateTime? _queueDate = DateTime.Today;
-    private TimeSpan? _queueTime = new(10, 0, 0);
-    private IReadOnlyCollection<int> _autoFillGroupIds = new HashSet<int>();
-    private bool _allowSelfJoin = true;
+    private List<(int Id, string Name)> QueueSubjects => AvailableSubjects.Select(s => (s.Id, s.Name)).ToList();
+    private List<(int Id, string Name)> QueueGroups => _groups.Select(g => (g.Id, g.Name)).ToList();
 
     protected override async Task OnInitializedAsync()
     {
@@ -109,7 +113,7 @@ public partial class Management
         await ReloadAsync();
         if (await CurrentSubject.PickAsync(AvailableSubjects.Select(s => s.Id)) is int current)
         {
-            OnQueueSubjectChanged(current);
+            _queueSubjectId = current;
             await OnTaskSubjectChanged(current);
             await OnComponentSubjectChanged(current);
         }
@@ -154,38 +158,10 @@ public partial class Management
     }
 
     // ----- Очереди -----
-    private void OnQueueSubjectChanged(int? subjectId)
+    private async Task OnQueueCreatedAsync(QueueEventDto _)
     {
-        _queueSubjectId = subjectId;
-        _ = CurrentSubject.SetAsync(subjectId);
-        var name = _subjects.FirstOrDefault(s => s.Id == subjectId)?.Name;
-        if (name is not null)
-            _queueName = $"{name} {(_queueDate ?? DateTime.Today).ToString("d", CultureInfo.CurrentCulture)}";
-    }
-
-    private async Task CreateQueueAsync()
-    {
-        if (_queueSubjectId is null) { Snackbar.Add(Loc["Management_SelectSubjectWarning"], Severity.Warning); return; }
-        if (_queueDate is null || _queueTime is null) { Snackbar.Add(Loc["Management_DateTimeRequired"], Severity.Warning); return; }
-
-        var when = DateTime.SpecifyKind(_queueDate.Value.Date + _queueTime.Value, DateTimeKind.Local).ToUniversalTime();
-        var name = string.IsNullOrWhiteSpace(_queueName)
-            ? $"{_subjects.FirstOrDefault(s => s.Id == _queueSubjectId)?.Name} {_queueDate.Value.ToString("d", CultureInfo.CurrentCulture)}"
-            : _queueName.Trim();
-
-        var autoFill = _autoFillGroupIds.Count > 0 ? _autoFillGroupIds.ToList() : null;
-
-        try
-        {
-            await QueuesApi.CreateAsync(new CreateQueueEventRequest(name, when, _queueSubjectId.Value, _allowSelfJoin, autoFill));
-            Snackbar.Add(Loc["Management_QueueCreated"], Severity.Success);
-            await ReloadQueuesAsync();
-            Dirty.MarkClean();
-        }
-        catch (ApiException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
+        await ReloadQueuesAsync();
+        Dirty.MarkClean();
     }
 
     // RowEditCommit в MudTable — синхронный Action<object>; запускаем сохранение фоном.
@@ -279,14 +255,19 @@ public partial class Management
         if (subjectId is null)
         {
             _tasks = [];
+            _taskGroups = [];
+            _newTaskGroupId = 0;
             return;
         }
 
         try
         {
+            var groupsTask = Subjects.GetTaskGroupsAsync(subjectId.Value);
             _tasks = (await Subjects.GetTasksAsync(subjectId.Value))
-                .Select(t => new TaskRow { Id = t.Id, Name = t.Name, Description = t.Description, MaxPoints = t.MaxPoints })
+                .Select(t => new TaskRow { Id = t.Id, Name = t.Name, Description = t.Description, MaxPoints = t.MaxPoints, TaskGroupId = t.TaskGroupId })
                 .ToList();
+            _taskGroups = (await groupsTask).Select(g => new TaskGroupRow { Id = g.Id, Name = g.Name, TaskCount = g.TaskCount }).ToList();
+            if (_taskGroups.All(g => g.Id != _newTaskGroupId)) _newTaskGroupId = 0;
         }
         catch (ApiException ex)
         {
@@ -295,6 +276,13 @@ public partial class Management
     }
 
     private MudTextField<string>? _taskNameField;
+    /// <summary>Группа для новых задач (одиночных, пачкой и набором); 0 — без группы.</summary>
+    private int _newTaskGroupId;
+    private int? NewTaskGroupId => _newTaskGroupId == 0 ? null : _newTaskGroupId;
+    private string _newTaskGroupName = "";
+
+    private string TaskGroupName(int? taskGroupId) =>
+        _taskGroups.FirstOrDefault(g => g.Id == taskGroupId)?.Name ?? Loc["TaskGroup_None"];
     private string? _bulkTasks;
     private int? _copyFromSubjectId;
     private bool _bulkBusy;
@@ -303,7 +291,7 @@ public partial class Management
     {
         if (_taskSubjectId is null || string.IsNullOrWhiteSpace(_newTaskName)) return;
         await RunAsync(
-            () => Subjects.CreateTaskAsync(_taskSubjectId.Value, new CreateTaskRequest(_newTaskName.Trim(), _newTaskDescription?.Trim() ?? "", _newTaskMaxPoints)),
+            () => Subjects.CreateTaskAsync(_taskSubjectId.Value, new CreateTaskRequest(_newTaskName.Trim(), _newTaskDescription?.Trim() ?? "", _newTaskMaxPoints, NewTaskGroupId)),
             Loc["Management_TaskCreated"],
             async () => { _newTaskName = ""; _newTaskDescription = ""; await OnTaskSubjectChanged(_taskSubjectId); });
         // Баллы оставляем прежними: соседние задачи обычно стоят одинаково.
@@ -324,7 +312,7 @@ public partial class Management
                 Snackbar.Add(Loc["Management_TasksBulkInvalid", i + 1], Severity.Warning);
                 return;
             }
-            requests.Add(new CreateTaskRequest(parts[0], parts.Length > 2 ? parts[2] : "", points));
+            requests.Add(new CreateTaskRequest(parts[0], parts.Length > 2 ? parts[2] : "", points, NewTaskGroupId));
         }
         if (await CreateTasksAsync(subjectId, requests) is int created && created > 0)
         {
@@ -333,7 +321,10 @@ public partial class Management
         }
     }
 
-    /// <summary>Копирует задачи другого предмета, пропуская совпадающие по названию.</summary>
+    /// <summary>
+    /// Копирует задачи другого предмета, пропуская совпадающие по названию. Группы переносятся по названию:
+    /// недостающие создаются в текущем предмете.
+    /// </summary>
     private async Task CopyTasksFromAsync(int? sourceId)
     {
         _copyFromSubjectId = null;
@@ -341,9 +332,17 @@ public partial class Management
         try
         {
             var existing = _tasks.Select(t => t.Name.Trim()).ToHashSet(StringComparer.CurrentCultureIgnoreCase);
-            var requests = (await Subjects.GetTasksAsync(source))
-                .Where(t => !existing.Contains(t.Name.Trim()))
-                .Select(t => new CreateTaskRequest(t.Name, t.Description, t.MaxPoints)).ToList();
+            var sourceTasks = (await Subjects.GetTasksAsync(source))
+                .Where(t => !existing.Contains(t.Name.Trim())).ToList();
+            var groupIds = _taskGroups.ToDictionary(g => g.Name, g => g.Id, StringComparer.Ordinal);
+            foreach (var groupName in sourceTasks.Select(t => t.TaskGroupName).OfType<string>().Distinct(StringComparer.Ordinal))
+            {
+                if (!groupIds.ContainsKey(groupName))
+                    groupIds[groupName] = (await Subjects.CreateTaskGroupAsync(subjectId, new CreateTaskGroupRequest(groupName))).Id;
+            }
+            var requests = sourceTasks
+                .Select(t => new CreateTaskRequest(t.Name, t.Description, t.MaxPoints,
+                    t.TaskGroupName is string g ? groupIds[g] : null)).ToList();
             var created = await CreateTasksAsync(subjectId, requests) ?? 0;
             Snackbar.Add(Loc["Management_TasksCopied", created], Severity.Success);
         }
@@ -380,7 +379,7 @@ public partial class Management
         var existing = _tasks.Select(t => t.Name.Trim()).ToHashSet(StringComparer.CurrentCultureIgnoreCase);
         var names = BuildSetNames(_setPrefix.Trim(), _setCount);
         var requests = names.Where(n => !existing.Contains(n))
-            .Select(n => new CreateTaskRequest(n, "", _setPoints)).ToList();
+            .Select(n => new CreateTaskRequest(n, "", _setPoints, NewTaskGroupId)).ToList();
         var created = await CreateTasksAsync(subjectId, requests) ?? 0;
         Snackbar.Add(Loc["Management_TaskSetCreated", created, names.Count - requests.Count], Severity.Success);
     }
@@ -413,13 +412,37 @@ public partial class Management
     private void OnTaskCommit(object element)
     {
         var row = (TaskRow)element;
-        _ = RunAsync(() => Subjects.UpdateTaskAsync(row.Id, new UpdateTaskRequest(row.Name, row.Description, row.MaxPoints)),
+        _ = RunAsync(() => Subjects.UpdateTaskAsync(row.Id, new UpdateTaskRequest(row.Name, row.Description, row.MaxPoints, row.TaskGroupId)),
             Loc["Common_Saved"], () => Task.CompletedTask, () => OnTaskSubjectChanged(_taskSubjectId));
     }
 
     private async Task DeleteTaskAsync(TaskRow row)
     {
         if (await Confirm.ConfirmDeleteAsync(row.Name)) await RunAsync(() => Subjects.DeleteTaskAsync(row.Id), Loc["Management_TaskDeleted"], () => OnTaskSubjectChanged(_taskSubjectId));
+    }
+
+    // ----- Группы задач -----
+    private async Task CreateTaskGroupAsync()
+    {
+        if (_taskSubjectId is not int subjectId || string.IsNullOrWhiteSpace(_newTaskGroupName)) return;
+        await RunAsync(
+            () => Subjects.CreateTaskGroupAsync(subjectId, new CreateTaskGroupRequest(_newTaskGroupName.Trim())),
+            Loc["Management_TaskGroupCreated"],
+            async () => { _newTaskGroupName = ""; await OnTaskSubjectChanged(_taskSubjectId); });
+    }
+
+    private void OnTaskGroupCommit(object element)
+    {
+        var row = (TaskGroupRow)element;
+        _ = RunAsync(() => Subjects.UpdateTaskGroupAsync(row.Id, new UpdateTaskGroupRequest(row.Name)),
+            Loc["Common_Saved"], () => OnTaskSubjectChanged(_taskSubjectId), () => OnTaskSubjectChanged(_taskSubjectId));
+    }
+
+    /// <summary>Удаляет группу; задачи остаются без группы.</summary>
+    private async Task DeleteTaskGroupAsync(TaskGroupRow row)
+    {
+        if (await Confirm.ConfirmDeleteAsync(row.Name))
+            await RunAsync(() => Subjects.DeleteTaskGroupAsync(row.Id), Loc["Management_TaskGroupDeleted"], () => OnTaskSubjectChanged(_taskSubjectId));
     }
 
     // ----- Оценочные колонки -----

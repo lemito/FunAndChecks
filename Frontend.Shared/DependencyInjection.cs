@@ -10,6 +10,9 @@ namespace Frontend.Shared;
 
 public static class DependencyInjection
 {
+    /// <summary>Клиент API с долгим таймаутом — для загрузки больших файлов (бэкапы).</summary>
+    public const string LongRunningApiClient = "ApiLong";
+
     /// <summary>
     /// Регистрирует общие сервисы фронтенда: MudBlazor, аутентификацию, HTTP-клиент к API
     /// и типизированные API-клиенты.
@@ -49,6 +52,12 @@ public static class DependencyInjection
         services.AddHttpClient("Api", client => client.BaseAddress = new Uri(apiBaseAddress))
             .AddHttpMessageHandler<AuthHeaderHandler>();
         services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
+        services.AddHttpClient(LongRunningApiClient, client =>
+            {
+                client.BaseAddress = new Uri(apiBaseAddress);
+                client.Timeout = TimeSpan.FromMinutes(30);
+            })
+            .AddHttpMessageHandler<AuthHeaderHandler>();
 
         // Типизированные клиенты.
         services.AddScoped<MeApi>();

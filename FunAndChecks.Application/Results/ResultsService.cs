@@ -27,7 +27,7 @@ public class ResultsService(
     private async Task<SubjectResultsDto?> BuildSubjectResultsAsync(int subjectId, CancellationToken cancellationToken)
     {
         var subject = await db.Subjects
-            .Include(s => s.Tasks)
+            .Include(s => s.Tasks).ThenInclude(t => t.TaskGroup)
             .Include(s => s.GradeComponents.OrderBy(c => c.Name))
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == subjectId, cancellationToken);
@@ -140,7 +140,7 @@ public class ResultsService(
     public async Task<StudentSubjectResultsDto> GetStudentResultsAsync(Guid studentId, int subjectId, CancellationToken cancellationToken = default)
     {
         var subject = await db.Subjects
-            .Include(s => s.Tasks)
+            .Include(s => s.Tasks).ThenInclude(t => t.TaskGroup)
             .Include(s => s.GradeComponents)
             .FirstOrDefaultAsync(s => s.Id == subjectId, cancellationToken)
             ?? throw new NotFoundException($"Subject with ID {subjectId} not found.");

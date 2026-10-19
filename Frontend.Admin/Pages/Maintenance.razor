@@ -28,6 +28,64 @@
     </MudCardActions>
 </MudCard>
 
+<MudCard Elevation="0" Class="mt-4 fc-restore-card">
+    <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">@Loc["Maintenance_RestoreTitle"]</MudText></CardHeaderContent></MudCardHeader>
+    <MudCardContent>
+        <MudText Typo="Typo.body2" Class="mb-3">@Loc["Maintenance_RestoreHint"]</MudText>
+        @if (_restore is { State: not RestoreState.Idle } restore)
+        {
+            <div class="fc-restore-status mb-3" role="status" aria-live="polite">
+                @switch (restore.State)
+                {
+                    case RestoreState.Running:
+                        <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Outlined.SettingsBackupRestore">
+                            <div>@Loc["Maintenance_RestoreRunning", restore.FileName ?? ""]</div>
+                            <div class="fc-muted">@RestoreStepText(restore.Step)</div>
+                        </MudAlert>
+                        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mt-2" />
+                        break;
+                    case RestoreState.Succeeded:
+                        <MudAlert Severity="@(restore.WarningCode is null ? Severity.Success : Severity.Warning)">
+                            <div>@Loc["Maintenance_RestoreSucceeded", restore.FileName ?? ""]</div>
+                            @if (restore.WarningCode is not null) { <div>@RestoreCodeText(restore.WarningCode)</div> }
+                            @if (restore.SafetyBackupFileName is not null) { <div>@Loc["Maintenance_RestoreSafetyBackup"] <span class="fc-backup-name">@restore.SafetyBackupFileName</span></div> }
+                            <div>@Loc["Maintenance_RestoreRelogin"]</div>
+                            <MudButton Class="mt-2" Size="Size.Small" Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.Login" OnClick="ReloginAsync">@Loc["Maintenance_RestoreReloginButton"]</MudButton>
+                        </MudAlert>
+                        break;
+                    case RestoreState.Failed:
+                        <MudAlert Severity="Severity.Error">
+                            <div>@Loc["Maintenance_RestoreFailed", restore.FileName ?? ""]</div>
+                            <div>@RestoreCodeText(restore.ErrorCode)</div>
+                            @if (!string.IsNullOrWhiteSpace(restore.Error)) { <details class="fc-restore-details"><summary>@Loc["Maintenance_RestoreDetails"]</summary><pre>@restore.Error</pre></details> }
+                            @if (restore.SafetyBackupFileName is not null) { <div>@Loc["Maintenance_RestoreSafetyBackup"] <span class="fc-backup-name">@restore.SafetyBackupFileName</span></div> }
+                        </MudAlert>
+                        break;
+                }
+            </div>
+        }
+        <div class="fc-restore-upload">
+            <label class="fc-restore-file">
+                <span>@Loc["Maintenance_RestoreDumpLabel"]</span>
+                <InputFile @key="_inputGeneration" OnChange="OnDumpSelected" accept=".dump" disabled="@Busy" />
+                @if (_dumpFile is not null) { <span class="fc-muted">@_dumpFile.Name · @FormatSize(_dumpFile.Size)</span> }
+            </label>
+            <label class="fc-restore-file">
+                <span>@Loc["Maintenance_RestoreArchiveLabel"]</span>
+                <InputFile @key="_inputGeneration" OnChange="OnArchiveSelected" accept=".zip" disabled="@Busy" />
+                @if (_archiveFile is not null) { <span class="fc-muted">@_archiveFile.Name · @FormatSize(_archiveFile.Size)</span> }
+            </label>
+        </div>
+    </MudCardContent>
+    <MudCardActions>
+        <MudButton Color="Color.Primary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.UploadFile"
+                   OnClick="UploadAsync" Disabled="@(Busy || _dumpFile is null)">
+            @if (_uploading) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+            @Loc["Maintenance_RestoreUpload"]
+        </MudButton>
+    </MudCardActions>
+</MudCard>
+
 <section class="fc-panel fc-backup-list mt-4">
     <div class="fc-backup-heading">
         <div><MudText Typo="Typo.h6">@Loc["Maintenance_BackupListTitle"]</MudText><MudText Typo="Typo.caption" Class="fc-muted">@Loc["Maintenance_BackupCount", _backups.Count]</MudText></div>
@@ -51,6 +109,13 @@
             <MudTd DataLabel="@Loc["Maintenance_BackupSize"]">@FormatSize(context.SizeBytes)</MudTd>
             <MudTd DataLabel="@Loc["Maintenance_BackupActions"]">
                 <div class="fc-backup-actions">
+                    @if (context.FileName.EndsWith(".dump", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Outlined.SettingsBackupRestore"
+                                   Disabled="Busy" OnClick="@(() => RestoreAsync(context.FileName))" aria-label="@Loc["Maintenance_RestoreLabel", context.FileName]">
+                            @Loc["Maintenance_Restore"]
+                        </MudButton>
+                    }
                     <MudButton Size="Size.Small" Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.FileDownload" Disabled="Busy" OnClick="@(() => DownloadAsync(context))" aria-label="@Loc["Maintenance_BackupDownloadLabel", context.FileName]">
                         @if (_busyFile == context.FileName && _downloading) { <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mr-2" /> }
                         @Loc["Maintenance_BackupDownload"]

@@ -1,3 +1,4 @@
+using FunAndChecks.Application.Backups;
 using FunAndChecks.Application.Common.Interfaces;
 using FunAndChecks.Application.Profiles;
 using FunAndChecks.Infrastructure.Backup;
@@ -61,6 +62,9 @@ public static class DependencyInjection
 
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IDatabaseBackupService, PgDumpBackupService>();
+        services.AddSingleton<MaintenanceModeState>();
+        services.AddSingleton<IDatabaseRestoreTarget, PostgresRestoreTarget>();
+        services.AddSingleton<IDatabaseRestoreService, DatabaseRestoreService>();
         services.AddSingleton<FfmpegProfileMediaProcessor>();
         services.AddSingleton<IProfileMediaProcessor>(sp => sp.GetRequiredService<FfmpegProfileMediaProcessor>());
         services.AddHostedService<MediaSessionCleanupService>();

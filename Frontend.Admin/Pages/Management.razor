@@ -31,38 +31,8 @@ else
             <MudCard Class="mb-4">
                 <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">@Loc["Management_CreateQueue"]</MudText></CardHeaderContent></MudCardHeader>
                 <MudCardContent>
-                    <MudGrid Spacing="2">
-                        <MudItem xs="12" sm="6">
-                            <MudSelect T="int?" Value="_queueSubjectId" ValueChanged="OnQueueSubjectChanged" Label="@Loc["Management_SubjectLabel"]"
-                                       Variant="Variant.Outlined" Placeholder="@Loc["Management_SelectSubject"]">
-                                @foreach (var s in AvailableSubjects) { <MudSelectItem T="int?" Value="@s.Id">@s.Name</MudSelectItem> }
-                            </MudSelect>
-                        </MudItem>
-                        <MudItem xs="12" sm="6">
-                            <MudTextField @bind-Value="_queueName" Label="@Loc["Management_QueueNameLabel"]" Variant="Variant.Outlined"
-                                          HelperText="@Loc["Management_QueueNameHelper"]" />
-                        </MudItem>
-                        <MudItem xs="6" sm="3"><MudDatePicker @bind-Date="_queueDate" Label="@Loc["Management_DateLabel"]" Variant="Variant.Outlined" /></MudItem>
-                        <MudItem xs="6" sm="3"><MudTimePicker @bind-Time="_queueTime" Label="@Loc["Management_TimeLabel"]" Variant="Variant.Outlined" /></MudItem>
-                        <MudItem xs="12" sm="6">
-                            <MudSelect T="int" SelectedValues="_autoFillGroupIds" SelectedValuesChanged="@(v => _autoFillGroupIds = v.ToList())"
-                                       MultiSelection="true" ToStringFunc="@(id => _groups.FirstOrDefault(g => g.Id == id)?.Name ?? "")"
-                                       Label="@Loc["Management_AutoFillLabel"]" Variant="Variant.Outlined"
-                                       Placeholder="@Loc["Management_SelectGroups"]"
-                                       MultiSelectionTextFunc="@(items => items.Count == 0 ? "" : string.Format(Loc["Management_AutoFillSelected"], items.Count))">
-                                @foreach (var g in _groups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
-                            </MudSelect>
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudSwitch T="bool" @bind-Value="_allowSelfJoin" Color="Color.Primary"
-                                       Disabled="@_autoFillGroupIds.Any()">@Loc["Management_AllowSelfJoin"]</MudSwitch>
-                        </MudItem>
-                    </MudGrid>
+                    <Frontend.Admin.UI.QueueCreateForm Subjects="@QueueSubjects" Groups="@QueueGroups" SubjectId="_queueSubjectId" Created="OnQueueCreatedAsync" />
                 </MudCardContent>
-                <MudCardActions>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateQueueAsync">@Loc["Management_CreateButton"]</MudButton>
-                    <MudText Typo="Typo.caption" Class="ml-3 align-self-center">@Loc["Management_CreateQueueHint"]</MudText>
-                </MudCardActions>
             </MudCard>
 
             <MudTable Class="fc-management-table" Breakpoint="Breakpoint.Sm" Items="_queues" Hover="true" Dense="true"
@@ -171,11 +141,45 @@ else
 
             @if (_taskSubjectId is not null)
             {
+                <details class="fc-management-bulk fc-management-task-groups" open="@(_taskGroups.Count > 0)">
+                    <summary>@Loc["Management_TaskGroupsTitle", _taskGroups.Count]</summary>
+                    <MudText Typo="Typo.caption" Class="fc-muted">@Loc["Management_TaskGroupsHint"]</MudText>
+                    <form class="fc-management-form" @onsubmit="CreateTaskGroupAsync" @onsubmit:preventDefault="true">
+                        <MudTextField @bind-Value="_newTaskGroupName" Immediate="true" Label="@Loc["Management_TaskGroupNameLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="200" />
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" Disabled="@string.IsNullOrWhiteSpace(_newTaskGroupName)">@Loc["Common_Add"]</MudButton>
+                    </form>
+                    @if (_taskGroups.Count > 0)
+                    {
+                        <MudTable Class="fc-management-table" Breakpoint="Breakpoint.Sm" Items="_taskGroups" Hover="true" Dense="true" CanCancelEdit="true" EditTrigger="TableEditTrigger.EditButton" RowEditCommit="OnTaskGroupCommit">
+                            <HeaderContent><MudTh>@Loc["Management_ColName"]</MudTh><MudTh>@Loc["Management_ColTaskCount"]</MudTh><MudTh></MudTh></HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="@Loc["Management_ColName"]">@context.Name</MudTd>
+                                <MudTd DataLabel="@Loc["Management_ColTaskCount"]">@context.TaskCount</MudTd>
+                                <MudTd><MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" aria-label="@Loc["Common_Delete"]"
+                                                      OnClick="@(() => DeleteTaskGroupAsync(context))" /></MudTd>
+                            </RowTemplate>
+                            <RowEditingTemplate>
+                                <MudTd DataLabel="@Loc["Management_ColName"]"><MudTextField @bind-Value="context.Name" MaxLength="200" aria-label="@Loc["Management_ColName"]" /></MudTd>
+                                <MudTd DataLabel="@Loc["Management_ColTaskCount"]">@context.TaskCount</MudTd>
+                                <MudTd></MudTd>
+                            </RowEditingTemplate>
+                        </MudTable>
+                    }
+                </details>
+
                 @* Enter добавляет задачу и возвращает фокус в название — задачи вводятся подряд с клавиатуры. *@
                 <form class="fc-management-form" @onsubmit="CreateTaskAsync" @onsubmit:preventDefault="true">
                     <MudTextField @ref="_taskNameField" @bind-Value="_newTaskName" Immediate="true" Label="@Loc["Management_TaskLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     <MudTextField @bind-Value="_newTaskDescription" Immediate="true" Label="@Loc["Management_TaskDescriptionLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     <MudNumericField @bind-Value="_newTaskMaxPoints" Immediate="true" Label="@Loc["Management_TaskPointsLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Style="width: 100px;" />
+                    @if (_taskGroups.Count > 0)
+                    {
+                        <MudSelect T="int" @bind-Value="_newTaskGroupId" Label="@Loc["Management_TaskGroupLabel"]" HelperText="@Loc["Management_TaskGroupForNewHint"]"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 160px;">
+                            <MudSelectItem T="int" Value="0">@Loc["TaskGroup_None"]</MudSelectItem>
+                            @foreach (var g in _taskGroups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
+                        </MudSelect>
+                    }
                     <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@Loc["Common_Add"]</MudButton>
                 </form>
                 <details class="fc-management-bulk">
@@ -199,11 +203,12 @@ else
                     </div>
                 </details>
                 <MudTable Class="fc-management-table" Breakpoint="Breakpoint.Sm" Items="_tasks" Hover="true" Dense="true" CanCancelEdit="true" EditTrigger="TableEditTrigger.EditButton" RowEditCommit="OnTaskCommit">
-                    <HeaderContent><MudTh>@Loc["Management_ColName"]</MudTh><MudTh>@Loc["Management_ColDescription"]</MudTh><MudTh>@Loc["Management_ColPoints"]</MudTh><MudTh></MudTh></HeaderContent>
+                    <HeaderContent><MudTh>@Loc["Management_ColName"]</MudTh><MudTh>@Loc["Management_ColDescription"]</MudTh><MudTh>@Loc["Management_ColPoints"]</MudTh><MudTh>@Loc["Management_TaskGroupLabel"]</MudTh><MudTh></MudTh></HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="@Loc["Management_ColName"]">@context.Name</MudTd>
                         <MudTd DataLabel="@Loc["Management_ColDescription"]">@context.Description</MudTd>
                         <MudTd DataLabel="@Loc["Management_ColPoints"]">@context.MaxPoints</MudTd>
+                        <MudTd DataLabel="@Loc["Management_TaskGroupLabel"]"><span class="@(context.TaskGroupId is null ? "fc-muted" : "")">@TaskGroupName(context.TaskGroupId)</span></MudTd>
                         <MudTd><MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" aria-label="@Loc["Common_Delete"]"
                                               OnClick="@(() => DeleteTaskAsync(context))" /></MudTd>
                     </RowTemplate>
@@ -211,6 +216,12 @@ else
                         <MudTd DataLabel="@Loc["Management_ColName"]"><MudTextField @bind-Value="context.Name" aria-label="@Loc["Management_ColName"]" /></MudTd>
                         <MudTd DataLabel="@Loc["Management_ColDescription"]"><MudTextField @bind-Value="context.Description" aria-label="@Loc["Management_ColDescription"]" /></MudTd>
                         <MudTd DataLabel="@Loc["Management_ColPoints"]"><MudNumericField @bind-Value="context.MaxPoints" Min="0" aria-label="@Loc["Management_ColPoints"]" /></MudTd>
+                        <MudTd DataLabel="@Loc["Management_TaskGroupLabel"]">
+                            <MudSelect T="int" @bind-Value="context.GroupSelection" aria-label="@Loc["Management_TaskGroupLabel"]">
+                                <MudSelectItem T="int" Value="0">@Loc["TaskGroup_None"]</MudSelectItem>
+                                @foreach (var g in _taskGroups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
+                            </MudSelect>
+                        </MudTd>
                         <MudTd></MudTd>
                     </RowEditingTemplate>
                 </MudTable>

@@ -326,7 +326,12 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
                     b.Property<int>("SubjectId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("TaskGroupId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("TaskGroupId");
 
                     b.HasIndex("SubjectId", "Name")
                         .IsUnique();
@@ -1216,6 +1221,30 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
                     b.ToTable("SurveyTargetGroups", (string)null);
                 });
 
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.TaskGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("SubjectId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubjectId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("TaskGroups", (string)null);
+                });
+
             modelBuilder.Entity("FunAndChecks.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1691,7 +1720,14 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("FunAndChecks.Domain.Entities.TaskGroup", "TaskGroup")
+                        .WithMany("Tasks")
+                        .HasForeignKey("TaskGroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Subject");
+
+                    b.Navigation("TaskGroup");
                 });
 
             modelBuilder.Entity("FunAndChecks.Domain.Entities.ForumBan", b =>
@@ -2096,6 +2132,17 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
                     b.Navigation("Group");
                 });
 
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.TaskGroup", b =>
+                {
+                    b.HasOne("FunAndChecks.Domain.Entities.Subject", "Subject")
+                        .WithMany("TaskGroups")
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Subject");
+                });
+
             modelBuilder.Entity("FunAndChecks.Domain.Entities.UserProfile", b =>
                 {
                     b.HasOne("FunAndChecks.Infrastructure.Identity.ApplicationUser", null)
@@ -2237,6 +2284,8 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
 
                     b.Navigation("GroupSubjects");
 
+                    b.Navigation("TaskGroups");
+
                     b.Navigation("Tasks");
                 });
 
@@ -2255,6 +2304,11 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("FunAndChecks.Domain.Entities.SurveyResponse", b =>
                 {
                     b.Navigation("Answers");
+                });
+
+            modelBuilder.Entity("FunAndChecks.Domain.Entities.TaskGroup", b =>
+                {
+                    b.Navigation("Tasks");
                 });
 
             modelBuilder.Entity("FunAndChecks.Domain.Entities.Student", b =>

@@ -203,6 +203,80 @@ public class PgDumpBackupService(
 
     private string GetBackupDirectory() => Path.GetFullPath(_options.Directory);
 
+    /// <summary>Сигнатура дампа pg_dump в формате custom (-Fc).</summary>
+    private static ReadOnlySpan<byte> CustomDumpSignature => "PGDMP"u8;
+
+    public async Task<BackupFileDto> ImportAsync(Stream dump, Stream? attachmentsArchive, CancellationToken cancellationToken = default)
+    {
+        var directory = GetBackupDirectory();
+        Directory.CreateDirectory(directory);
+        var baseName = $"funandchecks_uploaded_{DateTime.UtcNow:yyyyMMdd_HHmmss_fff}_{Guid.NewGuid():N}";
+        var dumpPath = Path.Combine(directory, baseName + ".dump");
+        var archivePath = Path.Combine(directory, baseName + AttachmentsSuffix);
+        var dumpPartial = dumpPath + ".partial";
+        var archivePartial = archivePath + ".partial";
+        var published = new List<string>();
+        try
+        {
+            await using (var output = new FileStream(dumpPartial, FileMode.CreateNew, FileAccess.Write, FileShare.None, 64 * 1024, true))
+            {
+                var header = new byte[CustomDumpSignature.Length];
+                var read = await dump.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false, cancellationToken);
+                if (read < header.Length || !header.AsSpan().SequenceEqual(CustomDumpSignature))
+                    throw InvalidUpload("dump", "The file is not a pg_dump archive in custom format (-Fc).", "backup_invalid_dump");
+                await output.WriteAsync(header, cancellationToken);
+                await dump.CopyToAsync(output, cancellationToken);
+            }
+
+            if (attachmentsArchive is not null)
+            {
+                await using (var output = new FileStream(archivePartial, FileMode.CreateNew, FileAccess.Write, FileShare.None, 64 * 1024, true))
+                    await attachmentsArchive.CopyToAsync(output, cancellationToken);
+                try
+                {
+                    // Проверяем центральный каталог zip до публикации: битый архив не должен попасть в список.
+                    using var archive = System.IO.Compression.ZipFile.OpenRead(archivePartial);
+                    _ = archive.Entries.Count;
+                }
+                catch (InvalidDataException)
+                {
+                    throw InvalidUpload("attachments", "The attachments file is not a valid zip archive.", "backup_invalid_archive");
+                }
+
+                // Архив публикуем раньше дампа: восстановление по дампу сразу увидит пару.
+                File.Move(archivePartial, archivePath);
+                published.Add(archivePath);
+            }
+
+            File.Move(dumpPartial, dumpPath);
+            published.Add(dumpPath);
+        }
+        catch
+        {
+            foreach (var path in published.Append(dumpPartial).Append(archivePartial))
+            {
+                try { if (File.Exists(path)) File.Delete(path); }
+                catch { /* Best effort */ }
+            }
+            throw;
+        }
+
+        var file = new FileInfo(dumpPath);
+        if (audit?.Enabled == true)
+            audit.Committed(audit.Create("backup", file.Name, "success", $"upload: backup {file.Name}",
+                after: new Dictionary<string, object?>
+                {
+                    ["fileName"] = file.Name,
+                    ["sizeBytes"] = file.Length,
+                    ["attachments"] = attachmentsArchive is null ? null : Path.GetFileName(archivePath),
+                }));
+        logger.LogInformation("Backup {FileName} uploaded.", file.Name);
+        return new BackupFileDto(file.Name, file.Length, file.LastWriteTimeUtc);
+    }
+
+    private static ValidationException InvalidUpload(string field, string message, string code) =>
+        new([new ValidationFailure(field, message) { ErrorCode = code }]);
+
     /// <summary>
     /// Файлы форума лежат не в БД, поэтому рядом с дампом кладётся их архив с тем же именем.
     /// Ошибка архива не отменяет готовый дамп, но пишется в лог.
@@ -262,7 +336,10 @@ public class PgDumpBackupService(
         catch { AdminAuditDiagnostics.RecordCaptureFailure(); return null; }
     }
 
-    private string GetExistingBackupPath(string fileName)
+    private string GetExistingBackupPath(string fileName) => GetExistingBackupPath(GetBackupDirectory(), fileName);
+
+    /// <summary>Полный путь к существующему файлу бэкапа непосредственно в <paramref name="directory"/>.</summary>
+    internal static string GetExistingBackupPath(string directory, string fileName)
     {
         if (!IsValidFileName(fileName))
             throw new ValidationException([
@@ -272,7 +349,6 @@ public class PgDumpBackupService(
                 },
             ]);
 
-        var directory = GetBackupDirectory();
         var filePath = Path.GetFullPath(Path.Combine(directory, fileName));
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         if (!string.Equals(Path.GetDirectoryName(filePath), Path.TrimEndingDirectorySeparator(directory), comparison))
@@ -289,8 +365,8 @@ public class PgDumpBackupService(
          (fileName.Length > AttachmentsSuffix.Length && fileName.EndsWith(AttachmentsSuffix, StringComparison.OrdinalIgnoreCase))) &&
         !fileName.Any(character => char.IsControl(character) || character is '/' or '\\' or ':' or '<' or '>' or '"' or '|' or '?' or '*');
 
-    private static bool IsRegularFile(FileInfo file) =>
+    internal static bool IsRegularFile(FileInfo file) =>
         file.Exists && (file.Attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint | FileAttributes.Device)) == 0;
 
-    private static NotFoundException BackupNotFound() => new("Backup not found.", "backup.not_found");
+    internal static NotFoundException BackupNotFound() => new("Backup not found.", "backup.not_found");
 }

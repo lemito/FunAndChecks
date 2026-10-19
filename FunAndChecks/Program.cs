@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Security.Claims;
 using FunAndChecks.Application;
 using FunAndChecks.Application.Auditing;
+using FunAndChecks.Application.Backups;
 using FunAndChecks.Application.Common.Interfaces;
 using FunAndChecks.Common;
 using FunAndChecks.Domain.Constants;
@@ -106,6 +107,10 @@ builder.Services.AddAuthentication(options =>
             },
             OnTokenValidated = async context =>
             {
+                // Во время восстановления БД заблокирована транзакцией restore; пропускает только опрос
+                // статуса (MaintenanceModeMiddleware), поэтому достаточно подписи и ролей из токена.
+                if (context.HttpContext.RequestServices.GetRequiredService<MaintenanceModeState>().IsActive)
+                    return;
                 var id = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
                 var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
                 if (!Guid.TryParse(id, out var userId) ||
@@ -305,6 +310,7 @@ app.UseCors(corsPolicy);
 
 // Лимитер после аутентификации: политика форума делит бакеты по пользователю.
 app.UseAuthentication();
+app.UseMiddleware<MaintenanceModeMiddleware>();
 app.UseRateLimiter();
 app.UseMiddleware<AdminAuditMiddleware>();
 app.UseAuthorization();

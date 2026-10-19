@@ -1,3 +1,4 @@
+using FunAndChecks.Application.Backups;
 using FunAndChecks.Application.Common.Interfaces;
 using FunAndChecks.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -13,14 +14,15 @@ namespace FunAndChecks.Infrastructure.Files;
 /// удалённых сообщений. Сначала строка в БД, потом файл — иначе ссылка могла бы указать в пустоту.
 /// </summary>
 public sealed class AttachmentCleanupService(IServiceScopeFactory scopes, IOptions<AttachmentStorageOptions> options,
-    ILogger<AttachmentCleanupService> logger) : BackgroundService
+    ILogger<AttachmentCleanupService> logger, MaintenanceModeState? maintenance = null) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(TimeSpan.FromMinutes(Math.Max(1, options.Value.CleanupIntervalMinutes)));
         do
         {
-            try { await CleanupAsync(stoppingToken); }
+            // Во время восстановления из бэкапа не трогаем ни БД, ни файлы вложений.
+            try { if (maintenance?.IsActive != true) await CleanupAsync(stoppingToken); }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { return; }
             catch (Exception ex) { logger.LogError(ex, "Attachment cleanup failed."); }
         }

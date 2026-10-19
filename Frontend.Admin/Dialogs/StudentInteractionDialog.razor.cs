@@ -54,6 +54,7 @@ public partial class StudentInteractionDialog : IDisposable
     private readonly Dictionary<int, int?> _gradeInputs = [];
     private readonly Dictionary<int, int> _currentGrades = [];
     private readonly HashSet<int> _openHistory = [];
+    private readonly HashSet<int> _openGroups = [];
     private readonly Dictionary<int, List<SubmissionLogDto>> _history = [];
     private readonly HashSet<int> _historyErrors = [];
     private readonly HashSet<int> _savingTasks = [];
@@ -91,12 +92,35 @@ public partial class StudentInteractionDialog : IDisposable
         // Задачи и оценки независимы — грузим параллельно, а не цепочкой.
         await Task.WhenAll(LoadTasksAsync(), LoadGradesAsync());
 
-        // Несданные и задачи на доработке раскрыты сразу: история нужна преподавателю перед приёмом.
-        var open = _tasks.Where(t => t.Status != SubmissionStatus.Accepted).Select(t => t.Id).ToList();
+        // Группы задач свёрнуты; раскрываем только группу задачи, к которой нужно прокрутить.
+        if (FocusTaskId is int focusTask && _tasks.FirstOrDefault(t => t.Id == focusTask)?.TaskGroupId is int focusGroup)
+            _openGroups.Add(focusGroup);
+
+        // Видимые несданные и задачи на доработке раскрыты сразу: история нужна преподавателю перед приёмом.
+        var open = _tasks.Where(t => IsTaskVisible(t) && t.Status != SubmissionStatus.Accepted).Select(t => t.Id).ToList();
         if (FocusTaskId is int focus && !open.Contains(focus)) open.Add(focus);
         foreach (var id in open) _openHistory.Add(id);
         _focusPending = FocusTaskId is not null;
         await Task.WhenAll(open.Select(LoadHistoryAsync));
+    }
+
+    private bool IsTaskVisible(TaskWithStatusDto task) => task.TaskGroupId is not int group || _openGroups.Contains(group);
+
+    private async Task ToggleGroupAsync(int groupId)
+    {
+        if (!_openGroups.Add(groupId))
+        {
+            _openGroups.Remove(groupId);
+            return;
+        }
+
+        // Как при открытии окна: у несданных задач раскрытой группы сразу видна история.
+        var load = new List<int>();
+        foreach (var task in _tasks.Where(t => t.TaskGroupId == groupId && t.Status != SubmissionStatus.Accepted))
+        {
+            if (_openHistory.Add(task.Id)) load.Add(task.Id);
+        }
+        await Task.WhenAll(load.Select(LoadHistoryAsync));
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

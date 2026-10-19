@@ -16,4 +16,10 @@ public interface IDatabaseBackupService
 
     /// <summary>Удаляет выбранную резервную копию из настроенного каталога.</summary>
     Task DeleteAsync(string fileName, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Сохраняет загруженный дамп (формат custom) и необязательный архив вложений в каталог бэкапов
+    /// под новым именем; возвращает описание сохранённого дампа.
+    /// </summary>
+    Task<BackupFileDto> ImportAsync(Stream dump, Stream? attachmentsArchive, CancellationToken cancellationToken = default);
 }

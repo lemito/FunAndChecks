@@ -697,4 +697,56 @@
   <data name="StudentQueues_LeaveTitle" xml:space="preserve"><value>Leave the queue?</value></data>
   <data name="StudentQueues_LeaveText" xml:space="preserve"><value>Your place will be lost: if you join again, you will be placed by your points and the new join time.</value></data>
   <data name="Dialog_TabAchievements" xml:space="preserve"><value>Achievements</value></data>
+  <data name="TaskGroup_None" xml:space="preserve"><value>No group</value></data>
+  <data name="TaskGroup_Progress" xml:space="preserve"><value>{0}/{1} accepted · {2}/{3} pts</value></data>
+  <data name="TaskGroup_ReworkCount" xml:space="preserve"><value>{0} in rework</value></data>
+  <data name="Management_TaskGroupsTitle" xml:space="preserve"><value>Task groups ({0})</value></data>
+  <data name="Management_TaskGroupsHint" xml:space="preserve"><value>Groups are optional. In the grading window tasks of a group are collapsed under its header; tasks without a group are shown first.</value></data>
+  <data name="Management_TaskGroupNameLabel" xml:space="preserve"><value>New group</value></data>
+  <data name="Management_TaskGroupLabel" xml:space="preserve"><value>Group</value></data>
+  <data name="Management_TaskGroupForNewHint" xml:space="preserve"><value>Also used for bulk add and task sets</value></data>
+  <data name="Management_ColTaskCount" xml:space="preserve"><value>Tasks</value></data>
+  <data name="Management_TaskGroupCreated" xml:space="preserve"><value>Task group created</value></data>
+  <data name="Management_TaskGroupDeleted" xml:space="preserve"><value>Task group deleted; its tasks are now ungrouped</value></data>
+  <data name="Error_TaskGroupNameTaken" xml:space="preserve"><value>A task group with this name already exists in this subject.</value></data>
+  <data name="Error_TaskGroupInvalid" xml:space="preserve"><value>The task group does not belong to this subject.</value></data>
+  <data name="Maintenance_RestoreTitle" xml:space="preserve"><value>Restore from backup</value></data>
+  <data name="Maintenance_RestoreHint" xml:space="preserve"><value>Upload a backup from your computer (.dump and, optionally, the matching .attachments.zip) or press “Restore” next to a backup in the list. The current data is backed up automatically first.</value></data>
+  <data name="Maintenance_RestoreDumpLabel" xml:space="preserve"><value>Database dump (.dump)</value></data>
+  <data name="Maintenance_RestoreArchiveLabel" xml:space="preserve"><value>Attachments archive (.attachments.zip, optional)</value></data>
+  <data name="Maintenance_RestoreUpload" xml:space="preserve"><value>Upload backup</value></data>
+  <data name="Maintenance_RestoreUploaded" xml:space="preserve"><value>Backup uploaded</value></data>
+  <data name="Maintenance_RestoreTooLarge" xml:space="preserve"><value>The files are too large: the limit is {0}.</value></data>
+  <data name="Maintenance_Restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="Maintenance_RestoreLabel" xml:space="preserve"><value>Restore from backup: {0}</value></data>
+  <data name="Maintenance_RestoreConfirmTitle" xml:space="preserve"><value>Restore from backup?</value></data>
+  <data name="Maintenance_RestoreConfirmText" xml:space="preserve"><value>All current data will be replaced with the backup contents: changes made after it was created will be lost. A backup of the current state is created first. The service is unavailable to everyone while restoring.</value></data>
+  <data name="Maintenance_RestoreConfirmFile" xml:space="preserve"><value>Backup:</value></data>
+  <data name="Maintenance_RestoreConfirmWord" xml:space="preserve"><value>RESTORE</value></data>
+  <data name="Maintenance_RestoreConfirmPrompt" xml:space="preserve"><value>Type {0} to confirm</value></data>
+  <data name="Maintenance_RestoreRunning" xml:space="preserve"><value>Restoring from {0}…</value></data>
+  <data name="Maintenance_RestoreSucceeded" xml:space="preserve"><value>Restored from {0}.</value></data>
+  <data name="Maintenance_RestoreFailed" xml:space="preserve"><value>Restore from {0} failed.</value></data>
+  <data name="Maintenance_RestoreDone" xml:space="preserve"><value>Restore completed</value></data>
+  <data name="Maintenance_RestoreSafetyBackup" xml:space="preserve"><value>Backup of the previous state:</value></data>
+  <data name="Maintenance_RestoreRelogin" xml:space="preserve"><value>Sessions were restored together with the data — sign in again.</value></data>
+  <data name="Maintenance_RestoreReloginButton" xml:space="preserve"><value>Sign in again</value></data>
+  <data name="Maintenance_RestoreDetails" xml:space="preserve"><value>Details</value></data>
+  <data name="Maintenance_RestoreInProgress" xml:space="preserve"><value>The database is being restored from a backup. Try again in a minute.</value></data>
+  <data name="Maintenance_RestoreInvalidDump" xml:space="preserve"><value>The file is not a database dump in pg_dump custom format (.dump).</value></data>
+  <data name="Maintenance_RestoreInvalidArchive" xml:space="preserve"><value>The attachments file is not a valid zip archive.</value></data>
+  <data name="Maintenance_RestoreStepValidating" xml:space="preserve"><value>Checking the backup…</value></data>
+  <data name="Maintenance_RestoreStepSafetyBackup" xml:space="preserve"><value>Backing up the current data…</value></data>
+  <data name="Maintenance_RestoreStepDatabase" xml:space="preserve"><value>Restoring the database…</value></data>
+  <data name="Maintenance_RestoreStepMigrating" xml:space="preserve"><value>Updating the database schema…</value></data>
+  <data name="Maintenance_RestoreStepAttachments" xml:space="preserve"><value>Restoring forum attachments…</value></data>
+  <data name="Maintenance_RestoreErrorInvalidDump" xml:space="preserve"><value>The file is not a FunAndChecks database backup. Nothing was changed.</value></data>
+  <data name="Maintenance_RestoreErrorNewerSchema" xml:space="preserve"><value>The backup was made by a newer version of the application. Update the application first. Nothing was changed.</value></data>
+  <data name="Maintenance_RestoreErrorSafetyBackup" xml:space="preserve"><value>Could not back up the current data, so the restore was cancelled. Nothing was changed.</value></data>
+  <data name="Maintenance_RestoreErrorTools" xml:space="preserve"><value>PostgreSQL client tools (pg_restore, psql) are unavailable on the server. Nothing was changed.</value></data>
+  <data name="Maintenance_RestoreErrorDatabase" xml:space="preserve"><value>The database could not be restored; the transaction was rolled back and the data is unchanged.</value></data>
+  <data name="Maintenance_RestoreErrorMigration" xml:space="preserve"><value>The database was restored, but updating its schema failed. Check the server logs; the backup of the previous state is listed below.</value></data>
+  <data name="Maintenance_RestoreErrorGeneric" xml:space="preserve"><value>The restore failed. Check the server logs.</value></data>
+  <data name="Maintenance_RestoreWarningNoAttachments" xml:space="preserve"><value>The backup has no attachments archive: forum files were left as they are.</value></data>
+  <data name="Maintenance_RestoreWarningAttachments" xml:space="preserve"><value>The database was restored, but forum attachments could not be restored. Check the server logs.</value></data>
 </root>

@@ -83,6 +83,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<Subject> Subjects => Set<Subject>();
     public DbSet<CourseTask> Tasks => Set<CourseTask>();
+    public DbSet<TaskGroup> TaskGroups => Set<TaskGroup>();
     public DbSet<Submission> Submissions => Set<Submission>();
     public DbSet<QueueEvent> QueueEvents => Set<QueueEvent>();
     public DbSet<QueueEntry> QueueEntries => Set<QueueEntry>();

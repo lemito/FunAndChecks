@@ -85,7 +85,7 @@ public static class Seed
         return student;
     }
 
-    public static CourseTask Task(this ApplicationDbContext db, Subject subject, int maxPoints = 10, string name = "Task")
+    public static CourseTask Task(this ApplicationDbContext db, Subject subject, int maxPoints = 10, string name = "Task", TaskGroup? group = null)
     {
         var task = new CourseTask
         {
@@ -93,9 +93,17 @@ public static class Seed
             Description = "desc",
             MaxPoints = maxPoints,
             SubjectId = subject.Id,
+            TaskGroup = group,
         };
         db.Tasks.Add(task);
         return task;
+    }
+
+    public static TaskGroup TaskGroup(this ApplicationDbContext db, Subject subject, string name = "Group")
+    {
+        var group = new TaskGroup { Name = name, SubjectId = subject.Id };
+        db.TaskGroups.Add(group);
+        return group;
     }
 
     public static GradeComponent Component(this ApplicationDbContext db, Subject subject, int maxPoints = 100, int minPoints = 0, string name = "Exam")

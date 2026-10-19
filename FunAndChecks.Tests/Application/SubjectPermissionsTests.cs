@@ -163,7 +163,8 @@ public class SubjectPermissionsTests : IDisposable
         var cache = Substitute.For<IResultsCacheService>();
         var subjects = new SubjectService(db, cache, access,
             new CreateSubjectRequestValidator(), new UpdateSubjectRequestValidator(),
-            new CreateTaskRequestValidator(), new UpdateTaskRequestValidator());
+            new CreateTaskRequestValidator(), new UpdateTaskRequestValidator(),
+            new CreateTaskGroupRequestValidator(), new UpdateTaskGroupRequestValidator());
         var groups = new GroupService(db, Substitute.For<IIdentityService>(), cache, access,
             new CreateGroupRequestValidator(), new UpdateGroupRequestValidator());
         (await subjects.GetVisibleForAdminAsync(admin.Id)).Select(s => s.Id).Should().Equal(granted.Id);

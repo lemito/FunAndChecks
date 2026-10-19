@@ -43,6 +43,10 @@ public class BackupFlowTests : IDisposable
             (await client.GetAsync("/api/admin/backup/file.dump")).StatusCode.Should().Be(status);
             (await client.DeleteAsync("/api/admin/backup/file.dump")).StatusCode.Should().Be(status);
             (await client.PostAsync("/api/admin/backup", null)).StatusCode.Should().Be(status);
+            (await client.GetAsync("/api/admin/backup/restore/status")).StatusCode.Should().Be(status);
+            (await client.PostAsync("/api/admin/backup/file.dump/restore", null)).StatusCode.Should().Be(status);
+            using var upload = UploadForm([.. "PGDMP"u8]);
+            (await client.PostAsync("/api/admin/backup/upload", upload)).StatusCode.Should().Be(status);
         }
         Directory.Exists(_directory).Should().BeFalse();
     }
@@ -112,6 +116,90 @@ public class BackupFlowTests : IDisposable
         (await missing.Content.ReadAsStringAsync()).Should().Contain("backup.not_found").And.NotContain(_directory);
         (await super.DeleteAsync("/api/admin/backup/missing.dump")).StatusCode.Should().Be(HttpStatusCode.NotFound);
         Directory.Exists(_directory).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SuperAdmin_UploadsDumpWithAttachments_AndItAppearsInList()
+    {
+        var tokens = await SeedTokensAsync();
+        using var super = Client(tokens.Super);
+        using var zip = new MemoryStream();
+        using (var archive = new System.IO.Compression.ZipArchive(zip, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+            archive.CreateEntry("2026/01/file");
+        byte[] dump = [.. "PGDMP"u8, 1, 2, 3];
+
+        using var form = UploadForm(dump, zip.ToArray());
+        using var response = await super.PostAsync("/api/admin/backup/upload", form);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var uploaded = (await response.Content.ReadFromJsonAsync<BackupFileDto>())!;
+        uploaded.FileName.Should().StartWith("funandchecks_uploaded_").And.EndWith(".dump");
+        uploaded.SizeBytes.Should().Be(dump.Length);
+        (await File.ReadAllBytesAsync(Path.Combine(_directory, uploaded.FileName))).Should().Equal(dump);
+        var list = (await super.GetFromJsonAsync<List<BackupFileDto>>("/api/admin/backup"))!;
+        list.Select(file => file.FileName).Should().BeEquivalentTo(
+            uploaded.FileName, uploaded.FileName[..^".dump".Length] + ".attachments.zip");
+    }
+
+    [Fact]
+    public async Task Upload_RejectsNonDumpAndBrokenArchive_WithoutLeavingFiles()
+    {
+        var tokens = await SeedTokensAsync();
+        using var super = Client(tokens.Super);
+
+        using var notDump = UploadForm([.. "hello"u8]);
+        using var notDumpResponse = await super.PostAsync("/api/admin/backup/upload", notDump);
+        notDumpResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await notDumpResponse.Content.ReadAsStringAsync()).Should().Contain("validation.backup_invalid_dump");
+
+        using var brokenZip = UploadForm([.. "PGDMP"u8], [.. "not a zip"u8]);
+        using var brokenZipResponse = await super.PostAsync("/api/admin/backup/upload", brokenZip);
+        brokenZipResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await brokenZipResponse.Content.ReadAsStringAsync()).Should().Contain("validation.backup_invalid_archive");
+
+        Directory.EnumerateFiles(_directory).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RestoreStatus_IsIdle_AndRestoreValidatesFileName()
+    {
+        var tokens = await SeedTokensAsync();
+        using var super = Client(tokens.Super);
+
+        var status = (await super.GetFromJsonAsync<RestoreStatusDto>("/api/admin/backup/restore/status"))!;
+        status.State.Should().Be(RestoreState.Idle);
+        (await super.PostAsync("/api/admin/backup/missing.dump/restore", null)).StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await super.PostAsync("/api/admin/backup/x.attachments.zip/restore", null)).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task MaintenanceMode_BlocksApi_ButNotRestoreStatus()
+    {
+        var tokens = await SeedTokensAsync();
+        using var super = Client(tokens.Super);
+        var maintenance = _factory.Services.GetRequiredService<MaintenanceModeState>();
+        maintenance.Enter();
+        try
+        {
+            using var blocked = await super.GetAsync("/api/admin/backup");
+            blocked.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+            (await blocked.Content.ReadAsStringAsync()).Should().Contain("maintenance.restore_in_progress");
+            (await super.GetAsync("/api/subjects")).StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+            (await super.GetAsync("/api/admin/backup/restore/status")).StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+        finally
+        {
+            maintenance.Exit();
+        }
+        (await super.GetAsync("/api/admin/backup")).StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    private static MultipartFormDataContent UploadForm(byte[] dump, byte[]? attachments = null)
+    {
+        var form = new MultipartFormDataContent { { new ByteArrayContent(dump), "dump", "backup.dump" } };
+        if (attachments is not null)
+            form.Add(new ByteArrayContent(attachments), "attachments", "backup.attachments.zip");
+        return form;
     }
 
     private HttpClient Client(string token)

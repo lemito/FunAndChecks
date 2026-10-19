@@ -73,6 +73,29 @@ public class ResultsServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Tasks_InGroups_FollowUngroupedTasks_InTableAndStudentResults()
+    {
+        await using var ctx = _db.NewContext();
+        var group = ctx.Group();
+        var subject = ctx.Subject();
+        await ctx.SaveChangesAsync();
+        ctx.LinkGroupSubject(group, subject);
+        var student = ctx.Student(group);
+        var labs = ctx.TaskGroup(subject, "Лабы");
+        var modules = ctx.TaskGroup(subject, "Модули");
+        (string, TaskGroup?)[] tasks = [("1.2", labs), ("Экзамен", null), ("М 2", modules), ("1.01", labs), ("М 1", modules)];
+        foreach (var (name, taskGroup) in tasks)
+            ctx.Task(subject, name: name, group: taskGroup);
+        await ctx.SaveChangesAsync();
+        string[] expected = ["Экзамен", "1.01", "1.2", "М 1", "М 2"];
+
+        var sut = new ResultsService(ctx, _cache);
+
+        (await sut.GetSubjectResultsAsync(subject.Id)).TaskHeaders.Select(t => t.TaskName).Should().Equal(expected);
+        (await sut.GetStudentResultsAsync(student.Id, subject.Id)).TaskResults.Select(t => t.TaskName).Should().Equal(expected);
+    }
+
+    [Fact]
     public async Task GetSubjectResults_UsesCacheOnSecondCall()
     {
         int subjectId;

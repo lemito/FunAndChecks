@@ -30,3 +30,23 @@ public record SetHiddenRequest(bool Hidden);
 public record BackupResultDto(string Path);
 
 public record BackupFileDto(string FileName, long SizeBytes, DateTime LastModifiedUtc);
+
+public enum RestoreState
+{
+    Idle = 0,
+    Running = 1,
+    Succeeded = 2,
+    Failed = 3,
+}
+
+/// <summary>Состояние восстановления из бэкапа; ErrorCode/WarningCode — коды <c>restore.*</c>.</summary>
+public record RestoreStatusDto(
+    RestoreState State,
+    string? Step,
+    string? FileName,
+    string? SafetyBackupFileName,
+    string? ErrorCode,
+    string? Error,
+    string? WarningCode,
+    DateTime? StartedUtc,
+    DateTime? FinishedUtc);

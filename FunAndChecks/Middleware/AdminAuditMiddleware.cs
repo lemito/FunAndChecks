@@ -69,7 +69,7 @@ public sealed class AdminAuditMiddleware(RequestDelegate next)
             !HttpMethods.IsPatch(http.Request.Method) && !HttpMethods.IsDelete(http.Request.Method)) return false;
         return action.ControllerName switch
         {
-            "Subjects" or "Tasks" or "Groups" or "Grades" or "Submissions" or "Students" or "Admins" or
+            "Subjects" or "Tasks" or "TaskGroups" or "Groups" or "Grades" or "Submissions" or "Students" or "Admins" or
             "Queues" or "Attendance" or "Achievements" or "Backup" or "Profiles" => true,
             "Me" => action.ActionName is "SetSubjectHidden" or "SetGroupHidden",
             _ => false,
