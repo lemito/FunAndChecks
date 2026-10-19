@@ -69,6 +69,22 @@ public class PgDumpBackupServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task DeletingDump_AlsoRemovesItsAttachmentsArchive_ButNotOthers()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(Path.Combine(_directory, "a.dump"), "dump");
+        await File.WriteAllTextAsync(Path.Combine(_directory, "a.attachments.zip"), "zip");
+        await File.WriteAllTextAsync(Path.Combine(_directory, "b.attachments.zip"), "other");
+
+        await Service().DeleteAsync("a.dump");
+
+        File.Exists(Path.Combine(_directory, "a.attachments.zip")).Should().BeFalse();
+        (await Service().ListAsync()).Should().ContainSingle().Which.FileName.Should().Be("b.attachments.zip");
+        await Service().DeleteAsync("b.attachments.zip");
+        (await Service().ListAsync()).Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task DeleteDuringDownload_RemovesBackupButOpenDownloadCanFinish()
     {
         Directory.CreateDirectory(_directory);

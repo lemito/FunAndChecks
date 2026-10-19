@@ -78,10 +78,27 @@ public class PgDumpBackupService(
         var path = GetExistingBackupPath(fileName);
         var size = SafeFileSize(path);
         File.Delete(path);
+        AuditDelete(fileName, size);
+        // Архив вложений создаётся вместе с дампом и без него бесполезен — удаляем парой.
+        if (fileName.EndsWith(".dump", StringComparison.OrdinalIgnoreCase))
+        {
+            var archiveName = fileName[..^".dump".Length] + AttachmentsSuffix;
+            var archivePath = Path.Combine(GetBackupDirectory(), archiveName);
+            if (File.Exists(archivePath) && IsRegularFile(new FileInfo(archivePath)))
+            {
+                var archiveSize = SafeFileSize(archivePath);
+                File.Delete(archivePath);
+                AuditDelete(archiveName, archiveSize);
+            }
+        }
+        return Task.CompletedTask;
+    }
+
+    private void AuditDelete(string fileName, long? size)
+    {
         if (audit?.Enabled == true)
             audit.Committed(audit.Create("backup", fileName, "success", $"delete: backup {fileName}",
                 before: new Dictionary<string, object?> { ["fileName"] = fileName, ["sizeBytes"] = size }));
-        return Task.CompletedTask;
     }
 
     public async Task<string> CreateBackupAsync(CancellationToken cancellationToken = default)

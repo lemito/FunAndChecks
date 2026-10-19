@@ -1,3 +1,4 @@
+using FunAndChecks.Application.Common.Exceptions;
 using FunAndChecks.Application.Common.Interfaces;
 using MailKit.Net.Smtp;
 using MailKit.Security;
@@ -44,7 +45,18 @@ public class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpEmailSen
             await client.AuthenticateAsync(_options.User, _options.Password, cancellationToken);
         }
 
-        await client.SendAsync(message, cancellationToken);
+        try
+        {
+            await client.SendAsync(message, cancellationToken);
+        }
+        catch (SmtpCommandException ex) when (ex.ErrorCode == SmtpErrorCode.RecipientNotAccepted && (int)ex.StatusCode >= 500)
+        {
+            // Постоянный отказ по адресу (например, nullMX у домена) — это ошибка ввода, а не 500.
+            // Временные 4xx и сбои соединения пробрасываем как есть.
+            // Текст ответа сервера содержит адрес получателя — в лог его не пишем.
+            logger.LogWarning("SMTP permanently rejected the recipient ({Status}).", ex.StatusCode);
+            throw new EmailDeliveryException("The mail server does not accept email for this address.");
+        }
         await client.DisconnectAsync(quit: true, cancellationToken);
     }
 }

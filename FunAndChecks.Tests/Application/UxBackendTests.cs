@@ -150,6 +150,22 @@ public class UxBackendTests : IDisposable
     }
 
     [Fact]
+    public async Task Leave_IsRefusedInQueueFilledByTeacher_BecauseRejoiningIsImpossible()
+    {
+        await using var ctx = _db.NewContext();
+        var c = await SeedAsync(ctx);
+        var sut = Queues(ctx);
+        var queue = await sut.CreateEventAsync(c.Admin.Id,
+            new CreateQueueEventRequest("Defense", DateTime.UtcNow.AddDays(1), c.Subject.Id, AutoFillGroupIds: [c.Group.Id]));
+        queue.AllowSelfJoin.Should().BeFalse();
+
+        var leave = () => sut.LeaveAsync(queue.Id, c.Student.Id);
+
+        (await leave.Should().ThrowAsync<ConflictException>()).Which.Code.Should().Be("queue.leave_unavailable");
+        ctx.QueueEntries.Should().ContainSingle(e => e.StudentId == c.Student.Id);
+    }
+
+    [Fact]
     public async Task RemainingAttendance_CanMarkEveryoneLeftPresent_ButNotUnmarked()
     {
         await using var ctx = _db.NewContext();

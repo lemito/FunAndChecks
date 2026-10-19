@@ -17,6 +17,7 @@ public partial class Queues : IAsyncDisposable
     [Inject] private AuthService Auth { get; set; } = null!;
     [Inject] private NavigationManager Nav { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private ConfirmService Confirm { get; set; } = null!;
     [Inject] private IStringLocalizer<AppStrings> Loc { get; set; } = null!;
     [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication { get; set; } = null!;
 
@@ -231,6 +232,8 @@ public partial class Queues : IAsyncDisposable
     private async Task LeaveAsync()
     {
         if (_viewedEventId is not int eventId) return;
+        // Место в очереди при повторной записи не возвращается — уточняем, чтобы случайный клик его не стоил.
+        if (!await Confirm.ConfirmAsync(Loc["StudentQueues_LeaveTitle"], Loc["StudentQueues_LeaveText"], Loc["StudentQueues_Leave"])) return;
         try
         {
             await QueuesApi.LeaveAsync(eventId);

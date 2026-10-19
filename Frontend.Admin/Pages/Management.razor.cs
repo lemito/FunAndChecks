@@ -107,7 +107,7 @@ public partial class Management
     {
         _isSuperAdmin = (await Authentication.GetAuthenticationStateAsync()).User.IsInRole(Roles.SuperAdmin);
         await ReloadAsync();
-        if (await CurrentSubject.PickAsync(_subjects.Select(s => s.Id)) is int current)
+        if (await CurrentSubject.PickAsync(AvailableSubjects.Select(s => s.Id)) is int current)
         {
             OnQueueSubjectChanged(current);
             await OnTaskSubjectChanged(current);
@@ -348,6 +348,41 @@ public partial class Management
             Snackbar.Add(Loc["Management_TasksCopied", created], Severity.Success);
         }
         catch (ApiException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+
+    private string _setPrefix = "";
+    private int _setCount = 10;
+    private int _setPoints = 1;
+
+    /// <summary>Имена набора «префикс.NN»: ведущие нули до общей длины, минимум две цифры.</summary>
+    private static List<string> BuildSetNames(string prefix, int count)
+    {
+        var width = Math.Max(2, count.ToString(CultureInfo.InvariantCulture).Length);
+        return Enumerable.Range(1, count)
+            .Select(i => $"{prefix}.{i.ToString(CultureInfo.InvariantCulture).PadLeft(width, '0')}")
+            .ToList();
+    }
+
+    private string? TaskSetPreview
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_setPrefix) || _setCount is < 1 or > 99) return null;
+            var names = BuildSetNames(_setPrefix.Trim(), _setCount);
+            return Loc["Management_TaskSetPreview", names[0], names[^1]];
+        }
+    }
+
+    /// <summary>Создаёт набор задач, пропуская уже существующие имена — повтор дозаполняет пропуски.</summary>
+    private async Task CreateTaskSetAsync()
+    {
+        if (_taskSubjectId is not int subjectId || string.IsNullOrWhiteSpace(_setPrefix) || _setCount is < 1 or > 99) return;
+        var existing = _tasks.Select(t => t.Name.Trim()).ToHashSet(StringComparer.CurrentCultureIgnoreCase);
+        var names = BuildSetNames(_setPrefix.Trim(), _setCount);
+        var requests = names.Where(n => !existing.Contains(n))
+            .Select(n => new CreateTaskRequest(n, "", _setPoints)).ToList();
+        var created = await CreateTasksAsync(subjectId, requests) ?? 0;
+        Snackbar.Add(Loc["Management_TaskSetCreated", created, names.Count - requests.Count], Severity.Success);
     }
 
     private async Task<int?> CreateTasksAsync(int subjectId, IReadOnlyList<CreateTaskRequest> requests)

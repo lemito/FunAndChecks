@@ -5,9 +5,9 @@
 @inject ISnackbar Snackbar
 
 @*
-    Приглашение пройти опрос. Не мешает там, где студент занят (очередь, сам опрос):
-    окно показывается один раз за сессию, дальше — ненавязчивая плашка. Опрос без права
-    отложить остаётся окном, но тоже не перекрывает живую очередь.
+    Приглашение пройти опрос. Никогда не блокирует работу: окно показывается один раз за сессию
+    и всегда закрывается, дальше — ненавязчивая плашка. В очередях и на самих опросах его нет.
+    Опрос без права отложить отличается только отсутствием кнопки «Позже».
 *@
 @if (_current is not null && !Suppressed)
 {
@@ -22,7 +22,6 @@
                     @if (_current.ClosesAtUtc is { } closes) { @CommunityText.T($" Открыт до {closes.ToLocalTime():g}.", $" Open until {closes.ToLocalTime():g}.") }
                 </p>
                 @if (_current.IsAnonymous) { <p class="fc-chip accent"><MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Size="Size.Small" />@CommunityText.T("Анонимно: преподаватели не увидят, кто что ответил", "Anonymous: teachers will not see who answered what")</p> }
-                @if (!_current.CanSnooze) { <p class="fc-muted">@CommunityText.T("Этот опрос нужно пройти, чтобы продолжить.", "Please complete this survey to continue.")</p> }
             </ChildContent>
             <Actions>
                 @if (_current.CanSnooze) { <MudButton Disabled="_busy" OnClick="SnoozeAsync">@CommunityText.T($"Напомнить через {_current.SnoozeHours} ч", $"Remind me in {_current.SnoozeHours} h")</MudButton> }
@@ -49,17 +48,20 @@
 
     private string Path => new Uri(Nav.Uri).AbsolutePath;
 
-    /// <summary>На странице опросов и в живой очереди приглашение не показываем вовсе.</summary>
-    private bool Suppressed => Path.StartsWith("/student/surveys", StringComparison.OrdinalIgnoreCase) ||
-                               Path.StartsWith("/student/queues/", StringComparison.OrdinalIgnoreCase);
+    /// <summary>На страницах опросов и очередей (список и живая очередь) приглашение не показываем вовсе.</summary>
+    private bool Suppressed => IsSurveys(Path) || Path.StartsWith("/student/queues", StringComparison.OrdinalIgnoreCase);
 
-    private bool ShowModal => _current is not null && (!_current.CanSnooze || _modalPinned);
+    private static bool IsSurveys(string path) => path.StartsWith("/student/surveys", StringComparison.OrdinalIgnoreCase);
+
+    private bool ShowModal => _current is not null && _modalPinned;
     private bool _modalPinned;
+    private bool _wasOnSurveys;
 
     protected override async Task OnInitializedAsync()
     {
         Realtime.SurveysChanged += Changed;
         Nav.LocationChanged += Moved;
+        _wasOnSurveys = IsSurveys(Path);
         await Realtime.EnsureStartedAsync();
         await LoadAsync();
     }
@@ -68,30 +70,37 @@
     {
         try
         {
-            var next = (await Api.PendingAsync()).FirstOrDefault();
-            if (next?.Id != _current?.Id) _modalPinned = next is not null && !ShownThisSession.Contains(next.Id);
-            _current = next;
-            if (_current is not null && !Suppressed) ShownThisSession.Add(_current.Id);
+            _current = (await Api.PendingAsync()).FirstOrDefault();
+            PinIfNotShown();
         }
         catch (ApiException) { /* Не мешаем работе, если опросы недоступны. */ }
     }
 
     private void Changed() => InvokeAsync(async () => { await LoadAsync(); StateHasChanged(); });
 
-    // Возврат со страницы опроса: он мог быть пройден. Остальные переходы — без запроса.
+    /// <summary>Окно — только для опроса, который в этой вкладке ещё не показывали, и не там, где приглашение скрыто.</summary>
+    private void PinIfNotShown()
+    {
+        _modalPinned = _current is not null && !Suppressed && ShownThisSession.Add(_current.Id);
+    }
+
+    // Список перечитываем только после ухода со страницы опросов (опрос мог быть пройден или отложен);
+    // новые опросы приходят событием SurveysChanged. Обычные переходы запросов не делают.
     private void Moved(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs args)
     {
-        _modalPinned = false;
-        if (_current is null || Suppressed) InvokeAsync(StateHasChanged);
-        else Changed();
+        var leftSurveys = _wasOnSurveys && !IsSurveys(Path);
+        _wasOnSurveys = IsSurveys(Path);
+        if (leftSurveys) { Changed(); return; }
+        PinIfNotShown();
+        InvokeAsync(StateHasChanged);
     }
 
     private void Open() => Nav.NavigateTo($"/student/surveys/{_current!.Id}");
 
-    /// <summary>Закрыть окно (крестик/Escape): для откладываемого опроса — остаться плашкой.</summary>
+    /// <summary>Закрыть окно (крестик/Escape): опрос остаётся плашкой, работе не мешает.</summary>
     private Task DismissAsync()
     {
-        if (_current?.CanSnooze == true) _modalPinned = false;
+        _modalPinned = false;
         return Task.CompletedTask;
     }
 

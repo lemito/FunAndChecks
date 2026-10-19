@@ -264,6 +264,11 @@ public class QueueService(
         if (!isGroupAllowed)
             throw new ForbiddenException("Your group does not have access to the subject of this event.");
 
+        // Двойной клик — частый случай: отвечаем 409 до INSERT, чтобы EF не писал ERROR в лог.
+        // catch ниже остаётся на случай настоящей гонки двух запросов.
+        if (await db.QueueEntries.AnyAsync(e => e.QueueEventId == eventId && e.StudentId == studentId, cancellationToken))
+            throw new ConflictException("Student is already in the queue.", "queue.already_joined");
+
         db.QueueEntries.Add(new QueueEntry
         {
             QueueEventId = eventId,
@@ -291,10 +296,12 @@ public class QueueService(
 
     public async Task LeaveAsync(int eventId, Guid studentId, CancellationToken cancellationToken = default)
     {
-        var entry = await db.QueueEntries.FirstOrDefaultAsync(e => e.QueueEventId == eventId && e.StudentId == studentId, cancellationToken)
+        var entry = await db.QueueEntries.Include(e => e.QueueEvent)
+                        .FirstOrDefaultAsync(e => e.QueueEventId == eventId && e.StudentId == studentId, cancellationToken)
                     ?? throw new NotFoundException("You are not in this queue.", "queue.not_joined");
-        if (entry.Status is QueueEntryStatus.Checking or QueueEntryStatus.Finished)
-            throw new ConflictException("You cannot leave a queue while being checked or after finishing.", "queue.leave_unavailable");
+        // В очередь, заполненную преподавателем, записаться снова нельзя — значит, и уйти из неё самому тоже.
+        if (!entry.QueueEvent.AllowSelfJoin || entry.Status is QueueEntryStatus.Checking or QueueEntryStatus.Finished)
+            throw new ConflictException("You cannot leave this queue now: it was filled by the teacher, or you are being checked or finished.", "queue.leave_unavailable");
         db.QueueEntries.Remove(entry);
         await db.SaveChangesAsync(cancellationToken);
         await NotifyBestEffortAsync(new QueueEntryUpdateDto(eventId, studentId, QueueEntryStatus.Finished, null), cancellationToken);

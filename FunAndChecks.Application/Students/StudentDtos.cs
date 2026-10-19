@@ -10,7 +10,8 @@ public record StudentDetailsDto(
     string LastName,
     string? Email,
     string? Color,
-    int? GroupId);
+    int? GroupId,
+    string? GroupName = null);
 
 /// <summary>Карточка админа (публично видны цвет и буква в таблице результатов).</summary>
 public record AdminDto(Guid Id, string FirstName, string LastName, string? Color, string? Letter);

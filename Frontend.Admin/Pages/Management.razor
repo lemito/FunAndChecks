@@ -188,6 +188,16 @@ else
                         </MudSelect>
                     </div>
                 </details>
+                <details class="fc-management-bulk">
+                    <summary>@Loc["Management_TaskSetLabel"]</summary>
+                    <div class="fc-management-bulk-actions">
+                        <MudTextField @bind-Value="_setPrefix" Immediate="true" Label="@Loc["Management_TaskSetPrefix"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 140px;" />
+                        <MudNumericField @bind-Value="_setCount" Immediate="true" Label="@Loc["Management_TaskSetCount"]" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" Max="99" Style="width: 140px;" />
+                        <MudNumericField @bind-Value="_setPoints" Immediate="true" Label="@Loc["Management_TaskPointsLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Style="width: 100px;" />
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(TaskSetPreview is null || _bulkBusy)" OnClick="CreateTaskSetAsync">@Loc["Management_TaskSetCreate"]</MudButton>
+                        @if (TaskSetPreview is string preview) { <MudText Typo="Typo.body2">@preview</MudText> }
+                    </div>
+                </details>
                 <MudTable Class="fc-management-table" Breakpoint="Breakpoint.Sm" Items="_tasks" Hover="true" Dense="true" CanCancelEdit="true" EditTrigger="TableEditTrigger.EditButton" RowEditCommit="OnTaskCommit">
                     <HeaderContent><MudTh>@Loc["Management_ColName"]</MudTh><MudTh>@Loc["Management_ColDescription"]</MudTh><MudTh>@Loc["Management_ColPoints"]</MudTh><MudTh></MudTh></HeaderContent>
                     <RowTemplate>

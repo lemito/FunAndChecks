@@ -76,6 +76,7 @@ public static class HttpResponseExtensions
             ["subjects.name_taken"] = ("Error_SubjectNameTaken", []),
             ["tasks.name_taken"] = ("Error_TaskNameTaken", []),
             ["email.rate_limited"] = ("Error_EmailRateLimited", ["retryAfterSeconds"]),
+            ["email.recipient_rejected"] = ("Error_EmailRecipientRejected", []),
             ["auth.email_not_confirmed"] = ("Error_EmailNotConfirmed", []),
             ["auth.account_locked"] = ("Error_AccountLocked", []),
             ["auth.invalid_credentials"] = ("Error_InvalidCredentials", []),

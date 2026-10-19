@@ -19,8 +19,9 @@
     </MudSelect>
     @if (StudentGroups.Count > 1)
     {
-        <MudSelect T="int?" @bind-Value="_groupFilter" Label="@Loc["QueueDetails_Groups"]" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
-            @foreach (var (id, name) in StudentGroups) { <MudSelectItem T="int?" Value="@id">@name</MudSelectItem> }
+        <MudSelect T="int" MultiSelection="true" SelectedValues="_groups" SelectedValuesChanged="OnGroupsChangedAsync" MultiSelectionTextFunc="GroupsText"
+                   Label="@Loc["QueueDetails_Groups"]" Placeholder="@Loc["AttendanceJournal_AllGroups"]" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+            @foreach (var (id, name, count) in StudentGroups) { <MudSelectItem T="int" Value="@id">@name <span class="fc-muted">· @count</span></MudSelectItem> }
         </MudSelect>
     }
     <MudTextField @bind-Value="_query" Label="@Loc["Grading_SearchLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense"
@@ -44,8 +45,8 @@ else if (Visible is { Count: > 0 } visible)
             <article class="fc-grading-row" @key="student.Id">
                 <div class="fc-grading-identity">
                     <UserChip UserId="student.Id" Name="@($"{student.LastName} {student.FirstName}")" NameClass="fc-student-name" NameStyle="@QueueStyles.NameStyle(student.Color)" Compact="true"
-                              Subtitle="@(student.GroupId is int g ? _groupNames.GetValueOrDefault(g) : null)" />
-                    <MudText Typo="Typo.caption" Class="fc-muted">@ProgressText(student) · @student.Email</MudText>
+                              Subtitle="@student.GroupName" />
+                    <MudText Typo="Typo.caption" Class="fc-muted">@(ProgressText(student) is { Length: > 0 } progress ? $"{progress} · {student.Email}" : student.Email)</MudText>
                     @if (IsGroupRestricted(student))
                     {
                         <MudText Typo="Typo.caption" Class="fc-semantic-warning">@Loc["Common_GradingRestricted"]</MudText>

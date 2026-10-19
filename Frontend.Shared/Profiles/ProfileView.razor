@@ -7,13 +7,15 @@
 @inject ISnackbar Snackbar
 @inject ResultsNavigationState ResultsNavigation
 @inject UnsavedChangesTracker Dirty
+@inject StudentsApi Students
+@inject ConfirmService Confirm
 
 <PageTitle>@(_profile?.FullName ?? ProfileText.T("Личный кабинет", "Profile"))</PageTitle>
 <div class="fc-page-heading"><div>
     @if (!_mine) { <a class="fc-profile-back" href="@ReturnPath">← @ProfileText.T("Назад", "Back")</a> }
     <MudText Typo="Typo.h4">@(_mine ? ProfileText.T("Мой кабинет", "My profile") : ProfileText.T("Профиль пользователя", "User profile"))</MudText>
     <MudText Class="fc-muted">@ProfileText.T("Немного о себе и о том, что уже получилось.", "A little about you and what you have achieved.")</MudText>
-</div>@if (_admin && _profile is not null) { <MudButton OnClick="() => _grant = true" Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.EmojiEvents">@ProfileText.T("Выдать достижение", "Grant achievement")</MudButton> }</div>
+</div>@if (_admin && _profile is not null) { <div class="d-flex gap-2 flex-wrap"><MudButton OnClick="() => _grant = true" Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.EmojiEvents">@ProfileText.T("Выдать достижение", "Grant achievement")</MudButton>@if (CanDeleteStudent) { <MudButton OnClick="DeleteStudentAsync" Disabled="@_busy" Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Outlined.DeleteForever">@ProfileText.T("Удалить студента", "Delete student")</MudButton> }</div> }</div>
 @if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error <MudButton OnClick="LoadAsync">@ProfileText.T("Повторить", "Retry")</MudButton></MudAlert> }
 @if (_loading) { <div class="fc-loading"><MudProgressCircular Indeterminate="true" /></div> }
 else if (_profile is not null)
@@ -87,7 +89,7 @@ else if (_profile is not null)
     private UserProfileDto? _profile;
     private ProfileStatsDto? _stats;
     private AchievementAwardDto? _award;
-    private bool _mine, _admin, _loading = true, _edit, _avatarEditor, _grant, _busy;
+    private bool _mine, _admin, _superAdmin, _loading = true, _edit, _avatarEditor, _grant, _busy;
     private string? _error, _editError, _about, _github, _portfolio;
     private readonly CancellationTokenSource _life = new();
     private Guid? _routeUserId;
@@ -112,13 +114,14 @@ else if (_profile is not null)
             if (version != _loadVersion) return;
             Guid.TryParse(state.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var viewerId);
             var admin = IsAdminLayout && (state.User.IsInRole(Frontend.Shared.Auth.Roles.Admin) || state.User.IsInRole(Frontend.Shared.Auth.Roles.SuperAdmin));
+            var superAdmin = IsAdminLayout && state.User.IsInRole(Frontend.Shared.Auth.Roles.SuperAdmin);
             var mine = userId is null || userId == viewerId;
             // Статистика необязательна и грузится параллельно с профилем; её ошибка профиль не ломает.
             var statsTask = StatsOrNullAsync(mine ? null : userId);
             var profile = mine ? await Api.MineAsync(_life.Token) : await Api.GetProfileAsync(userId!.Value, _life.Token);
             var stats = await statsTask;
             if (version != _loadVersion || _life.IsCancellationRequested) return;
-            _admin = admin; _mine = mine; _profile = profile; _stats = stats;
+            _admin = admin; _superAdmin = superAdmin; _mine = mine; _profile = profile; _stats = stats;
         }
         catch (ApiException ex) { if (version == _loadVersion) _error = ex.Message; }
         catch (OperationCanceledException) when (_life.IsCancellationRequested) { }
@@ -164,6 +167,28 @@ else if (_profile is not null)
         catch (ApiException ex) { Snackbar.Add(ex.Message, Severity.Error); }
     }
     private async Task RefreshAwardAsync() { _award = null; await LoadAsync(); }
+    // Удалять можно только чужой профиль студента; сервер дополнительно запрещает удаление админов.
+    private bool CanDeleteStudent => _superAdmin && !_mine && _profile is { IsAdmin: false };
+    private async Task DeleteStudentAsync()
+    {
+        if (_profile is not { } profile) return;
+        var who = profile.GroupName is null ? profile.FullName : profile.FullName + " (" + profile.GroupName + ")";
+        var confirmed = await Confirm.ConfirmAsync(ProfileText.T("Удалить студента навсегда?", "Permanently delete student?"),
+            who + "\n" + ProfileText.T("Это действие необратимо: аккаунт, профиль, сдачи, оценки, достижения, записи в очередях и посещаемость будут удалены без возможности восстановления.",
+                "This cannot be undone: the account, profile, submissions, grades, achievements, queue entries and attendance will be permanently deleted."),
+            ProfileText.T("Удалить навсегда", "Delete permanently"));
+        if (!confirmed) return;
+        var generation = _routeGeneration; _busy = true;
+        try
+        {
+            await Students.DeleteAccountAsync(profile.UserId, _life.Token);
+            Snackbar.Add(ProfileText.T("Студент удалён", "Student deleted"), Severity.Success);
+            if (generation == _routeGeneration) Nav.NavigateTo(ReturnPath);
+        }
+        catch (ApiException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        catch (OperationCanceledException) when (_life.IsCancellationRequested) { }
+        finally { if (generation == _routeGeneration) _busy = false; }
+    }
     private async Task GrantDoneAsync() { _grant = false; await LoadAsync(); }
     private static string Date(DateTime value) => value.ToLocalTime().ToString("d", CultureInfo.CurrentCulture);
     public void Dispose() { _life.Cancel(); _life.Dispose(); }

@@ -88,7 +88,16 @@ public class AuthService(
             throw;
         }
 
-        await SendConfirmationCodeAsync(request.Email, cancellationToken);
+        try
+        {
+            await SendConfirmationCodeAsync(request.Email, cancellationToken);
+        }
+        catch (EmailDeliveryException)
+        {
+            // Письмо на этот адрес не доставить никогда — аккаунт-сироту не оставляем.
+            await DeleteAccountAndProfileAsync(studentId, CancellationToken.None);
+            throw;
+        }
 
         return studentId;
     }

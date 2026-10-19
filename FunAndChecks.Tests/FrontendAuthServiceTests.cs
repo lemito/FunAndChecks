@@ -120,6 +120,21 @@ public class FrontendAuthServiceTests
             .Should().BeEquivalentTo(new object[] { "access_token", "refresh_token" });
     }
 
+    [Theory]
+    [InlineData("nameid")]
+    [InlineData("sub")]
+    public void ClientIdentity_ExposesServerUserIdAsNameIdentifier(string claimType)
+    {
+        var id = Guid.NewGuid().ToString();
+        var identity = JwtAuthenticationStateProvider.CreateIdentity([
+            new System.Security.Claims.Claim(claimType, id),
+            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "Student"),
+        ]);
+
+        identity.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value.Should().Be(id);
+        new System.Security.Claims.ClaimsPrincipal(identity).IsInRole("Student").Should().BeTrue();
+    }
+
     private static AuthService CreateSut(HttpResponseMessage response, RecordingJsRuntime js, IStringLocalizer<AppStrings>? loc = null)
     {
         var http = new HttpClient(new StubHandler(response)) { BaseAddress = new Uri("https://localhost") };

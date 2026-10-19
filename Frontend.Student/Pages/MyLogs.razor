@@ -49,7 +49,8 @@ else if (_results is not null)
     }
 
     <h3 class="fc-subsection-title">@Loc["MyLogs_Tasks"]</h3>
-    @foreach (var task in _results.TaskResults.OrderBy(t => t.CurrentStatus switch { SubmissionStatus.Rejected => 0, SubmissionStatus.NotSubmitted => 1, _ => 2 }).ThenBy(t => t.TaskName))
+    @* Порядок задач — как во всех списках: его задаёт сервер (лексикографически по названию). *@
+    @foreach (var task in _results.TaskResults)
     {
         var lastComment = task.CurrentStatus == SubmissionStatus.Rejected
             ? task.SubmissionHistory?.OrderByDescending(l => l.SubmittedAt).FirstOrDefault()?.Comment : null;

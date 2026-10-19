@@ -43,7 +43,7 @@ public class StudentService(
     {
         var student = await db.Students
             .Where(s => s.Id == studentId)
-            .Select(s => new StudentDetailsDto(s.Id, s.FirstName, s.LastName, null, s.Color, s.GroupId))
+            .Select(s => new StudentDetailsDto(s.Id, s.FirstName, s.LastName, null, s.Color, s.GroupId, s.Group != null ? s.Group.Name : null))
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException($"Student with ID {studentId} not found.");
 
@@ -90,7 +90,7 @@ public class StudentService(
         var students = await filtered
             .OrderBy(s => s.LastName).ThenBy(s => s.FirstName)
             .Take(SearchLimit)
-            .Select(s => new StudentDetailsDto(s.Id, s.FirstName, s.LastName, null, s.Color, s.GroupId))
+            .Select(s => new StudentDetailsDto(s.Id, s.FirstName, s.LastName, null, s.Color, s.GroupId, s.Group != null ? s.Group.Name : null))
             .ToListAsync(cancellationToken);
 
         var emails = await identityService.GetEmailsAsync(students.Select(s => s.Id));
@@ -201,7 +201,7 @@ public class StudentService(
             .Where(s => !db.AdminGroupAccesses.Any(a =>
                 a.AdminId == adminId && a.GroupId == s.GroupId && (a.IsRestricted || a.IsHidden)))
             .OrderBy(s => s.LastName).ThenBy(s => s.FirstName)
-            .Select(s => new StudentDetailsDto(s.Id, s.FirstName, s.LastName, null, s.Color, s.GroupId))
+            .Select(s => new StudentDetailsDto(s.Id, s.FirstName, s.LastName, null, s.Color, s.GroupId, s.Group != null ? s.Group.Name : null))
             .ToListAsync(cancellationToken);
 
         var emails = await identityService.GetEmailsAsync(students.Select(s => s.Id));

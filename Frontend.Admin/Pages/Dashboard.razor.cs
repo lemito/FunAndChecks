@@ -80,18 +80,28 @@ public partial class Dashboard
         try
         {
             await Task.Delay(400, refresh.Token);
-            await RefreshResultsAsync();
+            await RefreshResultsAsync(quiet: true);
             StateHasChanged();
         }
         catch (OperationCanceledException) { }
     }
 
-    /// <summary>Перечитывает таблицу без спиннера: сортировка, фильтры и прокрутка остаются на месте.</summary>
-    private async Task RefreshResultsAsync()
+    /// <summary>
+    /// Перечитывает таблицу без спиннера: сортировка, фильтры и прокрутка остаются на месте.
+    /// Ответ применяется, только если предмет за это время не сменили. Фоновое обновление ошибку не показывает:
+    /// следующее событие или смена предмета подтянут данные.
+    /// </summary>
+    private async Task RefreshResultsAsync(bool quiet = false)
     {
         if (_results is null) return;
-        try { SetResults(await Results.GetSubjectResultsAsync(_results.SubjectId)); }
-        catch (ApiException ex) { Snackbar.Add(string.Format(Loc["Common_LoadResultsError"], ex.Message), Severity.Error); }
+        var subjectId = _results.SubjectId;
+        try
+        {
+            var fresh = await Results.GetSubjectResultsAsync(subjectId);
+            if (_results?.SubjectId == subjectId && _selectedSubject?.Id == subjectId) SetResults(fresh);
+        }
+        catch (ApiException ex) when (!quiet) { Snackbar.Add(string.Format(Loc["Common_LoadResultsError"], ex.Message), Severity.Error); }
+        catch (ApiException) { }
     }
 
     private void SetResults(SubjectResultsDto? results)
@@ -124,6 +134,7 @@ public partial class Dashboard
             return;
 
         _selectedSubject = subject;
+        _liveRefresh?.Cancel();
         ProfileReturn.SelectSubject("/admin", subject.Id);
         await CurrentSubject.SetAsync(subject.Id);
         _loading = true;
@@ -135,19 +146,25 @@ public partial class Dashboard
             // Таблица и журнал независимы — запрашиваем параллельно.
             var resultsTask = Results.GetSubjectResultsAsync(subject.Id);
             var journalTask = Attendance.GetJournalAsync(subject.Id);
-            SetResults(await resultsTask);
+            var results = await resultsTask;
+            // Пока грузили, могли выбрать другой предмет — его загрузка и покажет свою таблицу.
+            if (_selectedSubject?.Id != subject.Id) return;
+            // Таблица видна, даже если журнал посещаемости не загрузится.
+            SetResults(results);
             var journal = await journalTask;
+            if (_selectedSubject?.Id != subject.Id) return;
             if (journal.Enabled || journal.Sessions.Count > 0)
                 _attendance = journal.Students.GroupBy(s => s.StudentId).ToDictionary(g => g.Key,
                     g => (g.Sum(s => s.Present), g.Sum(s => s.Absent), g.Sum(s => s.Unmarked)));
         }
-        catch (ApiException ex)
+        catch (ApiException ex) when (_selectedSubject?.Id == subject.Id)
         {
             Snackbar.Add(string.Format(Loc["Common_LoadResultsError"], ex.Message), Severity.Error);
         }
+        catch (ApiException) { /* Ответ по уже не выбранному предмету. */ }
         finally
         {
-            _loading = false;
+            if (_selectedSubject?.Id == subject.Id) _loading = false;
         }
     }
 

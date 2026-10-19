@@ -8,7 +8,8 @@ public record StudentDetailsDto(
     string LastName,
     string? Email,
     string? Color,
-    int? GroupId)
+    int? GroupId,
+    string? GroupName = null)
 {
     public string FullName => $"{FirstName} {LastName}";
 }

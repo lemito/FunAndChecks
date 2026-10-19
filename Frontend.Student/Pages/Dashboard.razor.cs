@@ -48,6 +48,8 @@ public partial class Dashboard
             return;
 
         _selectedSubject = subject;
+        _refresh?.Cancel();
+        _refreshMine = false;
         await CurrentSubject.SetAsync(subject.Id);
         _loading = true;
         _results = null;
@@ -56,13 +58,14 @@ public partial class Dashboard
         {
             await LoadAsync(subject.Id);
         }
-        catch (ApiException ex)
+        catch (ApiException ex) when (_selectedSubject?.Id == subject.Id)
         {
             Snackbar.Add(string.Format(Loc["Common_LoadResultsError"], ex.Message), Severity.Error);
         }
+        catch (ApiException) { /* Ответ по уже не выбранному предмету. */ }
         finally
         {
-            _loading = false;
+            if (_selectedSubject?.Id == subject.Id) _loading = false;
         }
     }
 
@@ -71,8 +74,14 @@ public partial class Dashboard
     private List<QueueEventDto> _queues = [];
     private CancellationTokenSource? _refresh;
 
-    /// <summary>Таблица группы, свои результаты и свои очереди — параллельно.</summary>
-    private async Task LoadAsync(int subjectId)
+    // Своя отметка пришла в окне склейки событий: при обновлении перечитать и карточку статуса.
+    private bool _refreshMine;
+
+    /// <summary>
+    /// Таблица группы и (если нужно) свои результаты и очереди — параллельно. Ответ применяется,
+    /// только если предмет за это время не сменили.
+    /// </summary>
+    private async Task LoadAsync(int subjectId, bool includeMine = true)
     {
         if (_myId is null)
         {
@@ -80,11 +89,19 @@ public partial class Dashboard
             if (Guid.TryParse(user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id)) _myId = id;
         }
         var tableTask = Results.GetSubjectResultsAsync(subjectId);
-        var mineTask = Me.GetMyResultsAsync(subjectId);
-        var queuesTask = Me.GetMyQueueEventsAsync();
-        _results = await tableTask;
-        try { _mine = await mineTask; } catch (ApiException) { _mine = null; }
-        try { _queues = await queuesTask; } catch (ApiException) { _queues = []; }
+        var mineTask = includeMine ? Me.GetMyResultsAsync(subjectId) : null;
+        var queuesTask = includeMine ? Me.GetMyQueueEventsAsync() : null;
+        var table = await tableTask;
+        if (_selectedSubject?.Id != subjectId) return;
+        _results = table;
+        if (mineTask is not null)
+        {
+            try { _mine = await mineTask; } catch (ApiException) { _mine = null; }
+        }
+        if (queuesTask is not null)
+        {
+            try { _queues = await queuesTask; } catch (ApiException) { _queues = []; }
+        }
     }
 
     /// <summary>
@@ -96,6 +113,7 @@ public partial class Dashboard
         if (_selectedSubject is null) return;
         if (update.StudentId == _myId)
         {
+            _refreshMine = true;
             var name = _mine?.TaskResults.FirstOrDefault(t => t.TaskId == update.TaskId)?.TaskName ?? "";
             var accepted = update.NewStatus == nameof(SubmissionStatus.Accepted);
             if (update.NewStatus is nameof(SubmissionStatus.Accepted) or nameof(SubmissionStatus.Rejected))
@@ -110,7 +128,10 @@ public partial class Dashboard
         try
         {
             await Task.Delay(400, refresh.Token);
-            await LoadAsync(_selectedSubject.Id);
+            // Чужие отметки меняют только таблицу (она кешируется на сервере); своё — ещё и карточку статуса.
+            var includeMine = _refreshMine;
+            _refreshMine = false;
+            await LoadAsync(_selectedSubject.Id, includeMine);
             StateHasChanged();
         }
         catch (OperationCanceledException) { }

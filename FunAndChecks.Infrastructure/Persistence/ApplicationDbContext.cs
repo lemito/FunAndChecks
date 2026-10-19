@@ -147,7 +147,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         }
     }
 
-    private static bool IsSerializationFailure(Exception exception)
+    internal static bool IsSerializationFailure(Exception exception)
     {
         for (var current = exception; current != null; current = current.InnerException)
         {

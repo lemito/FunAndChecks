@@ -2,9 +2,11 @@ using Frontend.Admin.Dialogs;
 using Frontend.Shared.Api;
 using Frontend.Shared.Models;
 using Frontend.Shared.Resources;
+using System.Text.Json;
 using Frontend.Shared.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Frontend.Admin.Pages;
@@ -18,16 +20,17 @@ public partial class StudentGrading
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<AppStrings> Loc { get; set; } = null!;
+    [Inject] private IJSRuntime JS { get; set; } = null!;
 
     private List<SubjectDto> _subjects = [];
-    private Dictionary<int, string> _groupNames = [];
     // Список студентов предмета грузится один раз; поиск и фильтр по группе работают на клиенте.
     private List<StudentDetailsDto> _students = [];
     private Dictionary<Guid, (int Accepted, int Rework)> _progress = [];
     private int _taskCount;
     private HashSet<int> _restrictedGroups = [];
     private int? _subjectId;
-    private int? _groupFilter;
+    // Выбранные группы предмета; пусто — все. Запоминается в браузере отдельно для каждого предмета.
+    private HashSet<int> _groups = [];
     private string _query = "";
     private bool _loading;
 
@@ -36,26 +39,58 @@ public partial class StudentGrading
         get
         {
             IEnumerable<StudentDetailsDto> items = _students;
-            if (_groupFilter is int group) items = items.Where(s => s.GroupId == group);
+            if (_groups.Count > 0) items = items.Where(s => s.GroupId is int group && _groups.Contains(group));
             var query = _query.Trim();
+            // Имя ищем в обоих порядках: в списке «Фамилия Имя», а набирают часто «Имя Фамилия».
             if (query.Length > 0)
                 items = items.Where(s => $"{s.LastName} {s.FirstName}".Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
+                                         $"{s.FirstName} {s.LastName}".Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
                                          (s.Email?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
             return items.ToList();
         }
     }
 
-    private List<(int Id, string Name)> StudentGroups => _students.Where(s => s.GroupId.HasValue).Select(s => s.GroupId!.Value).Distinct()
-        .Select(id => (id, _groupNames.GetValueOrDefault(id, "—"))).OrderBy(g => g.Item2).ToList();
+    /// <summary>Группы студентов предмета с числом студентов — для фильтра.</summary>
+    private List<(int Id, string Name, int Count)> StudentGroups => _students.Where(s => s.GroupId.HasValue)
+        .GroupBy(s => s.GroupId!.Value)
+        .Select(g => (g.Key, g.First().GroupName ?? "—", g.Count()))
+        .OrderBy(g => g.Item2, StringComparer.CurrentCultureIgnoreCase).ToList();
+
+    private string GroupsText(IReadOnlyList<string> _) => _groups.Count == 0
+        ? Loc["AttendanceJournal_AllGroups"]
+        : string.Join(", ", StudentGroups.Where(g => _groups.Contains(g.Id)).Select(g => g.Name));
+
+    private string GroupsKey => $"fc-grading-groups:{_subjectId}";
+
+    private async Task OnGroupsChangedAsync(IEnumerable<int>? groups)
+    {
+        _groups = [.. groups ?? []];
+        try
+        {
+            if (_groups.Count == 0) await JS.InvokeVoidAsync("localStorage.removeItem", GroupsKey);
+            else await JS.InvokeVoidAsync("localStorage.setItem", GroupsKey, JsonSerializer.Serialize(_groups));
+        }
+        catch (JSException) { /* Выбор останется до перезагрузки страницы. */ }
+    }
+
+    /// <summary>Восстанавливает выбор групп для предмета, отбрасывая группы, которых в нём больше нет.</summary>
+    private async Task RestoreGroupsAsync()
+    {
+        _groups = [];
+        try
+        {
+            var json = await JS.InvokeAsync<string?>("localStorage.getItem", GroupsKey);
+            if (!string.IsNullOrEmpty(json) && JsonSerializer.Deserialize<int[]>(json) is { } saved)
+                _groups = [.. saved.Where(id => StudentGroups.Any(g => g.Id == id))];
+        }
+        catch (Exception ex) when (ex is JSException or JsonException) { _groups = []; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var subjectsTask = Me.GetVisibleSubjectsAsync();
-            var groupsTask = Me.GetVisibleGroupsAsync();
-            _subjects = await subjectsTask;
-            _groupNames = (await groupsTask).ToDictionary(g => g.Id, g => g.Name);
+            _subjects = await Me.GetVisibleSubjectsAsync();
             _subjectId = await CurrentSubject.PickAsync(_subjects.Select(s => s.Id));
             if (_subjectId is not null) await LoadStudentsAsync();
         }
@@ -67,7 +102,6 @@ public partial class StudentGrading
 
     private async Task OnSubjectChangedAsync()
     {
-        _groupFilter = null;
         await CurrentSubject.SetAsync(_subjectId);
         await LoadStudentsAsync();
     }
@@ -88,11 +122,21 @@ public partial class StudentGrading
             var resultsTask = Results.GetSubjectResultsAsync(subjectId);
             _restrictedGroups = [.. (await accessTask).RestrictedGroupIds];
             _students = (await studentsTask).OrderBy(s => s.LastName).ThenBy(s => s.FirstName).ToList();
-            var results = await resultsTask;
-            _taskCount = results.TaskHeaders.Count;
-            _progress = results.UserResults.ToDictionary(r => r.StudentId, r => (
-                r.Results.Values.Count(c => c.Status == SubmissionStatus.Accepted),
-                r.Results.Values.Count(c => c.Status == SubmissionStatus.Rejected)));
+            if (showSpinner) await RestoreGroupsAsync();
+            // Прогресс — подсказка в строке; если таблица результатов не загрузилась, список всё равно показываем.
+            try
+            {
+                var results = await resultsTask;
+                _taskCount = results.TaskHeaders.Count;
+                _progress = results.UserResults.ToDictionary(r => r.StudentId, r => (
+                    r.Results.Values.Count(c => c.Status == SubmissionStatus.Accepted),
+                    r.Results.Values.Count(c => c.Status == SubmissionStatus.Rejected)));
+            }
+            catch (ApiException)
+            {
+                _taskCount = 0;
+                _progress = [];
+            }
         }
         catch (ApiException ex)
         {
@@ -120,7 +164,7 @@ public partial class StudentGrading
         {
             { x => x.StudentId, student.Id },
             { x => x.StudentName, $"{student.LastName} {student.FirstName}" },
-            { x => x.GroupName, student.GroupId is int g ? _groupNames.GetValueOrDefault(g) : null },
+            { x => x.GroupName, student.GroupName },
             { x => x.EventId, (int?)null },
             { x => x.SubjectId, _subjectId.Value },
             { x => x.StudentColor, student.Color },
@@ -141,6 +185,7 @@ public partial class StudentGrading
 
     private string ProgressText(StudentDetailsDto student)
     {
+        if (_taskCount == 0) return string.Empty;
         var (accepted, rework) = _progress.GetValueOrDefault(student.Id);
         return rework > 0
             ? Loc["Grading_ProgressWithRework", accepted, _taskCount, rework]

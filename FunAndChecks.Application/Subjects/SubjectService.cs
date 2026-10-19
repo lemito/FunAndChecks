@@ -130,10 +130,11 @@ public class SubjectService(
 
     public async Task<List<TaskDto>> GetTasksAsync(int subjectId, CancellationToken cancellationToken = default)
     {
-        return await db.Tasks
+        var tasks = await db.Tasks
             .Where(t => t.SubjectId == subjectId)
             .Select(t => new TaskDto(t.Id, t.Name, t.Description, t.MaxPoints))
             .ToListAsync(cancellationToken);
+        return TaskOrder.Apply(tasks, t => t.Name, t => t.Id).ToList();
     }
 
     public async Task<List<TaskWithStatusDto>> GetTasksWithStatusAsync(int subjectId, Guid studentId, CancellationToken cancellationToken = default)
@@ -159,7 +160,7 @@ public class SubjectService(
             })
             .ToListAsync(cancellationToken);
 
-        return tasks
+        return TaskOrder.Apply(tasks, t => t.Task.Name, t => t.Task.Id)
             .Select(t => new TaskWithStatusDto(
                 t.Task.Id,
                 t.Task.Name,

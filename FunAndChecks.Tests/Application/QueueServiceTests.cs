@@ -139,6 +139,31 @@ public class QueueServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Join_Twice_ThrowsAlreadyJoinedConflict()
+    {
+        await using var ctx = _db.NewContext();
+        var group = ctx.Group();
+        var subject = ctx.Subject();
+        var queueCreator = ctx.Admin("Creator");
+        ctx.GrantSubject(queueCreator, subject);
+        await ctx.SaveChangesAsync();
+        ctx.LinkGroupSubject(group, subject);
+        var student = ctx.Student(group);
+        await ctx.SaveChangesAsync();
+        var sut = CreateSut(ctx);
+        var created = await sut.CreateEventAsync(queueCreator.Id,
+            new CreateQueueEventRequest("Open", DateTime.UtcNow.AddDays(1), subject.Id));
+        await sut.JoinAsync(created.Id, student.Id);
+
+        var act = () => sut.JoinAsync(created.Id, student.Id);
+
+        var thrown = await act.Should().ThrowAsync<ConflictException>();
+        thrown.Which.Code.Should().Be("queue.already_joined");
+        ctx.ChangeTracker.Entries<FunAndChecks.Domain.Entities.QueueEntry>()
+            .Should().OnlyContain(e => e.State == Microsoft.EntityFrameworkCore.EntityState.Unchanged);
+    }
+
+    [Fact]
     public async Task Join_UnrelatedDatabaseFailure_IsNotMaskedAsDuplicateConflict()
     {
         await using var ctx = _db.NewContext();

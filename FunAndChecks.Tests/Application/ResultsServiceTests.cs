@@ -53,6 +53,26 @@ public class ResultsServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Tasks_AreOrderedLexicographicallyByName_InTableAndStudentResults()
+    {
+        await using var ctx = _db.NewContext();
+        var group = ctx.Group();
+        var subject = ctx.Subject();
+        await ctx.SaveChangesAsync();
+        ctx.LinkGroupSubject(group, subject);
+        var student = ctx.Student(group);
+        // Создаём вперемешку: порядок создания не должен влиять на порядок в списках.
+        foreach (var name in new[] { "1.2", "Лаба 10", "1.01", "лаба 2", "1.1" }) ctx.Task(subject, name: name);
+        await ctx.SaveChangesAsync();
+        string[] expected = ["1.01", "1.1", "1.2", "Лаба 10", "лаба 2"];
+
+        var sut = new ResultsService(ctx, _cache);
+
+        (await sut.GetSubjectResultsAsync(subject.Id)).TaskHeaders.Select(t => t.TaskName).Should().Equal(expected);
+        (await sut.GetStudentResultsAsync(student.Id, subject.Id)).TaskResults.Select(t => t.TaskName).Should().Equal(expected);
+    }
+
+    [Fact]
     public async Task GetSubjectResults_UsesCacheOnSecondCall()
     {
         int subjectId;

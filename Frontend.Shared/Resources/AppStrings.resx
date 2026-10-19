@@ -424,6 +424,7 @@
   <data name="Error_SubjectNameTaken" xml:space="preserve"><value>A subject with this name already exists.</value></data>
   <data name="Error_TaskNameTaken" xml:space="preserve"><value>A task with this name already exists in this subject.</value></data>
   <data name="Error_EmailRateLimited" xml:space="preserve"><value>Please wait {0} seconds before requesting another email.</value></data>
+  <data name="Error_EmailRecipientRejected" xml:space="preserve"><value>Email cannot be delivered to this address. Check it for typos.</value></data>
   <data name="Error_EmailNotConfirmed" xml:space="preserve"><value>Email is not confirmed. Check your inbox for the confirmation code.</value></data>
   <data name="Error_AccountLocked" xml:space="preserve"><value>The account is temporarily locked due to too many failed attempts. Try again later.</value></data>
   <data name="Error_InvalidCredentials" xml:space="preserve"><value>Invalid email or password.</value></data>
@@ -610,6 +611,12 @@
   <data name="Management_TasksBulkInvalid" xml:space="preserve"><value>Line {0}: expected “name;points” with points from 0 to 1000</value></data>
   <data name="Management_CopyTasksFrom" xml:space="preserve"><value>Copy tasks from…</value></data>
   <data name="Management_TasksCopied" xml:space="preserve"><value>Copied tasks: {0}</value></data>
+  <data name="Management_TaskSetLabel" xml:space="preserve"><value>Create a task set</value></data>
+  <data name="Management_TaskSetPrefix" xml:space="preserve"><value>Set number</value></data>
+  <data name="Management_TaskSetCount" xml:space="preserve"><value>Number of tasks</value></data>
+  <data name="Management_TaskSetCreate" xml:space="preserve"><value>Create set</value></data>
+  <data name="Management_TaskSetPreview" xml:space="preserve"><value>Will create: {0} … {1}</value></data>
+  <data name="Management_TaskSetCreated" xml:space="preserve"><value>Tasks created: {0}, existing skipped: {1}</value></data>
   <data name="Management_InvalidDate" xml:space="preserve"><value>Enter the date and time as {0}.</value></data>
   <data name="StudentQueues_MyPlace" xml:space="preserve"><value>You are #{0} of {1} waiting</value></data>
   <data name="StudentQueues_OrderHint" xml:space="preserve"><value>Order: more points first, then who joined earlier.</value></data>
@@ -686,4 +693,7 @@
   <data name="MyAttendance_Updated" xml:space="preserve"><value>mark updated</value></data>
   <data name="Login_SharedComputer" xml:space="preserve"><value>Shared computer — do not remember me</value></data>
   <data name="Login_SharedComputerHint" xml:space="preserve"><value>You will be signed out when this tab is closed; a new tab asks to sign in again.</value></data>
+  <data name="Dialog_GradeNotSaved" xml:space="preserve"><value>The grade was not saved. Fix it or clear the field, then try again.</value></data>
+  <data name="StudentQueues_LeaveTitle" xml:space="preserve"><value>Leave the queue?</value></data>
+  <data name="StudentQueues_LeaveText" xml:space="preserve"><value>Your place will be lost: if you join again, you will be placed by your points and the new join time.</value></data>
 </root>

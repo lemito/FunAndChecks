@@ -424,6 +424,7 @@
   <data name="Error_SubjectNameTaken" xml:space="preserve"><value>Предмет с таким названием уже существует.</value></data>
   <data name="Error_TaskNameTaken" xml:space="preserve"><value>Задание с таким названием уже есть в этом предмете.</value></data>
   <data name="Error_EmailRateLimited" xml:space="preserve"><value>Подождите {0} секунд перед повторной отправкой письма.</value></data>
+  <data name="Error_EmailRecipientRejected" xml:space="preserve"><value>На этот адрес нельзя доставить письмо. Проверьте, нет ли в нём опечатки.</value></data>
   <data name="Error_EmailNotConfirmed" xml:space="preserve"><value>Email не подтверждён. Проверьте почту — там код подтверждения.</value></data>
   <data name="Error_AccountLocked" xml:space="preserve"><value>Аккаунт временно заблокирован из-за слишком частых неудачных попыток. Попробуйте позже.</value></data>
   <data name="Error_InvalidCredentials" xml:space="preserve"><value>Неверный email или пароль.</value></data>
@@ -610,6 +611,12 @@
   <data name="Management_TasksBulkInvalid" xml:space="preserve"><value>Строка {0}: нужно «название;баллы», баллы от 0 до 1000</value></data>
   <data name="Management_CopyTasksFrom" xml:space="preserve"><value>Скопировать задачи из…</value></data>
   <data name="Management_TasksCopied" xml:space="preserve"><value>Скопировано задач: {0}</value></data>
+  <data name="Management_TaskSetLabel" xml:space="preserve"><value>Создать набор задач</value></data>
+  <data name="Management_TaskSetPrefix" xml:space="preserve"><value>Номер набора</value></data>
+  <data name="Management_TaskSetCount" xml:space="preserve"><value>Количество заданий</value></data>
+  <data name="Management_TaskSetCreate" xml:space="preserve"><value>Создать набор</value></data>
+  <data name="Management_TaskSetPreview" xml:space="preserve"><value>Будут созданы: {0} … {1}</value></data>
+  <data name="Management_TaskSetCreated" xml:space="preserve"><value>Создано задач: {0}, пропущено существующих: {1}</value></data>
   <data name="Management_InvalidDate" xml:space="preserve"><value>Введите дату и время в формате {0}.</value></data>
   <data name="StudentQueues_MyPlace" xml:space="preserve"><value>Ваше место: {0} из {1}</value></data>
   <data name="StudentQueues_OrderHint" xml:space="preserve"><value>Порядок: больше баллов — раньше, при равенстве — кто раньше записался.</value></data>
@@ -686,4 +693,7 @@
   <data name="MyAttendance_Updated" xml:space="preserve"><value>отметка обновлена</value></data>
   <data name="Login_SharedComputer" xml:space="preserve"><value>Чужой компьютер — не запоминать вход</value></data>
   <data name="Login_SharedComputerHint" xml:space="preserve"><value>Вход пропадёт, когда вкладка закроется; в новой вкладке нужно будет войти снова.</value></data>
+  <data name="Dialog_GradeNotSaved" xml:space="preserve"><value>Оценка не сохранилась. Исправьте её или очистите поле и повторите.</value></data>
+  <data name="StudentQueues_LeaveTitle" xml:space="preserve"><value>Выйти из очереди?</value></data>
+  <data name="StudentQueues_LeaveText" xml:space="preserve"><value>Место будет потеряно: при повторной записи вы встанете по баллам и новому времени записи.</value></data>
 </root>

@@ -183,7 +183,7 @@ public class GroupService(
         var students = await db.Students
             .Where(s => s.GroupId == groupId && s.IsActive)
             .OrderBy(s => s.LastName).ThenBy(s => s.FirstName)
-            .Select(s => new StudentDetailsDto(s.Id, s.FirstName, s.LastName, null, s.Color, s.GroupId))
+            .Select(s => new StudentDetailsDto(s.Id, s.FirstName, s.LastName, null, s.Color, s.GroupId, s.Group != null ? s.Group.Name : null))
             .ToListAsync(cancellationToken);
 
         var emails = await identityService.GetEmailsAsync(students.Select(s => s.Id));

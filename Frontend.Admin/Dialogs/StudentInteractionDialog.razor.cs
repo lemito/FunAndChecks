@@ -271,10 +271,21 @@ public partial class StudentInteractionDialog : IDisposable
     private void ReplaceStatus(int taskId, SubmissionStatus status) =>
         _tasks = _tasks.Select(t => t.Id == taskId ? t with { Status = status } : t).ToList();
 
-    private async Task SetGradeAsync(int componentId)
+    // Сохранения оценок идут цепочкой и не занимают _busy: кнопки «Завершить»/«Закрыть» остаются живыми
+    // и просто дожидаются цепочки, а не теряют клик, пока идёт автосохранение после выхода из поля.
+    private Task _gradeSaves = Task.CompletedTask;
+
+    private Task SetGradeAsync(int componentId)
     {
-        if (ReadOnly || _busy || _gradeInputs.GetValueOrDefault(componentId) is not int points) return;
-        _busy = true;
+        if (ReadOnly) return Task.CompletedTask;
+        return _gradeSaves = SaveGradeAfterAsync(_gradeSaves, componentId);
+    }
+
+    private async Task SaveGradeAfterAsync(Task previous, int componentId)
+    {
+        try { await previous; } catch (Exception) { /* Ошибку прошлого сохранения уже показали; цепочка не должна встать. */ }
+        // Значение берём на момент своей очереди: повторный клик или blur после сохранения — ничего не делают.
+        if (!IsGradeDirty(componentId) || _gradeInputs.GetValueOrDefault(componentId) is not int points) return;
         try
         {
             await Grades.SetGradeAsync(componentId, StudentId, new SetGradeRequest(points, null));
@@ -287,7 +298,6 @@ public partial class StudentInteractionDialog : IDisposable
         {
             Snackbar.Add(ex.Message, Severity.Error);
         }
-        finally { _busy = false; }
     }
 
     /// <summary>Автосохранение при выходе из поля: введённая оценка не теряется при закрытии диалога.</summary>
@@ -304,10 +314,15 @@ public partial class StudentInteractionDialog : IDisposable
     private async Task<bool> SaveDirtyGradesAsync()
     {
         if (ReadOnly) return true;
+        try { await _gradeSaves; } catch (Exception) { /* Не сохранившиеся оценки останутся «грязными» и будут сохранены ниже. */ }
         foreach (var id in _components.Select(c => c.Id).Where(IsGradeDirty).ToList())
         {
             await SetGradeAsync(id);
-            if (IsGradeDirty(id)) return false;
+            if (IsGradeDirty(id))
+            {
+                Snackbar.Add(Loc["Dialog_GradeNotSaved"], Severity.Warning);
+                return false;
+            }
         }
         return true;
     }

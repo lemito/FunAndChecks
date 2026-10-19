@@ -144,9 +144,15 @@ public partial class QueueDetails : IAsyncDisposable
         }
     }
 
+    // Одна цепочка повторов на страницу: ошибки от событий и от самих повторов её не множат.
+    private bool _retryScheduled;
+
     private async Task RetryLaterAsync()
     {
-        await Task.Delay(RetryDelay);
+        if (_retryScheduled) return;
+        _retryScheduled = true;
+        try { await Task.Delay(RetryDelay); }
+        finally { _retryScheduled = false; }
         if (!_disposed && _loadError is not null && !_dialogOpen)
             await InvokeAsync(LoadAsync);
     }

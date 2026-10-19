@@ -53,7 +53,8 @@ else if (_details is not null)
                 <strong>@(MyPosition is int place ? Loc["StudentQueues_MyPlace", place, Waiting.Count] : QueueStyles.StatusText(mine.Status, mine.CheckingByAdminName, Loc))</strong>
                 <small class="fc-muted">@Loc["StudentQueues_OrderHint"]</small>
             </div>
-            @if (mine.Status is QueueEntryStatus.Waiting or QueueEntryStatus.Skipped)
+            @* В очередь, заполненную преподавателем, нельзя записаться снова — поэтому и выйти из неё нельзя. *@
+            @if (_details.AllowSelfJoin && mine.Status is QueueEntryStatus.Waiting or QueueEntryStatus.Skipped)
             {
                 <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Outlined.Logout" OnClick="LeaveAsync">@Loc["StudentQueues_Leave"]</MudButton>
             }
