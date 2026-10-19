@@ -5,6 +5,17 @@
 @inject ConfirmService Confirm
 
 <article id="post-@Post.Id" class="fc-post @(Post.IsPinned ? "pinned" : "") @(Post.IsDeleted ? "deleted" : "")">
+    @* Ответ — как в Discord: тонкая строка над сообщением с изогнутой линией к нему. Клик ведёт к исходному сообщению. *@
+    @if (!Post.IsDeleted && Post.ReplyTo is { } quote)
+    {
+        <button type="button" class="fc-post-reply" @onclick="() => JumpTo.InvokeAsync(quote.Id)"
+                aria-label="@CommunityText.T($"Ответ на сообщение {quote.AuthorName}", $"Reply to {quote.AuthorName}")">
+            <span class="fc-post-reply-spine" aria-hidden="true"></span>
+            <UserAvatar UserId="quote.AuthorId" Name="@quote.AuthorName" Class="fc-post-reply-avatar" />
+            <strong>@quote.AuthorName</strong>
+            <span class="fc-post-reply-text">@(quote.IsDeleted ? CommunityText.T("сообщение удалено", "message deleted") : ForumMarkdown.ToPlainText(quote.Excerpt))</span>
+        </button>
+    }
     <header>
         <UserChip UserId="Post.Author.UserId" Name="@Post.Author.Name"
                   Subtitle="@($"{(Post.Author.IsAdmin ? CommunityText.T("Преподаватель · ", "Teacher · ") : "")}{CommunityText.Ago(Post.CreatedAtUtc)}{(Post.EditedAtUtc is null ? "" : CommunityText.T(" · изменено", " · edited"))}")" />
@@ -33,13 +44,6 @@
     }
     else
     {
-        @if (Post.ReplyTo is { } quote)
-        {
-            <button type="button" class="fc-post-quote" @onclick="() => JumpTo.InvokeAsync(quote.Id)">
-                <strong>@quote.AuthorName</strong>
-                <span>@(quote.IsDeleted ? CommunityText.T("сообщение удалено", "message deleted") : ForumMarkdown.ToPlainText(quote.Excerpt))</span>
-            </button>
-        }
         @if (!string.IsNullOrWhiteSpace(Post.Body)) { <MarkdownView Text="@Post.Body" BasePath="@BasePath" /> }
         @if (Post.Attachments.Any(a => a.IsImage))
         {

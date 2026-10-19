@@ -15,9 +15,6 @@ public static class StudentDialogResults
 {
     /// <summary>Завершить и сразу открыть следующего ожидающего.</summary>
     public const string Next = "next";
-
-    /// <summary>Взять завершённого/пропущенного студента на проверку.</summary>
-    public const string Take = "take";
 }
 
 public partial class StudentInteractionDialog : IDisposable
@@ -34,8 +31,6 @@ public partial class StudentInteractionDialog : IDisposable
     [Parameter] public int? EventId { get; set; }
     [Parameter] public int SubjectId { get; set; }
     [Parameter] public bool ReadOnly { get; set; }
-    /// <summary>Просмотр завершённого/пропущенного в очереди: показать кнопку «Взять на проверку».</summary>
-    [Parameter] public bool CanTake { get; set; }
     /// <summary>Задача, по ячейке которой открыли диалог, — подсвечивается и прокручивается в видимую область.</summary>
     [Parameter] public int? FocusTaskId { get; set; }
     [Parameter] public string? StudentColor { get; set; }
@@ -208,7 +203,6 @@ public partial class StudentInteractionDialog : IDisposable
 
     private Task FinishAndNextAsync() => ChangeStatusAsync(QueueEntryStatus.Finished, StudentDialogResults.Next);
 
-    private void Take() => MudDialog.Close(DialogResult.Ok<object>(StudentDialogResults.Take));
 
     private async Task ReworkAsync(TaskWithStatusDto task)
     {

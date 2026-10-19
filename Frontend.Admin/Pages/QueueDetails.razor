@@ -39,20 +39,6 @@ else if (_details is not null)
     <div class="fc-panel fc-queue-next">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.SkipNext" OnClick="TakeNextAsync"
                    Disabled="@(NextWaiting() is null)">@Loc["QueueDetails_TakeNext"]</MudButton>
-        @if (Groups.Count > 1)
-        {
-            <div class="fc-queue-groups" role="group" aria-label="@Loc["QueueDetails_Groups"]">
-                <span class="fc-muted">@Loc["QueueDetails_Groups"]:</span>
-                @foreach (var (group, count) in Groups)
-                {
-                    var hidden = _hiddenGroups.Contains(group);
-                    <button type="button" class="fc-queue-group-toggle @(hidden ? "hidden" : "")" aria-pressed="@(!hidden)" @onclick="() => ToggleGroupAsync(group)">
-                        <MudIcon Icon="@(hidden ? Icons.Material.Outlined.VisibilityOff : Icons.Material.Outlined.Visibility)" Size="Size.Small" />@group <small>@count</small>
-                    </button>
-                }
-                @if (_hiddenGroups.Count > 0) { <MudLink OnClick="ShowAllGroupsAsync" Class="fc-queue-groups-reset">@Loc["QueueDetails_ShowAllGroups"]</MudLink> }
-            </div>
-        }
     </div>
 
     @if (_participants.Any(p => p.Status == QueueEntryStatus.Checking))
@@ -69,9 +55,11 @@ else if (_details is not null)
     }
 
     <div class="fc-panel fc-toolbar fc-queue-filters">
-        <MudTextField @bind-Value="_filter" Label="@Loc["QueueDetails_FilterLabel"]" Variant="Variant.Outlined"
-                      Margin="Margin.Dense" Clearable="true" Immediate="true"
-                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Search" />
+        @* Фильтр только по группам, которые есть в этой очереди; «Взять следующего» тоже его учитывает. *@
+        <MudSelect T="string" MultiSelection="true" SelectedValues="_groups" SelectedValuesChanged="OnGroupsChangedAsync" MultiSelectionTextFunc="GroupsText"
+                   Label="@Loc["QueueDetails_Groups"]" Placeholder="@Loc["AttendanceJournal_AllGroups"]" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+            @foreach (var (group, count) in Groups) { <MudSelectItem T="string" Value="@group">@group <span class="fc-muted">· @count</span></MudSelectItem> }
+        </MudSelect>
         <MudSelect T="ParticipantSort" @bind-Value="_sort" Label="@Loc["QueueDetails_SortLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense">
             <MudSelectItem T="ParticipantSort" Value="ParticipantSort.Points">@Loc["QueueDetails_SortPoints"]</MudSelectItem>
             <MudSelectItem T="ParticipantSort" Value="ParticipantSort.Group">@Loc["QueueDetails_SortGroup"]</MudSelectItem>
@@ -96,9 +84,8 @@ else if (_details is not null)
                     </div>
                     <div class="fc-queue-person-score"><strong>@p.TotalPoints</strong><span>@Loc["Common_PointsAbbr"]</span></div>
                     <div class="fc-queue-person-status"><MudChip T="string" Color="@StatusColor(p.Status)" Size="Size.Small" Variant="Variant.Text">@QueueStyles.StatusText(p.Status, p.CheckingByAdminName, Loc)</MudChip></div>
-                    @{ var viewOnly = IsReadOnly(p) || p.Status is QueueEntryStatus.Finished or QueueEntryStatus.Skipped; }
-                    <div class="fc-queue-person-action"><MudButton Variant="@(viewOnly ? Variant.Outlined : Variant.Filled)" Color="Color.Primary" Disabled="@(!p.CanManage)"
-                        OnClick="@(() => OpenStudentAsync(p))" StartIcon="@(viewOnly ? Icons.Material.Outlined.Visibility : Icons.Material.Outlined.Assignment)">@Loc[viewOnly ? "QueueDetails_View" : "QueueDetails_Review"]</MudButton></div>
+                    <div class="fc-queue-person-action"><MudButton Variant="@(IsReadOnly(p) ? Variant.Outlined : Variant.Filled)" Color="Color.Primary" Disabled="@(!p.CanManage)"
+                        OnClick="@(() => OpenStudentAsync(p))" StartIcon="@(IsReadOnly(p) ? Icons.Material.Outlined.Visibility : Icons.Material.Outlined.Assignment)">@Loc[IsReadOnly(p) ? "QueueDetails_View" : "QueueDetails_Review"]</MudButton></div>
                 </article>
             }
         </section>

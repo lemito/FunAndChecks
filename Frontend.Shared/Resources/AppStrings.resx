@@ -696,4 +696,5 @@
   <data name="Dialog_GradeNotSaved" xml:space="preserve"><value>The grade was not saved. Fix it or clear the field, then try again.</value></data>
   <data name="StudentQueues_LeaveTitle" xml:space="preserve"><value>Leave the queue?</value></data>
   <data name="StudentQueues_LeaveText" xml:space="preserve"><value>Your place will be lost: if you join again, you will be placed by your points and the new join time.</value></data>
+  <data name="Dialog_TabAchievements" xml:space="preserve"><value>Achievements</value></data>
 </root>

@@ -18,7 +18,7 @@ public record ForumTopicPageDto(List<ForumTopicSummaryDto> Items, int TotalCount
 public record ForumPermissionsDto(bool CanReply, bool CanModerate, bool IsSubscribed, string? ReplyBlockedCode, DateTime? BannedUntilUtc);
 public record ForumTopicDto(ForumTopicSummaryDto Topic, List<ForumPostDto> PinnedPosts, ForumPermissionsDto Permissions, long LastReadPostId);
 public record ForumReactionSummaryDto(ForumReactionKind Kind, int Count, bool Mine);
-public record ForumQuoteDto(long Id, string AuthorName, string Excerpt, bool IsDeleted);
+public record ForumQuoteDto(long Id, string AuthorName, string Excerpt, bool IsDeleted, Guid? AuthorId = null);
 public record ForumPostDto(long Id, int TopicId, ForumUserDto Author, string Body, ForumQuoteDto? ReplyTo, DateTime CreatedAtUtc,
     DateTime? EditedAtUtc, bool IsPinned, bool IsDeleted, List<AttachmentDto> Attachments, List<ForumReactionSummaryDto> Reactions,
     bool CanEdit, bool CanDelete);

@@ -126,3 +126,10 @@
 }
 .fc-results-average { margin:0 0 14px; font-size:12px; }
 .fc-results-average strong { color:var(--fc-text); font-variant-numeric:tabular-nums; }
+/* Колонки задач — по ширине названия задачи: таблица не растягивается на всю ширину,
+   а у ячеек задач нет запаса под меню фильтра (фильтр по ним отключён). */
+.fc-results-grid .mud-table-root { width:auto; min-width:0; }
+.fc-results-grid .mud-table-cell.fc-results-task-header,
+.fc-results-grid .mud-table-cell.fc-results-task-column,
+.fc-results-grid td.mud-table-cell.fc-results-number { min-width:0; width:1%; padding-inline:10px; }
+.fc-results-grid .fc-results-task-header .column-header { padding-inline:0; justify-content:center; }

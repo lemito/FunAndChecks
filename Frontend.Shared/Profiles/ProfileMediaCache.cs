@@ -72,6 +72,12 @@ public sealed class ProfileMediaCache : IAsyncDisposable
         }
         catch (Exception ex) when (ex is JSException or OperationCanceledException or ObjectDisposedException) { }
     }
+    /// <summary>
+    /// Все ссылки отозваны (смена аккаунта). Показанные медиа держат уже мёртвый blob-адрес —
+    /// они подписываются и перезагружаются, иначе на месте аватара остаётся пустота.
+    /// </summary>
+    public event Action? Cleared;
+
     private async Task ClearAsync()
     {
         _accountLifetime.Cancel(); _accountLifetime.Dispose(); _accountLifetime = new();
@@ -79,6 +85,7 @@ public sealed class ProfileMediaCache : IAsyncDisposable
         foreach (var entry in entries)
             try { entry.Released = true; var url = await entry.Load; if (_module is not null) await _module.InvokeVoidAsync("release", url); }
             catch (Exception ex) when (ex is OperationCanceledException or JSException or Frontend.Shared.Api.ApiException) { }
+        if (entries.Length > 0 && !_disposed) Cleared?.Invoke();
     }
     public async ValueTask DisposeAsync()
     {

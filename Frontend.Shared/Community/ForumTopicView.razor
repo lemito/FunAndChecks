@@ -260,7 +260,7 @@ else
 
     private void StartReply(ForumPostDto post)
     {
-        _replyTo = new ForumQuoteDto(post.Id, post.Author.Name, Excerpt(post.Body), false);
+        _replyTo = new ForumQuoteDto(post.Id, post.Author.Name, Excerpt(post.Body), false, post.Author.UserId);
         _scrollTo = null;
         _ = ScrollToReplyAsync();
     }

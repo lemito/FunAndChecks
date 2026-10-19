@@ -49,7 +49,7 @@ else if (_results is not null)
                     <PropertyColumn Property="x => x.GroupName" Title="@Loc["Dashboard_Group"]" />
                     @foreach (var task in _results.TaskHeaders)
                     {
-                        <TemplateColumn Title="@task.TaskName" Sortable="false" CellClass="fc-results-task-column" HeaderClass="fc-results-task-header">
+                        <TemplateColumn Title="@task.TaskName" Sortable="false" Filterable="false" CellClass="fc-results-task-column" HeaderClass="fc-results-task-header">
                             <CellTemplate>
                                 @{ var cell = context.Item.Results.GetValueOrDefault(task.TaskId); }
                                 @* Любая ячейка открывает студента с этой задачей: принять или вернуть можно прямо отсюда. *@

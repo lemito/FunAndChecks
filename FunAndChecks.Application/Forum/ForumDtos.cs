@@ -22,7 +22,7 @@ public record ForumTopicDto(ForumTopicSummaryDto Topic, IReadOnlyList<ForumPostD
 
 public record ForumReactionSummaryDto(ForumReactionKind Kind, int Count, bool Mine);
 
-public record ForumQuoteDto(long Id, string AuthorName, string Excerpt, bool IsDeleted);
+public record ForumQuoteDto(long Id, string AuthorName, string Excerpt, bool IsDeleted, Guid? AuthorId = null);
 
 public record ForumPostDto(long Id, int TopicId, ForumUserDto Author, string Body, ForumQuoteDto? ReplyTo,
     DateTime CreatedAtUtc, DateTime? EditedAtUtc, bool IsPinned, bool IsDeleted,

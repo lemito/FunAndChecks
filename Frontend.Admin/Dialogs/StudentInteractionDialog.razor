@@ -109,6 +109,10 @@
                     </MudStack>
                 </MudTabPanel>
             }
+            @* Выдать достижение, не уходя из проверки: студент уже выбран. *@
+            <MudTabPanel Text="@Loc["Dialog_TabAchievements"]" Icon="@Icons.Material.Outlined.EmojiEvents">
+                <Frontend.Shared.Profiles.StudentAchievementsPanel UserId="StudentId" CanGrant="!ReadOnly" />
+            </MudTabPanel>
         </MudTabs>
     </DialogContent>
     <DialogActions>
@@ -117,10 +121,6 @@
             {
                 <MudButton Class="fc-color-apply" Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_pickerTouched || _busy)"
                            OnClick="@(() => ApplyColorAsync(_pickerColor))">@Loc["Dialog_ApplyColor"]</MudButton>
-            }
-            else if (EventId is not null && CanTake)
-            {
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Assignment" OnClick="Take">@Loc["Dialog_TakeForReview"]</MudButton>
             }
             else if (EventId is not null && !ReadOnly)
             {

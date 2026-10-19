@@ -26,7 +26,7 @@
 
             @foreach (var task in Results.TaskHeaders)
             {
-                <TemplateColumn Title="@task.TaskName" Sortable="false" CellClass="fc-results-number" HeaderClass="fc-results-task-header">
+                <TemplateColumn Title="@task.TaskName" Sortable="false" Filterable="false" CellClass="fc-results-number" HeaderClass="fc-results-task-header">
                     <CellTemplate>
                         @{ var cell = context.Item.Results.GetValueOrDefault(task.TaskId); }
                         @if (context.Item.StudentId == HighlightStudentId)

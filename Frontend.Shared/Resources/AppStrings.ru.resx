@@ -696,4 +696,5 @@
   <data name="Dialog_GradeNotSaved" xml:space="preserve"><value>Оценка не сохранилась. Исправьте её или очистите поле и повторите.</value></data>
   <data name="StudentQueues_LeaveTitle" xml:space="preserve"><value>Выйти из очереди?</value></data>
   <data name="StudentQueues_LeaveText" xml:space="preserve"><value>Место будет потеряно: при повторной записи вы встанете по баллам и новому времени записи.</value></data>
+  <data name="Dialog_TabAchievements" xml:space="preserve"><value>Достижения</value></data>
 </root>

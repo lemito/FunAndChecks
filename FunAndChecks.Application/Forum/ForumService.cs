@@ -448,13 +448,13 @@ public partial class ForumService(
             .GroupBy(r => r.PostId).ToDictionary(g => g.Key, g => g.ToList());
         var replyIds = posts.Where(p => p.ReplyToPostId.HasValue).Select(p => p.ReplyToPostId!.Value).Distinct().ToList();
         var replies = await db.ForumPosts.AsNoTracking().Where(p => replyIds.Contains(p.Id))
-            .Select(p => new { p.Id, p.AuthorName, p.Body, p.IsDeleted }).ToDictionaryAsync(p => p.Id, ct);
+            .Select(p => new { p.Id, p.AuthorId, p.AuthorName, p.Body, p.IsDeleted }).ToDictionaryAsync(p => p.Id, ct);
         var authors = await identity.GetProfileAccountsAsync(posts.Where(p => p.AuthorId.HasValue).Select(p => p.AuthorId!.Value), ct);
         var moderator = viewer.CanModerate(topic.SubjectId);
         return posts.Select(p =>
         {
             var reply = p.ReplyToPostId is long r && replies.TryGetValue(r, out var quoted)
-                ? new ForumQuoteDto(quoted.Id, quoted.AuthorName, quoted.IsDeleted ? "" : Excerpt(quoted.Body), quoted.IsDeleted) : null;
+                ? new ForumQuoteDto(quoted.Id, quoted.AuthorName, quoted.IsDeleted ? "" : Excerpt(quoted.Body), quoted.IsDeleted, quoted.AuthorId) : null;
             var mine = p.AuthorId == viewer.UserId;
             return new ForumPostDto(p.Id, p.TopicId, Author(p.AuthorId, p.AuthorName, authors), p.IsDeleted ? "" : p.Body, reply,
                 p.CreatedAtUtc, p.EditedAtUtc, p.IsPinned, p.IsDeleted,

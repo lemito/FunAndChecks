@@ -41,47 +41,42 @@ public partial class QueueDetails : IAsyncDisposable
     private long _colorRevision;
     private readonly Dictionary<Guid, (long Revision, string? Color)> _latestColorChanges = [];
 
-    private string? _filter;
     private ParticipantSort _sort = ParticipantSort.Points;
-    // Группы, которые этот преподаватель скрыл в этой очереди (хранится в браузере).
-    private readonly HashSet<string> _hiddenGroups = new(StringComparer.Ordinal);
+    // Группы, которые этот преподаватель смотрит в этой очереди; пусто — все. Хранится в браузере.
+    private HashSet<string> _groups = new(StringComparer.Ordinal);
     private bool _dialogOpen, _reloadScheduled;
     private string? _loadError;
 
     public enum ParticipantSort { Group, Points, JoinedAt }
 
-    private string HiddenGroupsKey => $"fc-queue-hidden-groups-{EventId}";
+    private string GroupsKey => $"fc-queue-groups-{EventId}";
+    // Прежняя настройка «скрытые группы» — удаляем, чтобы не копилась.
+    private string LegacyHiddenGroupsKey => $"fc-queue-hidden-groups-{EventId}";
 
     protected override async Task OnInitializedAsync()
     {
         var user = (await Authentication.GetAuthenticationStateAsync()).User;
         if (Guid.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value ?? user.FindFirst("nameid")?.Value, out var adminId))
             _currentAdminId = adminId;
-        await RestoreHiddenGroupsAsync();
         await LoadAsync();
+        await RestoreGroupsAsync();
         if (_details is not null && !_disposed)
             await InitializeSignalRAsync();
     }
 
     private List<QueueParticipantDto> Visible => VisibleParticipants();
 
-    /// <summary>Все группы очереди с числом участников — для переключателей видимости.</summary>
+    /// <summary>Группы, которые есть в этой очереди, с числом участников — варианты фильтра.</summary>
     private List<(string Group, int Count)> Groups => _participants.GroupBy(p => p.GroupName)
-        .OrderBy(g => g.Key).Select(g => (g.Key, g.Count())).ToList();
+        .OrderBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase).Select(g => (g.Key, g.Count())).ToList();
 
-    private IEnumerable<QueueParticipantDto> InVisibleGroups => _participants.Where(p => !_hiddenGroups.Contains(p.GroupName));
+    private IEnumerable<QueueParticipantDto> InVisibleGroups => _groups.Count == 0
+        ? _participants
+        : _participants.Where(p => _groups.Contains(p.GroupName));
 
     private List<QueueParticipantDto> VisibleParticipants()
     {
         var items = InVisibleGroups;
-
-        if (!string.IsNullOrWhiteSpace(_filter))
-        {
-            var term = _filter.Trim();
-            items = items.Where(p =>
-                p.FullName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                p.GroupName.Contains(term, StringComparison.OrdinalIgnoreCase));
-        }
 
         // Статус — всегда первичный ключ сортировки (сдают → в очереди → пропущенные → завершившие),
         // выбранное поле — вторичное, время записи — последний ключ при равенстве.
@@ -235,22 +230,21 @@ public partial class QueueDetails : IAsyncDisposable
             Snackbar.Add(Loc["QueueDetails_NoNext"], Severity.Info);
             return;
         }
-        await OpenStudentAsync(next, take: true);
+        await OpenStudentAsync(next);
     }
 
     /// <summary>
-    /// Открывает студента. Ожидающего или проверяемого берёт на проверку; завершённого или пропущенного —
-    /// только показывает, без смены статуса (берётся явной кнопкой «Взять на проверку»).
+    /// Открывает студента и сразу берёт его на проверку — в любом статусе, одним действием.
+    /// Один преподаватель может проверять нескольких студентов одновременно.
     /// </summary>
-    private async Task OpenStudentAsync(QueueParticipantDto participant, bool take = false)
+    private async Task OpenStudentAsync(QueueParticipantDto participant)
     {
         if (_details is null || !participant.CanManage)
             return;
 
-        var viewOnly = !take && participant.Status is QueueEntryStatus.Finished or QueueEntryStatus.Skipped;
         var checkingWarning = IsOtherTeacherChecking(participant) ? participant.CheckingByAdminName : null;
         // Другой преподаватель — предупреждение, а не запрет на приём.
-        if (!viewOnly && !IsReadOnly(participant) &&
+        if (!IsReadOnly(participant) &&
             (participant.Status != QueueEntryStatus.Checking || participant.CheckingByAdminId != _currentAdminId))
         {
             try
@@ -273,8 +267,7 @@ public partial class QueueDetails : IAsyncDisposable
             { x => x.GroupName, participant.GroupName },
             { x => x.EventId, EventId },
             { x => x.SubjectId, _details.SubjectId },
-            { x => x.ReadOnly, viewOnly || IsReadOnly(participant) },
-            { x => x.CanTake, viewOnly && !IsReadOnly(participant) },
+            { x => x.ReadOnly, IsReadOnly(participant) },
             { x => x.StudentColor, participant.StudentColor },
             { x => x.CheckingWarningName, checkingWarning },
             { x => x.OnColorApplied, EventCallback.Factory.Create<StudentColorUpdateDto>(this, UpdateStudentColor) },
@@ -297,23 +290,15 @@ public partial class QueueDetails : IAsyncDisposable
 
         // Возврат к списку — всегда полное перечитывание: так надёжнее, чем собирать картину из событий.
         await LoadAsync();
-        if (result is { Canceled: false, Data: string action } && !_disposed)
+        if (result is { Canceled: false, Data: StudentDialogResults.Next } && !_disposed)
         {
-            if (action == StudentDialogResults.Take)
-            {
-                var fresh = _participants.FirstOrDefault(p => p.StudentId == participant.StudentId);
-                if (fresh is not null) await OpenStudentAsync(fresh, take: true);
-            }
-            else if (action == StudentDialogResults.Next)
-            {
-                var next = NextWaiting();
-                if (next is null) Snackbar.Add(Loc["QueueDetails_NoNext"], Severity.Info);
-                else await OpenStudentAsync(next, take: true);
-            }
+            var next = NextWaiting();
+            if (next is null) Snackbar.Add(Loc["QueueDetails_NoNext"], Severity.Info);
+            else await OpenStudentAsync(next);
         }
     }
 
-    /// <summary>Счётчик статуса: при скрытых группах — «видимые / всего».</summary>
+    /// <summary>Счётчик статуса: при выбранных группах — «в выбранных / всего».</summary>
     private string StatCount(QueueEntryStatus status)
     {
         var total = _participants.Count(p => p.Status == status);
@@ -321,37 +306,34 @@ public partial class QueueDetails : IAsyncDisposable
         return visible == total ? total.ToString() : $"{visible} / {total}";
     }
 
-    private async Task ToggleGroupAsync(string group)
+    private string GroupsText(IReadOnlyList<string> _) =>
+        _groups.Count == 0 ? Loc["AttendanceJournal_AllGroups"] : string.Join(", ", _groups.Order());
+
+    private async Task OnGroupsChangedAsync(IEnumerable<string>? groups)
     {
-        if (!_hiddenGroups.Remove(group)) _hiddenGroups.Add(group);
-        await SaveHiddenGroupsAsync();
+        _groups = new HashSet<string>(groups ?? [], StringComparer.Ordinal);
+        try
+        {
+            if (_groups.Count == 0) await JS.InvokeVoidAsync("localStorage.removeItem", GroupsKey);
+            else await JS.InvokeVoidAsync("localStorage.setItem", GroupsKey, JsonSerializer.Serialize(_groups));
+        }
+        catch (JSException) { /* Выбор останется до перезагрузки страницы. */ }
     }
 
-    private async Task ShowAllGroupsAsync()
-    {
-        _hiddenGroups.Clear();
-        await SaveHiddenGroupsAsync();
-    }
-
-    private async Task RestoreHiddenGroupsAsync()
+    /// <summary>Восстанавливает выбор групп после первой загрузки — только из групп, что есть в очереди.</summary>
+    private async Task RestoreGroupsAsync()
     {
         try
         {
-            var json = await JS.InvokeAsync<string?>("localStorage.getItem", HiddenGroupsKey);
-            if (!string.IsNullOrEmpty(json) && JsonSerializer.Deserialize<string[]>(json) is { } groups)
-                _hiddenGroups.UnionWith(groups);
+            await JS.InvokeVoidAsync("localStorage.removeItem", LegacyHiddenGroupsKey);
+            var json = await JS.InvokeAsync<string?>("localStorage.getItem", GroupsKey);
+            if (!string.IsNullOrEmpty(json) && JsonSerializer.Deserialize<string[]>(json) is { } saved)
+            {
+                var existing = Groups.Select(g => g.Group).ToHashSet(StringComparer.Ordinal);
+                _groups = new HashSet<string>(saved.Where(existing.Contains), StringComparer.Ordinal);
+            }
         }
-        catch (Exception ex) when (ex is JSException or JsonException) { /* Нет настройки — показываем всех. */ }
-    }
-
-    private async Task SaveHiddenGroupsAsync()
-    {
-        try
-        {
-            if (_hiddenGroups.Count == 0) await JS.InvokeVoidAsync("localStorage.removeItem", HiddenGroupsKey);
-            else await JS.InvokeVoidAsync("localStorage.setItem", HiddenGroupsKey, JsonSerializer.Serialize(_hiddenGroups));
-        }
-        catch (JSException) { /* Настройка останется до перезагрузки страницы. */ }
+        catch (Exception ex) when (ex is JSException or JsonException) { _groups = new(StringComparer.Ordinal); }
     }
 
     private static Color StatusColor(QueueEntryStatus status) => status switch
