@@ -84,7 +84,8 @@
   <data name="Register_HaveAccount" xml:space="preserve"><value>Уже есть аккаунт? Войти</value></data>
   <data name="Register_AcceptPrivacyPolicy" xml:space="preserve"><value>Согласен с политикой конфиденциальности и пользовательским соглашением</value></data>
   <data name="Register_AcceptPrivacyPolicyRequired" xml:space="preserve"><value>Необходимо согласиться с политикой конфиденциальности</value></data>
-  <data name="Register_AcceptPrivacyPolicyHint" xml:space="preserve"><value>Прочитать <a href="/privacy-policy" class="fc-link">политику конфиденциальности</a></value></data>
+  <data name="Register_AcceptPrivacyPolicyHint" xml:space="preserve"><value>Подробнее — в политике конфиденциальности.</value></data>
+  <data name="Register_PrivacyPolicyLink" xml:space="preserve"><value>Политика конфиденциальности</value></data>
 
   <!-- ==================== ConfirmEmail ==================== -->
   <data name="ConfirmEmail_PageTitle" xml:space="preserve"><value>Подтверждение почты</value></data>
@@ -847,4 +848,7 @@
 ---
 *Последнее обновление: 2024 г. Текст является базовым шаблоном. Рекомендуется юридическая экспертиза перед публикацией в продакшн.*
 </value></data>
+  <data name="PrivacyPolicy_BackToRegister" xml:space="preserve"><value>К регистрации</value></data>
+  <data name="PrivacyPolicy_Unavailable" xml:space="preserve"><value>Страница недоступна</value></data>
+  <data name="PrivacyPolicy_UnavailableHint" xml:space="preserve"><value>Политика конфиденциальности временно недоступна.</value></data>
 </root>

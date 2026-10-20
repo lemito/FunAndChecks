@@ -41,6 +41,7 @@ public class AuthFlowTests
             email,
             password = "secret1",
             groupId,
+            acceptedPrivacyPolicy = true,
             gitHubUrl = (string?)null,
             color = "#abcdef",
         });
@@ -99,6 +100,7 @@ public class AuthFlowTests
             email,
             password = "secret1",
             groupId,
+            acceptedPrivacyPolicy = true,
             gitHubUrl = (string?)null,
             color = "#abcdef",
         });

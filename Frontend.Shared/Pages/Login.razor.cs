@@ -18,6 +18,7 @@ public partial class Login
     [Inject] private NavigationManager Nav { get; set; } = null!;
     [Inject] private IStringLocalizer<AppStrings> Loc { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
+    [Inject] private FeatureFlagsService Flags { get; set; } = null!;
     [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
 
     private MudForm _form = null!;
@@ -52,12 +53,15 @@ public partial class Login
 
             AuthState.NotifyAuthenticationStateChanged();
 
-            // Проверяем статус согласия с политикой конфиденциальности
-            var status = await Auth.GetPrivacyPolicyStatusAsync();
-            if (!status.Accepted)
+            // Проверяем статус согласия с политикой конфиденциальности только если функция включена
+            if (Flags.PrivacyPolicy)
             {
-                _showPrivacyConsentDialog = true;
-                return;
+                var status = await Auth.GetPrivacyPolicyStatusAsync();
+                if (!status.Accepted)
+                {
+                    _showPrivacyConsentDialog = true;
+                    return;
+                }
             }
 
             await RedirectByRoleAsync();

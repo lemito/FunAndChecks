@@ -1,11 +1,13 @@
 using FluentAssertions;
 using FluentValidation;
 using FunAndChecks.Application.Auth;
+using FunAndChecks.Application.Common;
 using FunAndChecks.Application.Common.Exceptions;
 using FunAndChecks.Application.Common.Interfaces;
 using FunAndChecks.Tests.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
 
@@ -35,7 +37,7 @@ public class AuthServiceTests : IDisposable
 
     private AuthService CreateSut(Infrastructure.Persistence.ApplicationDbContext ctx) =>
         new(ctx, _identity, _token, _refresh, _email, _templates, _throttle, _cache,
-            new RegisterStudentRequestValidator(),
+            new RegisterStudentRequestValidator(Options.Create(new FeatureFlags())),
             new ResetPasswordRequestValidator(),
             NullLogger<AuthService>.Instance);
 

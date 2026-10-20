@@ -111,6 +111,24 @@
     .fc-queue-table .fc-queue-status .mud-chip { margin-left:0; }
     .fc-queue-table .fc-queue-points { text-align:right; }
 }
+
+/* Legal page (Privacy Policy, Terms of Service) */
+.fc-legal-card { border:1px solid var(--mud-palette-lines-default); border-radius:14px; background:var(--mud-palette-surface); width:100%; }
+.fc-legal-head { padding:32px 40px 0; }
+.fc-legal-body { padding:0 40px 40px; }
+.fc-legal-content { max-width:76ch; font-size:14px; line-height:1.75; color:var(--mud-palette-text-primary); }
+.fc-legal-content h1 { font-size:24px; font-weight:650; letter-spacing:-.02em; margin:0 0 20px; }
+.fc-legal-content h2 { font-size:18px; font-weight:650; margin:30px 0 12px; }
+.fc-legal-content h3 { font-size:15px; font-weight:650; margin:22px 0 8px; }
+.fc-legal-content p { margin:0 0 14px; }
+.fc-legal-content ul,.fc-legal-content ol { padding-left:24px; margin:0 0 14px; }
+.fc-legal-content li { margin-bottom:6px; }
+.fc-legal-content a { color:var(--mud-palette-primary); text-decoration:underline; }
+.fc-legal-content hr { border:0; border-top:1px solid var(--mud-palette-lines-default); margin:28px 0; }
+.fc-legal-content strong { font-weight:650; }
+.fc-legal-content code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:12.5px; background:rgba(var(--mud-palette-primary-rgb),.08); padding:1px 5px; border-radius:4px; }
+.fc-legal-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:32px; }
+@media (max-width:760px) { .fc-legal-head { padding:24px 20px 0; } .fc-legal-body { padding:0 20px 28px; } }
 @media (max-width:600px) {
     .fc-stats.fc-results-summary,.fc-stats.fc-results-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .fc-panel-body, .fc-panel-heading { padding:16px; }

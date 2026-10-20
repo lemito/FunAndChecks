@@ -1,10 +1,12 @@
 using FunAndChecks.Application.Auth;
+using FunAndChecks.Application.Common;
 using FunAndChecks.Common;
 using FunAndChecks.Monitoring;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
 namespace FunAndChecks.Controllers;
@@ -12,8 +14,9 @@ namespace FunAndChecks.Controllers;
 [ApiController]
 [Route("api/auth")]
 [EnableRateLimiting(RateLimitPolicies.Auth)]
-public class AuthController(IAuthService authService) : ControllerBase
+public class AuthController(IAuthService authService, IOptions<FeatureFlags> flags) : ControllerBase
 {
+    private readonly FeatureFlags _flags = flags.Value;
     /// <summary>Регистрация студента. На указанную почту отправляется код подтверждения.</summary>
     [HttpPost("register")]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -98,6 +101,9 @@ public class AuthController(IAuthService authService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PrivacyPolicyStatusDto>> GetPrivacyPolicyStatus(CancellationToken cancellationToken)
     {
+        if (!_flags.PrivacyPolicy)
+            return NotFound();
+
         var userId = GetCurrentUserId();
         var status = await authService.GetPrivacyPolicyStatusAsync(userId, cancellationToken);
         return Ok(status);
@@ -111,6 +117,9 @@ public class AuthController(IAuthService authService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AcceptPrivacyPolicy(CancellationToken cancellationToken)
     {
+        if (!_flags.PrivacyPolicy)
+            return NotFound();
+
         var userId = GetCurrentUserId();
         await authService.AcceptPrivacyPolicyAsync(userId, cancellationToken);
         return NoContent();

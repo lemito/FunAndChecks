@@ -84,7 +84,8 @@
   <data name="Register_HaveAccount" xml:space="preserve"><value>Already have an account? Sign in</value></data>
   <data name="Register_AcceptPrivacyPolicy" xml:space="preserve"><value>I agree to the Privacy Policy and Terms of Service</value></data>
   <data name="Register_AcceptPrivacyPolicyRequired" xml:space="preserve"><value>You must agree to the Privacy Policy</value></data>
-  <data name="Register_AcceptPrivacyPolicyHint" xml:space="preserve"><value>Read <a href="/privacy-policy" class="fc-link">Privacy Policy</a></value></data>
+  <data name="Register_AcceptPrivacyPolicyHint" xml:space="preserve"><value>See the privacy policy for details.</value></data>
+  <data name="Register_PrivacyPolicyLink" xml:space="preserve"><value>Privacy Policy</value></data>
 
   <!-- ==================== ConfirmEmail ==================== -->
   <data name="ConfirmEmail_PageTitle" xml:space="preserve"><value>Email Confirmation</value></data>
@@ -847,4 +848,7 @@ We may update this Policy. The new version takes effect upon publication on this
 ---
 *Last updated: 2024. This text is a basic template. Legal review is recommended before production deployment.*
 </value></data>
+  <data name="PrivacyPolicy_BackToRegister" xml:space="preserve"><value>Back to registration</value></data>
+  <data name="PrivacyPolicy_Unavailable" xml:space="preserve"><value>Page unavailable</value></data>
+  <data name="PrivacyPolicy_UnavailableHint" xml:space="preserve"><value>The privacy policy is temporarily unavailable.</value></data>
 </root>

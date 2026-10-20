@@ -25,6 +25,7 @@ public partial class Register
     [Inject] private GroupsApi Groups { get; set; } = null!;
     [Inject] private NavigationManager Nav { get; set; } = null!;
     [Inject] private IStringLocalizer<AppStrings> Loc { get; set; } = null!;
+    [Inject] private FeatureFlagsService Flags { get; set; } = null!;
 
     private RegisterModel _model = new();
     private Frontend.Shared.Components.ServerValidator _serverValidator = null!;
