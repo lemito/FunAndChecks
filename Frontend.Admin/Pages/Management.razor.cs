@@ -8,6 +8,7 @@ using Frontend.Shared.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Frontend.Admin.Pages;
@@ -27,6 +28,7 @@ public partial class Management
     [Inject] private UnsavedChangesTracker Dirty { get; set; } = null!;
     [Inject] private ConfirmService Confirm { get; set; } = null!;
     [Inject] private CurrentSubject CurrentSubject { get; set; } = null!;
+    [Inject] private IJSRuntime JS { get; set; } = null!;
 
     // ----- Мутабельные модели строк для inline-редактирования таблиц -----
     private sealed class SubjectRow { public int Id; public string Name = ""; public bool AttendanceEnabled; }
@@ -469,6 +471,22 @@ public partial class Management
     private bool BulkHasChanges => _bulkGroupSelection != KeepValue || _bulkPoints is not null;
 
     private void ClearTaskSelection() => _selectedTasks = [];
+
+    private ElementReference _tasksTableHost;
+    private IJSObjectReference? _dragSelectModule;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Таблица задач появляется и исчезает со сменой раздела/предмета; init повторно не навешивает обработчики.
+        if (_section != "tasks" || _taskSubjectId is null || _tasksTableHost.Context is null) return;
+        try
+        {
+            _dragSelectModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Frontend.Admin/table-drag-select.js?v=2");
+            await _dragSelectModule.InvokeVoidAsync("init", _tasksTableHost);
+        }
+        catch (JSException) { /* без протяжки остаются обычные галочки */ }
+        catch (JSDisconnectedException) { }
+    }
 
     private async Task ApplyBulkEditAsync()
     {

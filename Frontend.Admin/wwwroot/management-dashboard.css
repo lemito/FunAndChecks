@@ -219,10 +219,14 @@
 .fc-task-create-form .fc-management-bulk-actions > .mud-input-control { flex: 0 1 auto; }
 
 /* Массовое изменение отмеченных задач. */
-.fc-task-bulk-bar { position: sticky; top: 8px; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 10px;
+.fc-task-bulk-bar { position: sticky; bottom: 12px; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 14px; margin-top: 10px;
     border: 1px solid var(--mud-palette-primary); border-radius: 10px; background: var(--mud-palette-surface); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
 .fc-task-bulk-bar > .mud-input-control { flex: 0 1 auto; margin: 0; }
 .fc-task-bulk-hint { display: block; margin-bottom: 6px; }
+/* Протяжка галочек: колонка выбора не прокручивает страницу пальцем и не выделяет текст. */
+.fc-drag-select tbody td:first-child { cursor: pointer; }
+@media (min-width: 600px) { .fc-drag-select tbody td:first-child { touch-action: none; } }
+.fc-drag-select.fc-drag-selecting, .fc-drag-select.fc-drag-selecting * { user-select: none; cursor: pointer; }
 
 /* Обзор доступов группа ↔ предмет. */
 .fc-access-chips { display: flex; flex-wrap: wrap; gap: 4px; }

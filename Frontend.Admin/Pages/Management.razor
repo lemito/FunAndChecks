@@ -233,31 +233,12 @@ else
                     }
                 </div>
 
-                @* Массовое изменение: группа и баллы для отмеченных задач. *@
-                @if (_selectedTasks.Count > 0)
-                {
-                    <div class="fc-task-bulk-bar" role="region" aria-label="@Loc["Management_TasksSelected", _selectedTasks.Count]">
-                        <strong>@Loc["Management_TasksSelected", _selectedTasks.Count]</strong>
-                        @if (_taskGroups.Count > 0)
-                        {
-                            <MudSelect T="int" @bind-Value="_bulkGroupSelection" Label="@Loc["Management_TaskGroupLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 170px;">
-                                <MudSelectItem T="int" Value="KeepValue">@Loc["Management_BulkKeep"]</MudSelectItem>
-                                <MudSelectItem T="int" Value="0">@Loc["TaskGroup_None"]</MudSelectItem>
-                                @foreach (var g in _taskGroups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
-                            </MudSelect>
-                        }
-                        <MudNumericField T="int?" @bind-Value="_bulkPoints" Immediate="true" Label="@Loc["Management_TaskPointsLabel"]" Placeholder="@Loc["Management_BulkKeep"]"
-                                         Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="1000" Clearable="true" Style="width: 140px;" />
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!BulkHasChanges || _bulkBusy)" OnClick="ApplyBulkEditAsync">@Loc["Management_BulkApply"]</MudButton>
-                        <MudButton Variant="Variant.Text" Color="Color.Error" Disabled="_bulkBusy" StartIcon="@Icons.Material.Filled.Delete" OnClick="DeleteSelectedTasksAsync">@Loc["Management_BulkDelete"]</MudButton>
-                        <MudButton Variant="Variant.Text" Disabled="_bulkBusy" OnClick="ClearTaskSelection">@Loc["Management_BulkClear"]</MudButton>
-                    </div>
-                }
-                else if (_tasks.Count > 1)
+                @if (_tasks.Count > 1)
                 {
                     <MudText Typo="Typo.caption" Class="fc-muted fc-task-bulk-hint">@Loc["Management_BulkHint"]</MudText>
                 }
-
+                @* Галочки можно протянуть: нажать на одну и вести по соседним (table-drag-select.js). *@
+                <div @ref="_tasksTableHost" class="fc-drag-select">
                 <MudTable Class="fc-management-table" Breakpoint="Breakpoint.Sm" Items="_tasks" Hover="true" Dense="true" CanCancelEdit="true" EditTrigger="TableEditTrigger.EditButton" RowEditCommit="OnTaskCommit"
                           MultiSelection="true" SelectOnRowClick="false" @bind-SelectedItems="_selectedTasks">
                     <HeaderContent><MudTh>@Loc["Management_ColName"]</MudTh><MudTh>@Loc["Management_ColDescription"]</MudTh><MudTh>@Loc["Management_ColPoints"]</MudTh><MudTh>@Loc["Management_TaskGroupLabel"]</MudTh><MudTh></MudTh></HeaderContent>
@@ -282,6 +263,27 @@ else
                         <MudTd></MudTd>
                     </RowEditingTemplate>
                 </MudTable>
+                </div>
+                @* Массовое изменение — под таблицей и прилипает к низу экрана: появляясь, не сдвигает строки, пока их протягивают. *@
+                @if (_selectedTasks.Count > 0)
+                {
+                    <div class="fc-task-bulk-bar" role="region" aria-label="@Loc["Management_TasksSelected", _selectedTasks.Count]">
+                        <strong>@Loc["Management_TasksSelected", _selectedTasks.Count]</strong>
+                        @if (_taskGroups.Count > 0)
+                        {
+                            <MudSelect T="int" @bind-Value="_bulkGroupSelection" Label="@Loc["Management_TaskGroupLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 170px;">
+                                <MudSelectItem T="int" Value="KeepValue">@Loc["Management_BulkKeep"]</MudSelectItem>
+                                <MudSelectItem T="int" Value="0">@Loc["TaskGroup_None"]</MudSelectItem>
+                                @foreach (var g in _taskGroups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
+                            </MudSelect>
+                        }
+                        <MudNumericField T="int?" @bind-Value="_bulkPoints" Immediate="true" Label="@Loc["Management_TaskPointsLabel"]" Placeholder="@Loc["Management_BulkKeep"]"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="1000" Clearable="true" Style="width: 140px;" />
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!BulkHasChanges || _bulkBusy)" OnClick="ApplyBulkEditAsync">@Loc["Management_BulkApply"]</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" Disabled="_bulkBusy" StartIcon="@Icons.Material.Filled.Delete" OnClick="DeleteSelectedTasksAsync">@Loc["Management_BulkDelete"]</MudButton>
+                        <MudButton Variant="Variant.Text" Disabled="_bulkBusy" OnClick="ClearTaskSelection">@Loc["Management_BulkClear"]</MudButton>
+                    </div>
+                }
             }
         </section>
         }

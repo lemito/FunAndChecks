@@ -766,7 +766,7 @@
   <data name="Management_BulkDeleteText" xml:space="preserve"><value>Delete {0} tasks together with their marks? This cannot be undone.</value></data>
   <data name="Management_TasksUpdated" xml:space="preserve"><value>Tasks changed: {0}</value></data>
   <data name="Management_TasksDeleted" xml:space="preserve"><value>Tasks deleted: {0}</value></data>
-  <data name="Management_BulkHint" xml:space="preserve"><value>Select tasks with the checkboxes to change their group or points at once.</value></data>
+  <data name="Management_BulkHint" xml:space="preserve"><value>Select tasks with the checkboxes (or drag across them with the mouse button held) to change their group or points at once.</value></data>
   <data name="Management_ColSubjects" xml:space="preserve"><value>Subjects</value></data>
   <data name="Management_ColGroups" xml:space="preserve"><value>Groups</value></data>
   <data name="Management_NoSubjectAccess" xml:space="preserve"><value>no subjects</value></data>

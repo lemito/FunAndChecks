@@ -766,7 +766,7 @@
   <data name="Management_BulkDeleteText" xml:space="preserve"><value>Удалить задачи ({0}) вместе с отметками по ним? Это нельзя отменить.</value></data>
   <data name="Management_TasksUpdated" xml:space="preserve"><value>Изменено задач: {0}</value></data>
   <data name="Management_TasksDeleted" xml:space="preserve"><value>Удалено задач: {0}</value></data>
-  <data name="Management_BulkHint" xml:space="preserve"><value>Отметьте задачи галочками, чтобы разом поменять им группу или баллы.</value></data>
+  <data name="Management_BulkHint" xml:space="preserve"><value>Отметьте задачи галочками (можно провести по ним, не отпуская кнопку мыши), чтобы разом поменять группу или баллы.</value></data>
   <data name="Management_ColSubjects" xml:space="preserve"><value>Предметы</value></data>
   <data name="Management_ColGroups" xml:space="preserve"><value>Группы</value></data>
   <data name="Management_NoSubjectAccess" xml:space="preserve"><value>нет предметов</value></data>
