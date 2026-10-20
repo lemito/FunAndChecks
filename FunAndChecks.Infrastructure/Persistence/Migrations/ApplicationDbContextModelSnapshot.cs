@@ -1560,6 +1560,9 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("PrivacyPolicyAcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasIndex("GroupId");
 
                     b.ToTable("Students", (string)null);

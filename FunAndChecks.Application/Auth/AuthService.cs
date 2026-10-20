@@ -78,6 +78,7 @@ public class AuthService(
                 GroupId = request.GroupId,
                 IsActive = false,
                 CreatedAt = DateTime.UtcNow,
+                PrivacyPolicyAcceptedAt = request.AcceptedPrivacyPolicy ? DateTime.UtcNow : null,
             });
             await db.SaveChangesAsync(cancellationToken);
         }
@@ -178,6 +179,30 @@ public class AuthService(
 
     public Task LogoutAsync(RefreshRequest request, CancellationToken cancellationToken = default) =>
         refreshTokenService.RevokeAsync(request.RefreshToken, cancellationToken);
+
+    public async Task<PrivacyPolicyStatusDto> GetPrivacyPolicyStatusAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var student = await db.Students.FindAsync([userId], cancellationToken);
+        if (student is null)
+            throw new NotFoundException($"Student with ID {userId} not found.");
+
+        return new PrivacyPolicyStatusDto(
+            Accepted: student.PrivacyPolicyAcceptedAt.HasValue,
+            AcceptedAt: student.PrivacyPolicyAcceptedAt);
+    }
+
+    public async Task AcceptPrivacyPolicyAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var student = await db.Students.FindAsync([userId], cancellationToken);
+        if (student is null)
+            throw new NotFoundException($"Student with ID {userId} not found.");
+
+        if (!student.PrivacyPolicyAcceptedAt.HasValue)
+        {
+            student.PrivacyPolicyAcceptedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync(cancellationToken);
+        }
+    }
 
     private async Task<AuthResponse> IssueTokensAsync(Guid userId, CancellationToken cancellationToken)
     {

@@ -2,6 +2,7 @@ using Frontend.Shared.Auth;
 using Frontend.Shared.Models;
 using Frontend.Shared.Resources;
 using Frontend.Shared.Services;
+using Frontend.Shared.UI;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
@@ -16,6 +17,7 @@ public partial class Login
     [Inject] private JwtAuthenticationStateProvider AuthState { get; set; } = null!;
     [Inject] private NavigationManager Nav { get; set; } = null!;
     [Inject] private IStringLocalizer<AppStrings> Loc { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = null!;
     [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
 
     private MudForm _form = null!;
@@ -24,6 +26,7 @@ public partial class Login
     private string? _error;
     private bool _emailNotConfirmed;
     private bool _busy, _showPassword, _sharedComputer;
+    private bool _showPrivacyConsentDialog;
 
     private async Task SubmitAsync()
     {
@@ -48,12 +51,27 @@ public partial class Login
             }
 
             AuthState.NotifyAuthenticationStateChanged();
+
+            // Проверяем статус согласия с политикой конфиденциальности
+            var status = await Auth.GetPrivacyPolicyStatusAsync();
+            if (!status.Accepted)
+            {
+                _showPrivacyConsentDialog = true;
+                return;
+            }
+
             await RedirectByRoleAsync();
         }
         finally
         {
             _busy = false;
         }
+    }
+
+    private void OnPrivacyPolicyAccepted()
+    {
+        _showPrivacyConsentDialog = false;
+        _ = RedirectByRoleAsync();
     }
 
     private async Task RedirectByRoleAsync()

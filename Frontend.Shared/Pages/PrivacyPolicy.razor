@@ -1,0 +1,26 @@
+@page "/privacy-policy"
+@layout AuthLayout
+@using Frontend.Shared.Community
+@inject IStringLocalizer<AppStrings> Loc
+
+<PageTitle>@Loc["PrivacyPolicy_PageTitle"]</PageTitle>
+
+<section class="fc-auth-card">
+    <div class="fc-auth-form">
+        <MudText Typo="Typo.h5">@Loc["PrivacyPolicy_Title"]</MudText>
+
+        <div class="fc-privacy-policy-content">
+            @((MarkupString)ForumMarkdown.ToHtml(Loc["PrivacyPolicy_Text"], "/student"))
+        </div>
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-6" OnClick="GoBack">
+            @Loc["Common_BackToLogin"]
+        </MudButton>
+    </div>
+</section>
+
+@code {
+    private void GoBack() => NavigationManager.NavigateTo("/login");
+
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+}

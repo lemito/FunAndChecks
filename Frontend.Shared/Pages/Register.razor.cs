@@ -16,6 +16,7 @@ public class RegisterModel
     public string Password { get; set; } = string.Empty;
     public string ConfirmPassword { get; set; } = string.Empty;
     public int? GroupId { get; set; }
+    public bool AcceptedPrivacyPolicy { get; set; }
 }
 
 public partial class Register
@@ -64,7 +65,8 @@ public partial class Register
             _model.LastName.Trim(),
             _model.Email.Trim(),
             _model.Password,
-            groupId);
+            groupId,
+            _model.AcceptedPrivacyPolicy);
 
         try
         {

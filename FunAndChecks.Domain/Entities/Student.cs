@@ -20,6 +20,9 @@ public class Student : User
     /// <summary>Момент регистрации (UTC) — для очистки неподтверждённых аккаунтов.</summary>
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>Момент принятия политики конфиденциальности (UTC). Null — не принято.</summary>
+    public DateTime? PrivacyPolicyAcceptedAt { get; set; }
+
     public int? GroupId { get; set; }
     public Group? Group { get; set; }
 

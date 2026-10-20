@@ -5,7 +5,8 @@ public record RegisterStudentRequest(
     string LastName,
     string Email,
     string Password,
-    int GroupId);
+    int GroupId,
+    bool AcceptedPrivacyPolicy);
 
 public record LoginRequest(string Email, string Password);
 
@@ -20,3 +21,5 @@ public record ResendConfirmationRequest(string Email);
 public record ForgotPasswordRequest(string Email);
 
 public record ResetPasswordRequest(string Email, string Code, string NewPassword);
+
+public record PrivacyPolicyStatus(bool Accepted, DateTime? AcceptedAt);

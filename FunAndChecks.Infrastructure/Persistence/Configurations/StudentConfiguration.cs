@@ -23,5 +23,7 @@ public class StudentConfiguration : IEntityTypeConfiguration<Student>
             .OnDelete(DeleteBehavior.SetNull);
 
         builder.Property(s => s.Color).HasMaxLength(16);
+
+        builder.Property(s => s.PrivacyPolicyAcceptedAt);
     }
 }

@@ -59,6 +59,11 @@
   <data name="Login_GoToRegister" xml:space="preserve"><value>Register</value></data>
   <data name="Login_ViewResults" xml:space="preserve"><value>View results without signing in</value></data>
   <data name="Login_ConfirmEmailButton" xml:space="preserve"><value>Confirm email</value></data>
+  <data name="Login_PrivacyConsentTitle" xml:space="preserve"><value>Consent to Personal Data Processing Required</value></data>
+  <data name="Login_PrivacyConsentMessage" xml:space="preserve"><value>To continue, you must agree to the Privacy Policy</value></data>
+  <data name="Login_PrivacyConsentAccept" xml:space="preserve"><value>I Agree and Continue</value></data>
+  <data name="Login_PrivacyConsentRead" xml:space="preserve"><value>Read Privacy Policy</value></data>
+  <data name="Login_PrivacyConsentAcceptRequired" xml:space="preserve"><value>You must agree</value></data>
 
   <!-- ==================== Register ==================== -->
   <data name="Register_PageTitle" xml:space="preserve"><value>Registration</value></data>
@@ -77,6 +82,9 @@
   <data name="Register_GroupPlaceholder" xml:space="preserve"><value>Select group</value></data>
   <data name="Register_SubmitButton" xml:space="preserve"><value>Register</value></data>
   <data name="Register_HaveAccount" xml:space="preserve"><value>Already have an account? Sign in</value></data>
+  <data name="Register_AcceptPrivacyPolicy" xml:space="preserve"><value>I agree to the Privacy Policy and Terms of Service</value></data>
+  <data name="Register_AcceptPrivacyPolicyRequired" xml:space="preserve"><value>You must agree to the Privacy Policy</value></data>
+  <data name="Register_AcceptPrivacyPolicyHint" xml:space="preserve"><value>Read <a href="/privacy-policy" class="fc-link">Privacy Policy</a></value></data>
 
   <!-- ==================== ConfirmEmail ==================== -->
   <data name="ConfirmEmail_PageTitle" xml:space="preserve"><value>Email Confirmation</value></data>
@@ -771,4 +779,72 @@
   <data name="Management_ColGroups" xml:space="preserve"><value>Groups</value></data>
   <data name="Management_NoSubjectAccess" xml:space="preserve"><value>no subjects</value></data>
   <data name="Management_NoGroupAccess" xml:space="preserve"><value>no groups</value></data>
+  <!-- ==================== Privacy Policy ==================== -->
+  <data name="PrivacyPolicy_PageTitle" xml:space="preserve"><value>Privacy Policy</value></data>
+  <data name="PrivacyPolicy_Title" xml:space="preserve"><value>Privacy Policy and Terms of Service</value></data>
+  <data name="PrivacyPolicy_Text" xml:space="preserve"><value># Privacy Policy and Terms of Service
+
+**FunAndChecks** (hereinafter — "Operator", "we", "the Site") respects your privacy and protects your personal data in accordance with the Federal Law of 27.07.2006 No. 152-FZ "On Personal Data" (hereinafter — "152-FZ") and other regulatory legal acts of the Russian Federation.
+
+This Privacy Policy defines the procedure for processing and protecting personal data of users registering on the Site and using its functionality.
+
+## 1. Purposes of Personal Data Processing
+We process your personal data for the following purposes:
+- **Identification and authorization** — providing access to personal account, queues, submission results;
+- **Ensuring Site functionality** — signing up for submissions, viewing grades, attendance, submission history;
+- **Informing** — sending email confirmation codes, queue notifications, password change notifications, system messages;
+- **Maintaining educational history** — storing submission results, grades, teacher comments, attendance;
+- **Administration and security** — protection against unauthorized access, incident investigation, action audit.
+
+## 2. Categories of Processed Personal Data
+Depending on the usage scenario, we may process:
+- **Identifying data**: last name, first name, email address;
+- **Educational data**: group, subjects, submission results (points, statuses), grades, teacher comments, attendance;
+- **Technical data**: IP address, User-Agent, login time, session tokens (access/refresh), system action data (audit logs);
+- **Profile data** (at user's discretion): avatar, profile color, pinned achievements.
+
+## 3. Legal Grounds for Processing (Art. 6, 11 152-FZ)
+Processing is carried out on the basis of:
+- **Consent of the data subject** (cl. 1 Art. 6 152-FZ) — upon registration you check the box confirming consent;
+- **Performance of contract/user agreement** (cl. 2 Art. 11 152-FZ) — for providing Site services;
+- **Legitimate interests of the Operator** (cl. 4 Art. 6 152-FZ) — ensuring security, fraud prevention, analytics.
+
+## 4. Personal Data Retention Periods
+- **Account**: 3 years from the last activity (login). After that — account is anonymized/deleted by background cleanup;
+- **Educational history** (grades, submissions, attendance): stored indefinitely to preserve academic history, or until deletion request by the data subject;
+- **Technical logs and tokens**: access tokens — until expiry (15 min), refresh tokens — until revocation/rotation (max 30 days of inactivity), audit logs — 1 year.
+
+## 5. Rights of the Data Subject (Art. 18 152-FZ)
+You have the right to:
+- Obtain confirmation of processing and access to your data;
+- Demand correction of inaccurate/incomplete data;
+- Demand cessation of processing and deletion of data (in the absence of legal grounds for retention);
+- Withdraw consent to processing (including via account deletion in profile settings);
+- Appeal the Operator's actions to Roskomnadzor or in court.
+
+## 6. Security Measures (Art. 19 152-FZ)
+We apply necessary organizational and technical measures:
+- Passwords are stored as hashes (bcrypt/Argon2), not available in plain text;
+- Data transmission — only via HTTPS (TLS 1.2+);
+- Role-based access control (RBAC): student / teacher / admin / superadmin;
+- Refresh token rotation, revocation on password change, rate-limiting on auth endpoints;
+- CSRF protection, SameSite cookies, Content Security Policy;
+- Regular encrypted database backups.
+
+## 7. Disclosure to Third Parties
+Personal data is not disclosed to third parties, except:
+- Processors (hosting, email gateway) — under data processing agreements (Art. 28 GDPR / Art. 152-FZ);
+- Authorized government bodies — on grounds and in the manner established by Russian law.
+
+## 8. Operator Contacts
+For questions on personal data processing, exercise of data subject rights, or complaints:
+- Email: privacy@funandchecks.local (placeholder — replace with real contact before production)
+- Feedback form on the Site ("Support" section)
+
+## 9. Policy Changes
+We may update this Policy. The new version takes effect upon publication on this page. We notify users of significant changes via the Site or email.
+
+---
+*Last updated: 2024. This text is a basic template. Legal review is recommended before production deployment.*
+</value></data>
 </root>

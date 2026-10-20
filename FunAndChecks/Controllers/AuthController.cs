@@ -2,8 +2,10 @@ using FunAndChecks.Application.Auth;
 using FunAndChecks.Common;
 using FunAndChecks.Monitoring;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Claims;
 
 namespace FunAndChecks.Controllers;
 
@@ -86,5 +88,38 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         await authService.ResetPasswordAsync(request, cancellationToken);
         return NoContent();
+    }
+
+    /// <summary>Получить статус согласия с политикой конфиденциальности текущего пользователя.</summary>
+    [HttpGet("privacy-policy-status")]
+    [Authorize]
+    [ProducesResponseType(typeof(PrivacyPolicyStatusDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PrivacyPolicyStatusDto>> GetPrivacyPolicyStatus(CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        var status = await authService.GetPrivacyPolicyStatusAsync(userId, cancellationToken);
+        return Ok(status);
+    }
+
+    /// <summary>Принять политику конфиденциальности от имени текущего пользователя.</summary>
+    [HttpPost("accept-privacy-policy")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AcceptPrivacyPolicy(CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        await authService.AcceptPrivacyPolicyAsync(userId, cancellationToken);
+        return NoContent();
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value;
+        return Guid.Parse(userIdClaim!);
     }
 }

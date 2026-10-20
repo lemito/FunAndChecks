@@ -42,6 +42,14 @@
             }
         </MudSelect>
 
+        <div class="mt-4">
+            <MudCheckBox @bind-Value="_model.AcceptedPrivacyPolicy" Label="@Loc["Register_AcceptPrivacyPolicy"]" Required="true"
+                         RequiredError="@Loc["Register_AcceptPrivacyPolicyRequired"]" Color="Color.Primary" Dense="true" />
+            <MudText Typo="Typo.caption" Class="ms-6 fc-muted">
+                @Loc["Register_AcceptPrivacyPolicyHint"]
+            </MudText>
+        </div>
+
         @if (_error is not null)
         {
             <MudAlert Severity="Severity.Error" Class="mt-4">@_error</MudAlert>

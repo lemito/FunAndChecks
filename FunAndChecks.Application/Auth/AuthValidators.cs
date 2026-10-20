@@ -11,6 +11,7 @@ public class RegisterStudentRequestValidator : AbstractValidator<RegisterStudent
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(256);
         RuleFor(x => x.Password).NotEmpty().MinimumLength(6).MaximumLength(128);
         RuleFor(x => x.GroupId).GreaterThan(0);
+        RuleFor(x => x.AcceptedPrivacyPolicy).Equal(true).WithMessage("Необходимо согласиться с политикой конфиденциальности");
     }
 }
 
