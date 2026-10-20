@@ -13,7 +13,8 @@ public static class SurveyXlsxExporter
         var col = 1;
         if (!survey.IsAnonymous)
         {
-            ws.Cell(1, col++).Value = "ФИО";
+            ws.Cell(1, col++).Value = "Фамилия";
+            ws.Cell(1, col++).Value = "Имя";
             ws.Cell(1, col++).Value = "Группа";
         }
         ws.Cell(1, col++).Value = survey.IsAnonymous ? "Дата" : "Время ответа (UTC)";
@@ -27,7 +28,9 @@ public static class SurveyXlsxExporter
             col = 1;
             if (!survey.IsAnonymous)
             {
-                ws.Cell(row, col++).Value = response.RespondentName;
+                var (lastName, firstName) = PersonName.Split(response.LastName, response.FirstName, response.RespondentName);
+                ws.Cell(row, col++).Value = lastName;
+                ws.Cell(row, col++).Value = firstName;
                 ws.Cell(row, col++).Value = response.GroupName ?? "";
             }
             ws.Cell(row, col).Value = response.SubmittedAtUtc;

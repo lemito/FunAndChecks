@@ -237,7 +237,9 @@ public class SurveyAdminService(
                 .OrderBy(g => questions[g.Key].Order)
                 .Select(g => new SurveyAnswerViewDto(g.Key, string.Join("; ", g.Select(x =>
                     x.OptionId is int o ? options.GetValueOrDefault(o, "?") : x.Text ?? x.Number?.ToString("0.####") ?? ""))))
-                .ToList())).ToList();
+                .ToList(),
+            survey.IsAnonymous ? null : r.RespondentId is Guid l && accounts.TryGetValue(l, out var c) ? c.LastName : null,
+            survey.IsAnonymous ? null : r.RespondentId is Guid f && accounts.TryGetValue(f, out var d) ? d.FirstName : null)).ToList();
         return survey.IsAnonymous ? rows.OrderBy(_ => Random.Shared.Next()).ToList() : rows;
     }
 

@@ -108,6 +108,10 @@ public class AttendanceFlowTests : IDisposable
             (await admin.PutAsJsonAsync($"{sessionUrl}/students/{studentId}", new SetAttendanceRequest(status, version)))
                 .StatusCode.Should().Be(HttpStatusCode.OK);
         }
+        // Занятие только первой группы: на листе второй группы ему не место (там был бы столбец из одних «н/у»).
+        (await admin.PostAsJsonAsync($"{subjectUrl}/sessions",
+                new CreateAttendanceSessionRequest("Только 101", new DateTime(2026, 10, 6, 7, 0, 0, DateTimeKind.Utc), [data.GroupId])))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
 
         using var response = await admin.GetAsync($"{subjectUrl}/export");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -115,14 +119,20 @@ public class AttendanceFlowTests : IDisposable
         using var workbook = new XLWorkbook(stream);
         workbook.Worksheets.Should().HaveCount(2);
         var firstGroup = workbook.Worksheet("M8O-101");
-        firstGroup.Cell(5, 2).GetString().Should().Be("M8O-101");
-        firstGroup.Cell(6, 2).GetString().Should().Be("M8O-101");
+        firstGroup.Cell(1, 1).GetString().Should().EndWith("M8O-101");
+        firstGroup.Cell(4, 1).GetString().Should().Be("Фамилия");
+        firstGroup.Cell(4, 2).GetString().Should().Be("Имя");
+        firstGroup.Cell(5, 2).GetString().Should().Be("Test");
+        firstGroup.Cell(6, 2).GetString().Should().Be("Test");
         firstGroup.Cell(7, 1).IsEmpty().Should().BeTrue();
         firstGroup.Cell(5, 3).GetString().Should().Be("✓");
+        firstGroup.Cell(4, 4).GetString().Should().Contain("Только 101");
         var secondGroup = workbook.Worksheet("M8O-102");
-        secondGroup.Cell(5, 2).GetString().Should().Be("M8O-102");
+        secondGroup.Cell(5, 1).GetString().Should().Be("Gamma");
+        secondGroup.Cell(5, 2).GetString().Should().Be("Test");
         secondGroup.Cell(6, 1).IsEmpty().Should().BeTrue();
         secondGroup.Cell(5, 3).GetString().Should().Be("✕");
+        secondGroup.Cell(4, 4).GetString().Should().Be("Посещений");
         secondGroup.Cell(5, 5).GetValue<int>().Should().Be(1);
     }
 

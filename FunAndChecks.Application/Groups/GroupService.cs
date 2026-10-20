@@ -160,6 +160,22 @@ public class GroupService(
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<GroupSubjectsDto>> GetSubjectLinksAsync(Guid adminId, CancellationToken cancellationToken = default)
+    {
+        var isSuperAdmin = await accessService.IsSuperAdminAsync(adminId, cancellationToken);
+        var links = await db.GroupSubjects
+            .Where(gs => !db.AdminGroupAccesses.Any(a => a.AdminId == adminId && a.GroupId == gs.GroupId && (a.IsRestricted || a.IsHidden)))
+            .Where(gs => isSuperAdmin
+                ? !db.AdminSubjectAccesses.Any(a => a.AdminId == adminId && a.SubjectId == gs.SubjectId && a.IsHidden)
+                : db.AdminSubjectAccesses.Any(a => a.AdminId == adminId && a.SubjectId == gs.SubjectId && !a.IsRestricted && !a.IsHidden))
+            .Select(gs => new { gs.GroupId, gs.SubjectId })
+            .ToListAsync(cancellationToken);
+        return links.GroupBy(l => l.GroupId)
+            .Select(g => new GroupSubjectsDto(g.Key, g.Select(l => l.SubjectId).Order().ToList()))
+            .OrderBy(g => g.GroupId)
+            .ToList();
+    }
+
     public async Task<List<int>> GetGroupIdsForSubjectAsync(Guid adminId, int subjectId, CancellationToken cancellationToken = default)
     {
         await accessService.EnsureSubjectAllowedAsync(adminId, subjectId, cancellationToken);

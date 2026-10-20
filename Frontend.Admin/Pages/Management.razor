@@ -78,9 +78,10 @@ else
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateSubjectAsync">@Loc["Common_Add"]</MudButton>
             </div>
             <MudTable Class="fc-management-table" Breakpoint="Breakpoint.Sm" Items="_subjects" Hover="true" Dense="true" CanCancelEdit="true" EditTrigger="TableEditTrigger.EditButton" RowEditCommit="OnSubjectCommit" RowEditableFunc="@(subject => CanUseSubject(subject.Id))">
-                <HeaderContent><MudTh>@Loc["Management_ColName"]</MudTh><MudTh>@Loc["Management_ColAttendance"]</MudTh><MudTh></MudTh></HeaderContent>
+                <HeaderContent><MudTh>@Loc["Management_ColName"]</MudTh><MudTh>@Loc["Management_ColGroups"]</MudTh><MudTh>@Loc["Management_ColAttendance"]</MudTh><MudTh></MudTh></HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="@Loc["Management_ColName"]">@context.Name</MudTd>
+                    <MudTd DataLabel="@Loc["Management_ColGroups"]">@(CanUseSubject(context.Id) ? AccessChips(GroupNamesOf(context.Id), Loc["Management_NoGroupAccess"]) : null)</MudTd>
                     <MudTd DataLabel="@Loc["Management_ColAttendance"]"><MudSwitch T="bool" Value="context.AttendanceEnabled" ValueChanged="@(v => SetAttendanceEnabledAsync(context, v))" Disabled="IsSubjectRestricted(context.Id)" Color="Color.Primary" aria-label="@Loc["Management_AttendanceLabel"]">@Loc["Management_AttendanceTracking"]</MudSwitch></MudTd>
                     <MudTd>
                         <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.GroupWork"
@@ -91,6 +92,7 @@ else
                 </RowTemplate>
                 <RowEditingTemplate>
                     <MudTd DataLabel="@Loc["Management_ColName"]"><MudTextField @bind-Value="context.Name" /></MudTd>
+                    <MudTd DataLabel="@Loc["Management_ColGroups"]">@AccessChips(GroupNamesOf(context.Id), Loc["Management_NoGroupAccess"])</MudTd>
                     <MudTd DataLabel="@Loc["Management_ColAttendance"]">@(context.AttendanceEnabled ? Loc["Common_Enabled"] : Loc["Common_Disabled"])</MudTd>
                     <MudTd></MudTd>
                 </RowEditingTemplate>
@@ -113,9 +115,10 @@ else
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateGroupAsync">@Loc["Common_Add"]</MudButton>
             </div>
             <MudTable Class="fc-management-table" Breakpoint="Breakpoint.Sm" Items="_groups" Hover="true" Dense="true" CanCancelEdit="true" EditTrigger="TableEditTrigger.EditButton" RowEditCommit="OnGroupCommit">
-                <HeaderContent><MudTh>@Loc["Management_ColName"]</MudTh><MudTh></MudTh></HeaderContent>
+                <HeaderContent><MudTh>@Loc["Management_ColName"]</MudTh><MudTh>@Loc["Management_ColSubjects"]</MudTh><MudTh></MudTh></HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="@Loc["Management_ColName"]">@context.Name</MudTd>
+                    <MudTd DataLabel="@Loc["Management_ColSubjects"]">@AccessChips(SubjectNamesOf(context.Id), Loc["Management_NoSubjectAccess"])</MudTd>
                     <MudTd>
                         <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.MenuBook"
                                    OnClick="@(() => OpenGroupAccessAsync(context))">@Loc["Common_Access"]</MudButton>
@@ -125,6 +128,7 @@ else
                 </RowTemplate>
                 <RowEditingTemplate>
                     <MudTd DataLabel="@Loc["Management_ColName"]"><MudTextField @bind-Value="context.Name" /></MudTd>
+                    <MudTd DataLabel="@Loc["Management_ColSubjects"]">@AccessChips(SubjectNamesOf(context.Id), Loc["Management_NoSubjectAccess"])</MudTd>
                     <MudTd></MudTd>
                 </RowEditingTemplate>
             </MudTable>
@@ -167,42 +171,95 @@ else
                     }
                 </details>
 
-                @* Enter добавляет задачу и возвращает фокус в название — задачи вводятся подряд с клавиатуры. *@
-                <form class="fc-management-form" @onsubmit="CreateTaskAsync" @onsubmit:preventDefault="true">
-                    <MudTextField @ref="_taskNameField" @bind-Value="_newTaskName" Immediate="true" Label="@Loc["Management_TaskLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    <MudTextField @bind-Value="_newTaskDescription" Immediate="true" Label="@Loc["Management_TaskDescriptionLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    <MudNumericField @bind-Value="_newTaskMaxPoints" Immediate="true" Label="@Loc["Management_TaskPointsLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Style="width: 100px;" />
-                    @if (_taskGroups.Count > 0)
+                @* Создание: виден один способ за раз, и группа задач в нём относится только к нему. *@
+                <div class="fc-task-create">
+                    <div class="fc-task-create-head">
+                        <strong>@Loc["Management_TaskCreateTitle"]</strong>
+                        <div class="fc-task-modes" role="group" aria-label="@Loc["Management_TaskModeLabel"]">
+                            @foreach (var mode in TaskCreateModes)
+                            {
+                                <button type="button" class="@(_taskCreateMode == mode.Id ? "active" : "")" aria-pressed="@(_taskCreateMode == mode.Id ? "true" : "false")"
+                                        @onclick="@(() => _taskCreateMode = mode.Id)">@Loc[mode.Label]</button>
+                            }
+                        </div>
+                    </div>
+
+                    @if (_taskCreateMode == TaskCreateMode.Single)
                     {
-                        <MudSelect T="int" @bind-Value="_newTaskGroupId" Label="@Loc["Management_TaskGroupLabel"]" HelperText="@Loc["Management_TaskGroupForNewHint"]"
-                                   Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 160px;">
-                            <MudSelectItem T="int" Value="0">@Loc["TaskGroup_None"]</MudSelectItem>
-                            @foreach (var g in _taskGroups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
-                        </MudSelect>
+                        @* Enter добавляет задачу и возвращает фокус в название — задачи вводятся подряд с клавиатуры. *@
+                        <form class="fc-management-form fc-task-create-form" @onsubmit="CreateTaskAsync" @onsubmit:preventDefault="true">
+                            <MudTextField @ref="_taskNameField" @bind-Value="_newTaskName" Immediate="true" Label="@Loc["Management_TaskLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <MudTextField @bind-Value="_newTaskDescription" Immediate="true" Label="@Loc["Management_TaskDescriptionLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <MudNumericField @bind-Value="_newTaskMaxPoints" Immediate="true" Label="@Loc["Management_TaskPointsLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Style="width: 100px;" />
+                            @NewTaskGroupSelect
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="@string.IsNullOrWhiteSpace(_newTaskName)">@Loc["Common_Add"]</MudButton>
+                        </form>
                     }
-                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@Loc["Common_Add"]</MudButton>
-                </form>
-                <details class="fc-management-bulk">
-                    <summary>@Loc["Management_TasksBulkLabel"]</summary>
-                    <MudTextField @bind-Value="_bulkTasks" Immediate="true" Lines="5" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    <div class="fc-management-bulk-actions">
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(string.IsNullOrWhiteSpace(_bulkTasks) || _bulkBusy)" OnClick="AddBulkTasksAsync">@Loc["Management_TasksBulkAdd"]</MudButton>
-                        <MudSelect T="int?" Value="_copyFromSubjectId" ValueChanged="CopyTasksFromAsync" Label="@Loc["Management_CopyTasksFrom"]" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_bulkBusy">
-                            @foreach (var s in AvailableSubjects.Where(s => s.Id != _taskSubjectId)) { <MudSelectItem T="int?" Value="@s.Id">@s.Name</MudSelectItem> }
-                        </MudSelect>
+                    else if (_taskCreateMode == TaskCreateMode.List)
+                    {
+                        <div class="fc-task-create-form">
+                            <MudTextField @bind-Value="_bulkTasks" Immediate="true" Lines="5" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          Label="@Loc["Management_TasksBulkLabel"]" Placeholder="1.1;2&#10;1.2;2;Описание" />
+                            <div class="fc-management-bulk-actions">
+                                @NewTaskGroupSelect
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(string.IsNullOrWhiteSpace(_bulkTasks) || _bulkBusy)" OnClick="AddBulkTasksAsync">@Loc["Management_TasksBulkAdd"]</MudButton>
+                            </div>
+                        </div>
+                    }
+                    else if (_taskCreateMode == TaskCreateMode.Set)
+                    {
+                        <div class="fc-task-create-form">
+                            <MudText Typo="Typo.caption" Class="fc-muted">@Loc["Management_TaskSetHint"]</MudText>
+                            <div class="fc-management-bulk-actions">
+                                <MudTextField @bind-Value="_setPrefix" Immediate="true" Label="@Loc["Management_TaskSetPrefix"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 140px;" />
+                                <MudNumericField @bind-Value="_setCount" Immediate="true" Label="@Loc["Management_TaskSetCount"]" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" Max="99" Style="width: 140px;" />
+                                <MudNumericField @bind-Value="_setPoints" Immediate="true" Label="@Loc["Management_TaskPointsLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Style="width: 100px;" />
+                                @NewTaskGroupSelect
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(TaskSetPreview is null || _bulkBusy)" OnClick="CreateTaskSetAsync">@Loc["Management_TaskSetCreate"]</MudButton>
+                            </div>
+                            @if (TaskSetPreview is string preview) { <MudText Typo="Typo.body2">@preview</MudText> }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="fc-task-create-form">
+                            <MudText Typo="Typo.caption" Class="fc-muted">@Loc["Management_CopyTasksHint"]</MudText>
+                            <div class="fc-management-bulk-actions">
+                                <MudSelect T="int?" Value="_copyFromSubjectId" ValueChanged="CopyTasksFromAsync" Label="@Loc["Management_CopyTasksFrom"]" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="_bulkBusy">
+                                    @foreach (var s in AvailableSubjects.Where(s => s.Id != _taskSubjectId)) { <MudSelectItem T="int?" Value="@s.Id">@s.Name</MudSelectItem> }
+                                </MudSelect>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @* Массовое изменение: группа и баллы для отмеченных задач. *@
+                @if (_selectedTasks.Count > 0)
+                {
+                    <div class="fc-task-bulk-bar" role="region" aria-label="@Loc["Management_TasksSelected", _selectedTasks.Count]">
+                        <strong>@Loc["Management_TasksSelected", _selectedTasks.Count]</strong>
+                        @if (_taskGroups.Count > 0)
+                        {
+                            <MudSelect T="int" @bind-Value="_bulkGroupSelection" Label="@Loc["Management_TaskGroupLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 170px;">
+                                <MudSelectItem T="int" Value="KeepValue">@Loc["Management_BulkKeep"]</MudSelectItem>
+                                <MudSelectItem T="int" Value="0">@Loc["TaskGroup_None"]</MudSelectItem>
+                                @foreach (var g in _taskGroups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
+                            </MudSelect>
+                        }
+                        <MudNumericField T="int?" @bind-Value="_bulkPoints" Immediate="true" Label="@Loc["Management_TaskPointsLabel"]" Placeholder="@Loc["Management_BulkKeep"]"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="1000" Clearable="true" Style="width: 140px;" />
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!BulkHasChanges || _bulkBusy)" OnClick="ApplyBulkEditAsync">@Loc["Management_BulkApply"]</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" Disabled="_bulkBusy" StartIcon="@Icons.Material.Filled.Delete" OnClick="DeleteSelectedTasksAsync">@Loc["Management_BulkDelete"]</MudButton>
+                        <MudButton Variant="Variant.Text" Disabled="_bulkBusy" OnClick="ClearTaskSelection">@Loc["Management_BulkClear"]</MudButton>
                     </div>
-                </details>
-                <details class="fc-management-bulk">
-                    <summary>@Loc["Management_TaskSetLabel"]</summary>
-                    <div class="fc-management-bulk-actions">
-                        <MudTextField @bind-Value="_setPrefix" Immediate="true" Label="@Loc["Management_TaskSetPrefix"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 140px;" />
-                        <MudNumericField @bind-Value="_setCount" Immediate="true" Label="@Loc["Management_TaskSetCount"]" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" Max="99" Style="width: 140px;" />
-                        <MudNumericField @bind-Value="_setPoints" Immediate="true" Label="@Loc["Management_TaskPointsLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Style="width: 100px;" />
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(TaskSetPreview is null || _bulkBusy)" OnClick="CreateTaskSetAsync">@Loc["Management_TaskSetCreate"]</MudButton>
-                        @if (TaskSetPreview is string preview) { <MudText Typo="Typo.body2">@preview</MudText> }
-                    </div>
-                </details>
-                <MudTable Class="fc-management-table" Breakpoint="Breakpoint.Sm" Items="_tasks" Hover="true" Dense="true" CanCancelEdit="true" EditTrigger="TableEditTrigger.EditButton" RowEditCommit="OnTaskCommit">
+                }
+                else if (_tasks.Count > 1)
+                {
+                    <MudText Typo="Typo.caption" Class="fc-muted fc-task-bulk-hint">@Loc["Management_BulkHint"]</MudText>
+                }
+
+                <MudTable Class="fc-management-table" Breakpoint="Breakpoint.Sm" Items="_tasks" Hover="true" Dense="true" CanCancelEdit="true" EditTrigger="TableEditTrigger.EditButton" RowEditCommit="OnTaskCommit"
+                          MultiSelection="true" SelectOnRowClick="false" @bind-SelectedItems="_selectedTasks">
                     <HeaderContent><MudTh>@Loc["Management_ColName"]</MudTh><MudTh>@Loc["Management_ColDescription"]</MudTh><MudTh>@Loc["Management_ColPoints"]</MudTh><MudTh>@Loc["Management_TaskGroupLabel"]</MudTh><MudTh></MudTh></HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="@Loc["Management_ColName"]">@context.Name</MudTd>
@@ -289,4 +346,28 @@ else
 
     </div>
     </div>
+}
+
+@code {
+    /// <summary>Список доступов строкой меток; пустой — приглушённая надпись. Не загрузилось — ничего.</summary>
+    private RenderFragment AccessChips(IEnumerable<string> names, string empty) => @<text>
+        @if (!_accessLinksFailed)
+        {
+            var list = names.ToList();
+            if (list.Count == 0) { <span class="fc-muted fc-access-empty">@empty</span> }
+            else { <span class="fc-access-chips">@foreach (var name in list) { <span class="fc-access-chip">@name</span> }</span> }
+        }
+    </text>;
+
+    /// <summary>Группа задач в форме создания — только для того способа, что сейчас открыт.</summary>
+    private RenderFragment NewTaskGroupSelect => @<text>
+        @if (_taskGroups.Count > 0)
+        {
+            <MudSelect T="int" @bind-Value="_newTaskGroupId" Label="@Loc["Management_TaskGroupForCreate"]"
+                       Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 200px;">
+                <MudSelectItem T="int" Value="0">@Loc["TaskGroup_None"]</MudSelectItem>
+                @foreach (var g in _taskGroups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
+            </MudSelect>
+        }
+    </text>;
 }

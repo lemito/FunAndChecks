@@ -15,7 +15,7 @@ public record AttendanceParticipantDto(Guid StudentId, string FullName, int Grou
 public record AttendanceSessionDetailsDto(int Id, int SubjectId, string SubjectName, string Name,
     DateTime StartsAt, bool Enabled, List<GroupDto> Groups, List<AttendanceParticipantDto> Participants);
 public record AttendanceStudentRowDto(Guid StudentId, string FullName, int GroupId, string GroupName,
-    Dictionary<int, AttendanceStatus> Marks, int Present, int Absent, int Unmarked);
+    Dictionary<int, AttendanceStatus> Marks, int Present, int Absent, int Unmarked, string LastName = "", string FirstName = "");
 public record AttendanceJournalDto(int SubjectId, string SubjectName, bool Enabled,
     List<AttendanceSessionDto> Sessions, List<AttendanceStudentRowDto> Students);
 public record StudentAttendanceDto(int SessionId, string Name, DateTime StartsAt, AttendanceStatus Status,

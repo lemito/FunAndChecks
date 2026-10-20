@@ -704,7 +704,6 @@
   <data name="Management_TaskGroupsHint" xml:space="preserve"><value>Groups are optional. In the grading window tasks of a group are collapsed under its header; tasks without a group are shown first.</value></data>
   <data name="Management_TaskGroupNameLabel" xml:space="preserve"><value>New group</value></data>
   <data name="Management_TaskGroupLabel" xml:space="preserve"><value>Group</value></data>
-  <data name="Management_TaskGroupForNewHint" xml:space="preserve"><value>Also used for bulk add and task sets</value></data>
   <data name="Management_ColTaskCount" xml:space="preserve"><value>Tasks</value></data>
   <data name="Management_TaskGroupCreated" xml:space="preserve"><value>Task group created</value></data>
   <data name="Management_TaskGroupDeleted" xml:space="preserve"><value>Task group deleted; its tasks are now ungrouped</value></data>
@@ -749,4 +748,27 @@
   <data name="Maintenance_RestoreErrorGeneric" xml:space="preserve"><value>The restore failed. Check the server logs.</value></data>
   <data name="Maintenance_RestoreWarningNoAttachments" xml:space="preserve"><value>The backup has no attachments archive: forum files were left as they are.</value></data>
   <data name="Maintenance_RestoreWarningAttachments" xml:space="preserve"><value>The database was restored, but forum attachments could not be restored. Check the server logs.</value></data>
+  <data name="Management_TaskCreateTitle" xml:space="preserve"><value>Add tasks</value></data>
+  <data name="Management_TaskModeLabel" xml:space="preserve"><value>How to add</value></data>
+  <data name="Management_TaskModeSingle" xml:space="preserve"><value>One task</value></data>
+  <data name="Management_TaskModeList" xml:space="preserve"><value>List</value></data>
+  <data name="Management_TaskModeSet" xml:space="preserve"><value>Numbered set</value></data>
+  <data name="Management_TaskModeCopy" xml:space="preserve"><value>From another subject</value></data>
+  <data name="Management_TaskGroupForCreate" xml:space="preserve"><value>Group for the new tasks</value></data>
+  <data name="Management_TaskSetHint" xml:space="preserve"><value>Creates tasks “prefix.01”, “prefix.02”, …; existing names are skipped, so running it again fills the gaps.</value></data>
+  <data name="Management_CopyTasksHint" xml:space="preserve"><value>Copies tasks that are not here yet. Task groups are carried over by name.</value></data>
+  <data name="Management_TasksSelected" xml:space="preserve"><value>Selected: {0}</value></data>
+  <data name="Management_BulkKeep" xml:space="preserve"><value>Keep as is</value></data>
+  <data name="Management_BulkApply" xml:space="preserve"><value>Apply</value></data>
+  <data name="Management_BulkClear" xml:space="preserve"><value>Clear selection</value></data>
+  <data name="Management_BulkDelete" xml:space="preserve"><value>Delete selected</value></data>
+  <data name="Management_BulkDeleteTitle" xml:space="preserve"><value>Delete tasks?</value></data>
+  <data name="Management_BulkDeleteText" xml:space="preserve"><value>Delete {0} tasks together with their marks? This cannot be undone.</value></data>
+  <data name="Management_TasksUpdated" xml:space="preserve"><value>Tasks changed: {0}</value></data>
+  <data name="Management_TasksDeleted" xml:space="preserve"><value>Tasks deleted: {0}</value></data>
+  <data name="Management_BulkHint" xml:space="preserve"><value>Select tasks with the checkboxes to change their group or points at once.</value></data>
+  <data name="Management_ColSubjects" xml:space="preserve"><value>Subjects</value></data>
+  <data name="Management_ColGroups" xml:space="preserve"><value>Groups</value></data>
+  <data name="Management_NoSubjectAccess" xml:space="preserve"><value>no subjects</value></data>
+  <data name="Management_NoGroupAccess" xml:space="preserve"><value>no groups</value></data>
 </root>

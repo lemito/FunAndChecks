@@ -28,3 +28,5 @@ public record GroupDto(int Id, string Name);
 public record CreateGroupRequest(string Name);
 
 public record UpdateGroupRequest(string Name);
+
+public record GroupSubjectsDto(int GroupId, List<int> SubjectIds);

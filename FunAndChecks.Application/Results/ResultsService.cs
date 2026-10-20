@@ -42,6 +42,8 @@ public class ResultsService(
             {
                 s.Id,
                 s.FullName,
+                s.LastName,
+                s.FirstName,
                 GroupName = s.Group != null ? s.Group.Name : "N/A",
                 s.Color,
                 Grades = s.Grades
@@ -128,7 +130,9 @@ public class ResultsService(
                 totalPoints,
                 cells,
                 grades,
-                student.Color);
+                student.Color,
+                student.LastName,
+                student.FirstName);
         })
         .OrderByDescending(r => r.TotalPoints)
         .ThenBy(r => r.FullName, StringComparer.CurrentCultureIgnoreCase)

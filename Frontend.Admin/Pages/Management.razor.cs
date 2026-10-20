@@ -134,12 +134,40 @@ public partial class Management
             _restrictedGroups = [.. access.RestrictedGroupIds];
 
             await ReloadQueuesAsync();
+            await LoadAccessLinksAsync();
         }
         catch (ApiException ex)
         {
             Snackbar.Add(ex.Message, Severity.Error);
         }
     }
+
+    // ----- Обзор доступов: какие предметы открыты каждой группе (и наоборот) -----
+    private Dictionary<int, List<int>> _groupSubjects = [];
+    private bool _accessLinksFailed;
+
+    private async Task LoadAccessLinksAsync()
+    {
+        try
+        {
+            _groupSubjects = (await Groups.GetSubjectLinksAsync()).ToDictionary(l => l.GroupId, l => l.SubjectIds);
+            _accessLinksFailed = false;
+        }
+        catch (ApiException)
+        {
+            // Обзор — подсказка: без него таблицы и кнопки «Доступ» работают как раньше.
+            _accessLinksFailed = true;
+        }
+    }
+
+    private IEnumerable<string> SubjectNamesOf(int groupId) =>
+        _groupSubjects.GetValueOrDefault(groupId, [])
+            .Select(id => _subjects.FirstOrDefault(s => s.Id == id)?.Name).OfType<string>()
+            .Order(StringComparer.CurrentCultureIgnoreCase);
+
+    private IEnumerable<string> GroupNamesOf(int subjectId) =>
+        _groups.Where(g => _groupSubjects.TryGetValue(g.Id, out var ids) && ids.Contains(subjectId))
+            .Select(g => g.Name).Order(StringComparer.CurrentCultureIgnoreCase);
 
     private async Task ReloadQueuesAsync()
     {
@@ -248,14 +276,27 @@ public partial class Management
     }
 
     // ----- Задачи -----
+    private enum TaskCreateMode { Single, List, Set, Copy }
+    private static readonly (TaskCreateMode Id, string Label)[] TaskCreateModes =
+    [
+        (TaskCreateMode.Single, "Management_TaskModeSingle"),
+        (TaskCreateMode.List, "Management_TaskModeList"),
+        (TaskCreateMode.Set, "Management_TaskModeSet"),
+        (TaskCreateMode.Copy, "Management_TaskModeCopy"),
+    ];
+    private TaskCreateMode _taskCreateMode = TaskCreateMode.Single;
+
     private async Task OnTaskSubjectChanged(int? subjectId)
     {
+        // Отмеченные задачи переживают перечитку того же предмета (строки пересоздаются — сверяем по Id).
+        var keepSelected = subjectId == _taskSubjectId ? _selectedTasks.Select(t => t.Id).ToHashSet() : [];
         _taskSubjectId = subjectId;
         await CurrentSubject.SetAsync(subjectId);
         if (subjectId is null)
         {
             _tasks = [];
             _taskGroups = [];
+            _selectedTasks = [];
             _newTaskGroupId = 0;
             return;
         }
@@ -268,6 +309,8 @@ public partial class Management
                 .ToList();
             _taskGroups = (await groupsTask).Select(g => new TaskGroupRow { Id = g.Id, Name = g.Name, TaskCount = g.TaskCount }).ToList();
             if (_taskGroups.All(g => g.Id != _newTaskGroupId)) _newTaskGroupId = 0;
+            if (_bulkGroupSelection > 0 && _taskGroups.All(g => g.Id != _bulkGroupSelection)) _bulkGroupSelection = KeepValue;
+            _selectedTasks = _tasks.Where(t => keepSelected.Contains(t.Id)).ToHashSet();
         }
         catch (ApiException ex)
         {
@@ -414,6 +457,77 @@ public partial class Management
         var row = (TaskRow)element;
         _ = RunAsync(() => Subjects.UpdateTaskAsync(row.Id, new UpdateTaskRequest(row.Name, row.Description, row.MaxPoints, row.TaskGroupId)),
             Loc["Common_Saved"], () => Task.CompletedTask, () => OnTaskSubjectChanged(_taskSubjectId));
+    }
+
+    // ----- Массовое изменение задач -----
+    private const int KeepValue = -1;
+    private HashSet<TaskRow> _selectedTasks = [];
+    /// <summary>Группа для отмеченных: <see cref="KeepValue"/> — не менять, 0 — без группы.</summary>
+    private int _bulkGroupSelection = KeepValue;
+    /// <summary>Баллы для отмеченных; null — не менять.</summary>
+    private int? _bulkPoints;
+    private bool BulkHasChanges => _bulkGroupSelection != KeepValue || _bulkPoints is not null;
+
+    private void ClearTaskSelection() => _selectedTasks = [];
+
+    private async Task ApplyBulkEditAsync()
+    {
+        if (!BulkHasChanges || _bulkPoints is < 0 or > 1000) return;
+        var changes = _selectedTasks
+            .Select(t => (Task: t,
+                Points: _bulkPoints ?? t.MaxPoints,
+                GroupId: _bulkGroupSelection == KeepValue ? t.TaskGroupId : _bulkGroupSelection == 0 ? null : _bulkGroupSelection))
+            .Where(c => c.Points != c.Task.MaxPoints || c.GroupId != c.Task.TaskGroupId)
+            .ToList();
+        _bulkBusy = true;
+        var changed = 0;
+        try
+        {
+            foreach (var (task, points, groupId) in changes)
+            {
+                await Subjects.UpdateTaskAsync(task.Id, new UpdateTaskRequest(task.Name, task.Description, points, groupId));
+                changed++;
+            }
+            _bulkGroupSelection = KeepValue;
+            _bulkPoints = null;
+            Dirty.MarkClean();
+            Snackbar.Add(Loc["Management_TasksUpdated", changed], Severity.Success);
+        }
+        catch (ApiException ex)
+        {
+            // Часть задач уже могла сохраниться — перечитка ниже покажет, какие.
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _bulkBusy = false;
+            await OnTaskSubjectChanged(_taskSubjectId);
+        }
+    }
+
+    private async Task DeleteSelectedTasksAsync()
+    {
+        var selected = _selectedTasks.ToList();
+        if (selected.Count == 0 ||
+            !await Confirm.ConfirmAsync(Loc["Management_BulkDeleteTitle"], Loc["Management_BulkDeleteText", selected.Count], Loc["Common_Delete"]))
+            return;
+        _bulkBusy = true;
+        var deleted = 0;
+        try
+        {
+            foreach (var task in selected)
+            {
+                await Subjects.DeleteTaskAsync(task.Id);
+                deleted++;
+            }
+            Snackbar.Add(Loc["Management_TasksDeleted", deleted], Severity.Success);
+        }
+        catch (ApiException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally
+        {
+            _bulkBusy = false;
+            await OnTaskSubjectChanged(_taskSubjectId);
+        }
     }
 
     private async Task DeleteTaskAsync(TaskRow row)
@@ -566,6 +680,8 @@ public partial class Management
         {
             Snackbar.Add(ex.Message, Severity.Error);
         }
+        // И после частичной ошибки: обзор показывает то, что реально сохранено.
+        await LoadAccessLinksAsync();
     }
 
     // ----- Видимость / архив (скрытие самим админом) -----

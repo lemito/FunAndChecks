@@ -48,7 +48,7 @@ public record SurveyGroupCountDto(int GroupId, string Name, int ResponseCount, i
 public record SurveyAnswerViewDto(int QuestionId, string Value);
 
 public record SurveyIndividualResponseDto(int ResponseId, Guid? RespondentId, string RespondentName, string? GroupName,
-    DateTime SubmittedAtUtc, IReadOnlyList<SurveyAnswerViewDto> Answers);
+    DateTime SubmittedAtUtc, IReadOnlyList<SurveyAnswerViewDto> Answers, string? LastName = null, string? FirstName = null);
 
 public record PendingSurveyDto(int Id, string Title, string? SubjectName, bool IsAnonymous, bool CanSnooze, int SnoozeHours,
     int QuestionCount, DateTime? ClosesAtUtc);

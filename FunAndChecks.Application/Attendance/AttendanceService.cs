@@ -166,7 +166,7 @@ public class AttendanceService(IApplicationDbContext db, IAdminAccessService acc
             new AttendanceStudentRowDto(g.Key.StudentId, g.First().Student.FullName, g.Key.GroupId, g.Key.GroupName,
                 g.ToDictionary(r => r.SessionId, r => r.Status),
                 g.Count(r => r.Status == AttendanceStatus.Present), g.Count(r => r.Status == AttendanceStatus.Absent),
-                g.Count(r => r.Status == AttendanceStatus.Unmarked)))
+                g.Count(r => r.Status == AttendanceStatus.Unmarked), g.First().Student.LastName, g.First().Student.FirstName))
             .OrderBy(s => s.GroupName).ThenBy(s => s.FullName).ToList();
         return new(subjectId, subject.Name, subject.AttendanceEnabled, sessions, students);
     }

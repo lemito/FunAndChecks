@@ -151,15 +151,18 @@ public class SubjectPermissionsTests : IDisposable
         var hidden = db.Subject("Hidden");
         var denied = db.Subject("Denied");
         var group = db.Group();
+        var hiddenGroup = db.Group("Hidden group");
         db.GrantSubject(admin, granted);
         db.GrantSubject(admin, hidden);
         await db.SaveChangesAsync();
         db.LinkGroupSubject(group, granted);
         db.LinkGroupSubject(group, hidden);
         db.LinkGroupSubject(group, denied);
+        db.LinkGroupSubject(hiddenGroup, granted);
         await db.SaveChangesAsync();
         var access = db.Access();
         await access.SetSubjectHiddenAsync(admin.Id, hidden.Id, true);
+        await access.SetGroupHiddenAsync(admin.Id, hiddenGroup.Id, true);
         var cache = Substitute.For<IResultsCacheService>();
         var subjects = new SubjectService(db, cache, access,
             new CreateSubjectRequestValidator(), new UpdateSubjectRequestValidator(),
@@ -170,6 +173,9 @@ public class SubjectPermissionsTests : IDisposable
         (await subjects.GetVisibleForAdminAsync(admin.Id)).Select(s => s.Id).Should().Equal(granted.Id);
         (await groups.GetSubjectIdsAsync(admin.Id, group.Id)).Should().Equal(granted.Id);
         (await groups.GetVisibleForAdminAsync(admin.Id)).Should().ContainSingle();
+        // Обзор всех доступов разом фильтрует так же, как доступ одной группы.
+        var links = await groups.GetSubjectLinksAsync(admin.Id);
+        links.Should().ContainSingle().Which.Should().BeEquivalentTo(new GroupSubjectsDto(group.Id, [granted.Id]));
     }
 
     [Fact]

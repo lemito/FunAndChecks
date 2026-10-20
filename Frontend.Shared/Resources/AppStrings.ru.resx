@@ -704,7 +704,6 @@
   <data name="Management_TaskGroupsHint" xml:space="preserve"><value>Группы необязательны. В окне проверки задачи группы свёрнуты под её заголовком; задачи без группы показываются первыми.</value></data>
   <data name="Management_TaskGroupNameLabel" xml:space="preserve"><value>Новая группа</value></data>
   <data name="Management_TaskGroupLabel" xml:space="preserve"><value>Группа</value></data>
-  <data name="Management_TaskGroupForNewHint" xml:space="preserve"><value>Применяется и к пачке, и к набору</value></data>
   <data name="Management_ColTaskCount" xml:space="preserve"><value>Задач</value></data>
   <data name="Management_TaskGroupCreated" xml:space="preserve"><value>Группа задач создана</value></data>
   <data name="Management_TaskGroupDeleted" xml:space="preserve"><value>Группа удалена, её задачи остались без группы</value></data>
@@ -749,4 +748,27 @@
   <data name="Maintenance_RestoreErrorGeneric" xml:space="preserve"><value>Восстановление не удалось. Проверьте логи сервера.</value></data>
   <data name="Maintenance_RestoreWarningNoAttachments" xml:space="preserve"><value>У бэкапа нет архива вложений: файлы форума оставлены как есть.</value></data>
   <data name="Maintenance_RestoreWarningAttachments" xml:space="preserve"><value>База восстановлена, но вложения форума восстановить не удалось. Проверьте логи сервера.</value></data>
+  <data name="Management_TaskCreateTitle" xml:space="preserve"><value>Добавить задачи</value></data>
+  <data name="Management_TaskModeLabel" xml:space="preserve"><value>Способ добавления</value></data>
+  <data name="Management_TaskModeSingle" xml:space="preserve"><value>Одна задача</value></data>
+  <data name="Management_TaskModeList" xml:space="preserve"><value>Списком</value></data>
+  <data name="Management_TaskModeSet" xml:space="preserve"><value>Набор</value></data>
+  <data name="Management_TaskModeCopy" xml:space="preserve"><value>Из другого предмета</value></data>
+  <data name="Management_TaskGroupForCreate" xml:space="preserve"><value>Группа для добавляемых задач</value></data>
+  <data name="Management_TaskSetHint" xml:space="preserve"><value>Создаёт задачи «номер.01», «номер.02», …; уже существующие пропускаются, так что повтор дозаполнит пропуски.</value></data>
+  <data name="Management_CopyTasksHint" xml:space="preserve"><value>Копируются задачи, которых здесь ещё нет. Группы задач переносятся по названию.</value></data>
+  <data name="Management_TasksSelected" xml:space="preserve"><value>Выбрано: {0}</value></data>
+  <data name="Management_BulkKeep" xml:space="preserve"><value>Не менять</value></data>
+  <data name="Management_BulkApply" xml:space="preserve"><value>Применить</value></data>
+  <data name="Management_BulkClear" xml:space="preserve"><value>Снять выбор</value></data>
+  <data name="Management_BulkDelete" xml:space="preserve"><value>Удалить выбранные</value></data>
+  <data name="Management_BulkDeleteTitle" xml:space="preserve"><value>Удалить задачи?</value></data>
+  <data name="Management_BulkDeleteText" xml:space="preserve"><value>Удалить задачи ({0}) вместе с отметками по ним? Это нельзя отменить.</value></data>
+  <data name="Management_TasksUpdated" xml:space="preserve"><value>Изменено задач: {0}</value></data>
+  <data name="Management_TasksDeleted" xml:space="preserve"><value>Удалено задач: {0}</value></data>
+  <data name="Management_BulkHint" xml:space="preserve"><value>Отметьте задачи галочками, чтобы разом поменять им группу или баллы.</value></data>
+  <data name="Management_ColSubjects" xml:space="preserve"><value>Предметы</value></data>
+  <data name="Management_ColGroups" xml:space="preserve"><value>Группы</value></data>
+  <data name="Management_NoSubjectAccess" xml:space="preserve"><value>нет предметов</value></data>
+  <data name="Management_NoGroupAccess" xml:space="preserve"><value>нет групп</value></data>
 </root>
