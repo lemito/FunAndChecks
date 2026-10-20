@@ -79,6 +79,7 @@ public class AuthService(
                 IsActive = false,
                 CreatedAt = DateTime.UtcNow,
                 PrivacyPolicyAcceptedAt = request.AcceptedPrivacyPolicy ? DateTime.UtcNow : null,
+                TermsAcceptedAt = request.AcceptedTerms ? DateTime.UtcNow : null,
             });
             await db.SaveChangesAsync(cancellationToken);
         }
@@ -184,22 +185,47 @@ public class AuthService(
     {
         var student = await db.Students.FindAsync([userId], cancellationToken);
         if (student is null)
-            throw new NotFoundException($"Student with ID {userId} not found.");
+        {
+            // Админа (преподавателя) создаёт суперадмин, отдельного согласия он не даёт —
+            // основание обработки другое. Считаем согласие данным.
+            if (await db.Admins.AnyAsync(a => a.Id == userId, cancellationToken))
+                return new PrivacyPolicyStatusDto(Accepted: true, AcceptedAt: null, TermsAccepted: true, TermsAcceptedAt: null);
+
+            throw new NotFoundException($"User with ID {userId} not found.");
+        }
 
         return new PrivacyPolicyStatusDto(
             Accepted: student.PrivacyPolicyAcceptedAt.HasValue,
-            AcceptedAt: student.PrivacyPolicyAcceptedAt);
+            AcceptedAt: student.PrivacyPolicyAcceptedAt,
+            TermsAccepted: student.TermsAcceptedAt.HasValue,
+            TermsAcceptedAt: student.TermsAcceptedAt);
     }
 
-    public async Task AcceptPrivacyPolicyAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task AcceptLegalAsync(Guid userId, AcceptLegalRequest request, CancellationToken cancellationToken = default)
     {
         var student = await db.Students.FindAsync([userId], cancellationToken);
         if (student is null)
-            throw new NotFoundException($"Student with ID {userId} not found.");
+        {
+            // Админу согласие не требуется — принимать нечего.
+            if (await db.Admins.AnyAsync(a => a.Id == userId, cancellationToken))
+                return;
 
-        if (!student.PrivacyPolicyAcceptedAt.HasValue)
+            throw new NotFoundException($"User with ID {userId} not found.");
+        }
+
+        bool save = false;
+        if (request.AcceptedPrivacyPolicy && !student.PrivacyPolicyAcceptedAt.HasValue)
         {
             student.PrivacyPolicyAcceptedAt = DateTime.UtcNow;
+            save = true;
+        }
+        if (request.AcceptedTerms && !student.TermsAcceptedAt.HasValue)
+        {
+            student.TermsAcceptedAt = DateTime.UtcNow;
+            save = true;
+        }
+        if (save)
+        {
             await db.SaveChangesAsync(cancellationToken);
         }
     }

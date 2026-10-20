@@ -1,3 +1,4 @@
+using Frontend.Shared.Api;
 using Frontend.Shared.Auth;
 using Frontend.Shared.Models;
 using Frontend.Shared.Resources;
@@ -53,11 +54,20 @@ public partial class Login
 
             AuthState.NotifyAuthenticationStateChanged();
 
-            // Проверяем статус согласия с политикой конфиденциальности только если функция включена
+            // Админам сервер сам отдаёт «согласие есть» — им согласие не требуется.
             if (Flags.PrivacyPolicy)
             {
-                var status = await Auth.GetPrivacyPolicyStatusAsync();
-                if (!status.Accepted)
+                var accepted = false;
+                try
+                {
+                    var status = await Auth.GetPrivacyPolicyStatusAsync();
+                    accepted = status.Accepted && status.TermsAccepted;
+                }
+                catch (ApiException)
+                {
+                    // Статус не удалось получить — считаем согласие неданным и просим его явно.
+                }
+                if (!accepted)
                 {
                     _showPrivacyConsentDialog = true;
                     return;
@@ -84,6 +94,7 @@ public partial class Login
         var home = state.User.IsInRole(Roles.Admin) ? "/admin" : "/student";
         Nav.NavigateTo(SafeReturnUrl(ReturnUrl, home) ?? home);
     }
+
 
     /// <summary>
     /// Возврат после входа — только на страницы своего кабинета или мониторинг,

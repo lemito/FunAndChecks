@@ -68,7 +68,7 @@ public class AuthServiceTests : IDisposable
         await using var ctx = _db.NewContext();
         var sut = CreateSut(ctx);
 
-        var request = new RegisterStudentRequest("Ann", "Smith", "stud@example.com", "secret", groupId, true);
+        var request = new RegisterStudentRequest("Ann", "Smith", "stud@example.com", "secret", groupId, true, true);
         var id = await sut.RegisterStudentAsync(request);
 
         (await ctx.Students.FindAsync(id)).Should().NotBeNull();
@@ -81,7 +81,7 @@ public class AuthServiceTests : IDisposable
         await using var ctx = _db.NewContext();
         var sut = CreateSut(ctx);
 
-        var request = new RegisterStudentRequest("Ann", "Smith", "stud@example.com", "secret", 999, true);
+        var request = new RegisterStudentRequest("Ann", "Smith", "stud@example.com", "secret", 999, true, true);
         var act = () => sut.RegisterStudentAsync(request);
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -93,7 +93,7 @@ public class AuthServiceTests : IDisposable
         await using var ctx = _db.NewContext();
         var sut = CreateSut(ctx);
 
-        var request = new RegisterStudentRequest("Ann", "Smith", "", "secret", groupId, true);
+        var request = new RegisterStudentRequest("Ann", "Smith", "", "secret", groupId, true, true);
         var act = () => sut.RegisterStudentAsync(request);
         await act.Should().ThrowAsync<ValidationException>();
     }
@@ -109,7 +109,7 @@ public class AuthServiceTests : IDisposable
         await using var ctx = _db.NewContext();
         var sut = CreateSut(ctx);
 
-        var request = new RegisterStudentRequest("Ann", "Smith", "dup@example.com", "secret", groupId, true);
+        var request = new RegisterStudentRequest("Ann", "Smith", "dup@example.com", "secret", groupId, true, true);
         var act = () => sut.RegisterStudentAsync(request);
         await act.Should().ThrowAsync<ValidationException>();
         (await ctx.Students.AnyAsync()).Should().BeFalse();
@@ -124,7 +124,7 @@ public class AuthServiceTests : IDisposable
         await using var ctx = _db.NewContext();
         var sut = CreateSut(ctx);
 
-        var request = new RegisterStudentRequest("Ann", "Smith", "taken@example.com", "secret", groupId, true);
+        var request = new RegisterStudentRequest("Ann", "Smith", "taken@example.com", "secret", groupId, true, true);
         var result = await sut.RegisterStudentAsync(request);
 
         result.Should().Be(Guid.Empty);

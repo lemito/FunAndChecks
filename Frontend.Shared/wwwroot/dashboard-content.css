@@ -128,6 +128,8 @@
 .fc-legal-content strong { font-weight:650; }
 .fc-legal-content code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:12.5px; background:rgba(var(--mud-palette-primary-rgb),.08); padding:1px 5px; border-radius:4px; }
 .fc-legal-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:32px; }
+.fc-legal-nav { display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-top:12px; font-size:13px; }
+.fc-legal-content + .fc-legal-content { margin-top:36px; padding-top:32px; border-top:1px solid var(--mud-palette-lines-default); }
 @media (max-width:760px) { .fc-legal-head { padding:24px 20px 0; } .fc-legal-body { padding:0 20px 28px; } }
 @media (max-width:600px) {
     .fc-stats.fc-results-summary,.fc-stats.fc-results-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }

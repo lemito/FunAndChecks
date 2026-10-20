@@ -17,6 +17,7 @@ public class RegisterModel
     public string ConfirmPassword { get; set; } = string.Empty;
     public int? GroupId { get; set; }
     public bool AcceptedPrivacyPolicy { get; set; }
+    public bool AcceptedTerms { get; set; }
 }
 
 public partial class Register
@@ -59,6 +60,21 @@ public partial class Register
             _serverValidator.DisplayErrors(new() { [nameof(RegisterModel.GroupId)] = [Loc["Register_GroupRequired"].Value] });
             return;
         }
+
+        if (Flags.PrivacyPolicy)
+        {
+            if (!_model.AcceptedPrivacyPolicy)
+            {
+                _serverValidator.DisplayErrors(new() { [nameof(RegisterModel.AcceptedPrivacyPolicy)] = [Loc["Register_AcceptPrivacyPolicyRequired"].Value] });
+                return;
+            }
+            if (!_model.AcceptedTerms)
+            {
+                _serverValidator.DisplayErrors(new() { [nameof(RegisterModel.AcceptedTerms)] = [Loc["Register_AcceptTermsRequired"].Value] });
+                return;
+            }
+        }
+
         _busy = true;
 
         var request = new RegisterStudentRequest(
@@ -67,7 +83,8 @@ public partial class Register
             _model.Email.Trim(),
             _model.Password,
             groupId,
-            _model.AcceptedPrivacyPolicy);
+            _model.AcceptedPrivacyPolicy,
+            _model.AcceptedTerms);
 
         try
         {

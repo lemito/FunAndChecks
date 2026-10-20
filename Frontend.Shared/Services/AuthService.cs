@@ -95,7 +95,7 @@ public class AuthService(HttpClient http, TokenStore tokenStore, IStringLocalize
         await tokenStore.ClearAsync();
     }
 
-    /// <summary>Получить статус согласия с политикой конфиденциальности.</summary>
+    /// <summary>Получить статус согласия с политикой конфиденциальности и Пользовательским соглашением.</summary>
     public async Task<PrivacyPolicyStatus> GetPrivacyPolicyStatusAsync() =>
         await ApiClientBase.GuardAsync<PrivacyPolicyStatus>(async () =>
         {
@@ -106,14 +106,14 @@ public class AuthService(HttpClient http, TokenStore tokenStore, IStringLocalize
                 throw new ApiException(response.StatusCode, message);
             }
             var status = await response.Content.ReadFromJsonAsync<PrivacyPolicyStatus>();
-            return status ?? new PrivacyPolicyStatus(false, null);
+            return status ?? new PrivacyPolicyStatus(false, null, false, null);
         }, loc);
 
-    /// <summary>Принять политику конфиденциальности.</summary>
+    /// <summary>Принять политику конфиденциальности и Пользовательское соглашение.</summary>
     public async Task AcceptPrivacyPolicyAsync() =>
         await ApiClientBase.GuardAsync<int>(async () =>
         {
-            var response = await http.PostAsync("api/auth/accept-privacy-policy", null);
+            var response = await http.PostAsJsonAsync("api/auth/accept-privacy-policy", new AcceptLegalRequest(true, true));
             await response.EnsureSuccessAsync(loc);
             return 0;
         }, loc);

@@ -1563,6 +1563,9 @@ namespace FunAndChecks.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("PrivacyPolicyAcceptedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("TermsAcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasIndex("GroupId");
 
                     b.ToTable("Students", (string)null);

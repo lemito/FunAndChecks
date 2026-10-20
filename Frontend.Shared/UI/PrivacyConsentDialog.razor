@@ -10,7 +10,10 @@
         <MudText Typo="Typo.h6" Class="mb-3">@Loc["Login_PrivacyConsentTitle"]</MudText>
         <MudText Typo="Typo.body1" Class="mb-4">@Loc["Login_PrivacyConsentMessage"]</MudText>
 
-        <MudCheckBox @bind-Value="_accepted" Label="@Loc["Login_PrivacyConsentAccept"]" Color="Color.Primary"
+        <MudCheckBox @bind-Value="_privacyPolicy" Label="@Loc["Register_AcceptPrivacyPolicy"]" Color="Color.Primary"
+                     Required="true" RequiredError="@Loc["Login_PrivacyConsentAcceptRequired"]" Class="mb-2" />
+
+        <MudCheckBox @bind-Value="_terms" Label="@Loc["Register_AcceptTerms"]" Color="Color.Primary"
                      Required="true" RequiredError="@Loc["Login_PrivacyConsentAcceptRequired"]" Class="mb-4" />
 
         <MudLink Href="/privacy-policy" Target="_blank" Class="mb-4 d-block">
@@ -18,7 +21,7 @@
         </MudLink>
 
         <div class="d-flex justify-end gap-2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AcceptAsync" Disabled="@(!_accepted || _busy)">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AcceptAsync" Disabled="@(!_privacyPolicy || !_terms || _busy)">
                 @if (_busy) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
                 @Loc["Login_PrivacyConsentAccept"]
             </MudButton>
@@ -30,14 +33,15 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public Action? OnAccepted { get; set; }
 
-    private bool _accepted;
+    private bool _privacyPolicy;
+    private bool _terms;
     private bool _busy;
 
     public void Dispose() { }
 
     private async Task AcceptAsync()
     {
-        if (!_accepted) return;
+        if (!_privacyPolicy || !_terms) return;
         _busy = true;
         try
         {

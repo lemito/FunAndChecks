@@ -23,6 +23,9 @@ public class Student : User
     /// <summary>Момент принятия политики конфиденциальности (UTC). Null — не принято.</summary>
     public DateTime? PrivacyPolicyAcceptedAt { get; set; }
 
+    /// <summary>Момент принятия Пользовательского соглашения (UTC). Null — не принято.</summary>
+    public DateTime? TermsAcceptedAt { get; set; }
+
     public int? GroupId { get; set; }
     public Group? Group { get; set; }
 

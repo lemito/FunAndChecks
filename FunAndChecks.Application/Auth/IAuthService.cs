@@ -26,9 +26,9 @@ public interface IAuthService
     /// <summary>Сбрасывает пароль по коду из письма.</summary>
     Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>Возвращает статус согласия с политикой конфиденциальности для пользователя.</summary>
+    /// <summary>Возвращает статус согласия с политикой конфиденциальности и Пользовательским соглашением для пользователя.</summary>
     Task<PrivacyPolicyStatusDto> GetPrivacyPolicyStatusAsync(Guid userId, CancellationToken cancellationToken = default);
 
-    /// <summary>Принимает политику конфиденциальности от имени пользователя.</summary>
-    Task AcceptPrivacyPolicyAsync(Guid userId, CancellationToken cancellationToken = default);
+    /// <summary>Принимает политику конфиденциальности и/или Пользовательское соглашение от имени пользователя.</summary>
+    Task AcceptLegalAsync(Guid userId, AcceptLegalRequest request, CancellationToken cancellationToken = default);
 }

@@ -93,7 +93,7 @@ public class AuthController(IAuthService authService, IOptions<FeatureFlags> fla
         return NoContent();
     }
 
-    /// <summary>Получить статус согласия с политикой конфиденциальности текущего пользователя.</summary>
+    /// <summary>Получить статус согласия с политикой конфиденциальности и Пользовательским соглашением текущего пользователя.</summary>
     [HttpGet("privacy-policy-status")]
     [Authorize]
     [ProducesResponseType(typeof(PrivacyPolicyStatusDto), StatusCodes.Status200OK)]
@@ -109,19 +109,19 @@ public class AuthController(IAuthService authService, IOptions<FeatureFlags> fla
         return Ok(status);
     }
 
-    /// <summary>Принять политику конфиденциальности от имени текущего пользователя.</summary>
+    /// <summary>Принять политику конфиденциальности и/или Пользовательское соглашение от имени текущего пользователя.</summary>
     [HttpPost("accept-privacy-policy")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AcceptPrivacyPolicy(CancellationToken cancellationToken)
+    public async Task<IActionResult> AcceptPrivacyPolicy(AcceptLegalRequest request, CancellationToken cancellationToken)
     {
         if (!_flags.PrivacyPolicy)
             return NotFound();
 
         var userId = GetCurrentUserId();
-        await authService.AcceptPrivacyPolicyAsync(userId, cancellationToken);
+        await authService.AcceptLegalAsync(userId, request, cancellationToken);
         return NoContent();
     }
 

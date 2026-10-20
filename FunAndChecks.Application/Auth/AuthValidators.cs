@@ -17,6 +17,7 @@ public class RegisterStudentRequestValidator : AbstractValidator<RegisterStudent
         if (flags.Value.PrivacyPolicy)
         {
             RuleFor(x => x.AcceptedPrivacyPolicy).Equal(true).WithMessage("Необходимо согласиться с политикой конфиденциальности");
+            RuleFor(x => x.AcceptedTerms).Equal(true).WithMessage("Необходимо принять Пользовательское соглашение");
         }
     }
 }

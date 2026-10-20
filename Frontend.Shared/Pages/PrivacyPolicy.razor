@@ -29,11 +29,26 @@ else
 {
     <section class="fc-legal-card">
         <div class="fc-legal-head">
-            <MudText Typo="Typo.h5">@Loc["PrivacyPolicy_Title"]</MudText>
+            <MudText Typo="Typo.h5">@Loc["PrivacyPolicy_PageTitle"]</MudText>
+            <div class="fc-legal-nav">
+                <MudText Typo="Typo.caption" Class="fc-muted me-2">@Loc["PrivacyPolicy_DocumentsNav"]</MudText>
+                <MudLink Href="#policy" Class="me-3">@Loc["PrivacyPolicy_Title"]</MudLink>
+                <MudLink Href="#consent" Class="me-3">@Loc["PrivacyPolicy_ConsentTitle"]</MudLink>
+                <MudLink Href="#terms">@Loc["PrivacyPolicy_TermsTitle"]</MudLink>
+            </div>
         </div>
         <div class="fc-legal-body">
             <div class="fc-legal-content">
+                <h2 id="policy">@Loc["PrivacyPolicy_Title"]</h2>
                 @((MarkupString)ForumMarkdown.ToHtml(Loc["PrivacyPolicy_Text"], "/student"))
+            </div>
+            <div class="fc-legal-content">
+                <h2 id="consent">@Loc["PrivacyPolicy_ConsentTitle"]</h2>
+                @((MarkupString)ForumMarkdown.ToHtml(Loc["PrivacyPolicy_ConsentText"], "/student"))
+            </div>
+            <div class="fc-legal-content">
+                <h2 id="terms">@Loc["PrivacyPolicy_TermsTitle"]</h2>
+                @((MarkupString)ForumMarkdown.ToHtml(Loc["Terms_Text"], "/student"))
             </div>
             <div class="fc-legal-actions">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/register">
