@@ -8,7 +8,9 @@ namespace Frontend.Shared.Services;
 public class FeatureFlagsService(HttpClient http)
 {
     /// <summary>
-    /// Privacy Policy feature flag. Defaults to true until API response is received.
+    /// Privacy Policy feature flag. Значение приходит с API — источник истины там.
+    /// Фолбэк до ответа и при ошибке — true: если сервер включил фичу, а ответ не дошёл,
+    /// форма согласия всё равно нужна (сервер иначе отклонит регистрацию).
     /// </summary>
     public bool PrivacyPolicy { get; private set; } = true;
 
@@ -22,7 +24,7 @@ public class FeatureFlagsService(HttpClient http)
         }
         catch
         {
-            // Keep default value on error
+            // Оставляем значение по умолчанию — см. поле выше.
         }
     }
 }

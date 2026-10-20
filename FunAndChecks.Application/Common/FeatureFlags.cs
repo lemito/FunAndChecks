@@ -9,8 +9,10 @@ public class FeatureFlags
 
     /// <summary>
     /// Privacy Policy feature: consent checkbox, policy page, consent endpoints.
+    /// Выключено по умолчанию — включается в конфигурации развёртывания
+    /// (FeatureFlags:PrivacyPolicy) после утверждения текста документов.
     /// </summary>
-    public bool PrivacyPolicy { get; set; } = true;
+    public bool PrivacyPolicy { get; set; } = false;
 }
 
 /// <summary>
