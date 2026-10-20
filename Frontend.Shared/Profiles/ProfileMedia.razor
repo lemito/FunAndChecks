@@ -36,6 +36,14 @@
     private readonly CancellationTokenSource _life = new();
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // Аватар — украшение: если модуль не загрузился или устарел, остаются инициалы, а не ошибка всей страницы.
+        try { await AfterRenderAsync(); }
+        catch (JSException) { }
+        catch (JSDisconnectedException) { }
+    }
+
+    private async Task AfterRenderAsync()
+    {
         if (_disposed) return;
         var module = _module ?? await JS.InvokeAsync<IJSObjectReference>("import", ProfileMediaModule.Url);
         if (_disposed) { await module.DisposeAsync(); return; }

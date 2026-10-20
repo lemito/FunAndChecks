@@ -35,6 +35,12 @@ public partial class Dashboard
 
     private int _acceptedCount, _reworkCount;
 
+    /// <summary>
+    /// MudDataGrid регистрирует колонки в порядке создания: колонка, появившаяся при живом обновлении
+    /// (новая задача или оценка), встала бы в конец, после Σ. Другой набор колонок — новая таблица.
+    /// </summary>
+    private string ColumnsKey => _results is null ? "" : ResultsColumns.Key(_results);
+
     private string CellLabel(StudentResultRowDto row, TaskHeaderDto task)
     {
         var status = row.Results.GetValueOrDefault(task.TaskId)?.Status switch

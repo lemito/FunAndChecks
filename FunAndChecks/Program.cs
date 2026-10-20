@@ -283,6 +283,22 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Имена файлов интерфейса без отпечатков (index.html, css, js, _content/*). Без Cache-Control браузер кеширует их
+// эвристически и после обновления смешивает новый код со старыми стилями и скриптами: «ломаются стили»,
+// страница не догружается. no-cache = «можно хранить, но перед использованием спросить» (ETag -> дешёвый 304).
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path;
+    if (!path.StartsWithSegments("/api") && !path.StartsWithSegments("/apiHub") && !path.StartsWithSegments("/internal"))
+        context.Response.OnStarting(() =>
+        {
+            if (!context.Response.Headers.ContainsKey(Microsoft.Net.Http.Headers.HeaderNames.CacheControl))
+                context.Response.Headers.CacheControl = "no-cache";
+            return Task.CompletedTask;
+        });
+    await next(context);
+});
+
 // Хостинг Blazor WASM (AdminUI) — статические файлы и SPA-fallback.
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();

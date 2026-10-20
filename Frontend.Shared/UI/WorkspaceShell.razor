@@ -38,7 +38,22 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.Palette" Color="Color.Primary" OnClick="OpenSettings" aria-label="@Text("Цвет и вид интерфейса", "Colour and appearance")" title="@Text("Цвет и вид интерфейса", "Colour and appearance")" />
             </div>
         </header>
-        <main id="workspace-content" class="fc-main" tabindex="-1"><div @oninput="Dirty.MarkDirty" @onchange="Dirty.MarkDirty">@ChildContent</div>
+        <main id="workspace-content" class="fc-main" tabindex="-1"><div @oninput="Dirty.MarkDirty" @onchange="Dirty.MarkDirty">
+            @* Ошибка в одной странице не должна останавливать всё приложение (иначе — только перезагрузка):
+               показываем замену с «Повторить», меню и шапка продолжают работать. *@
+            <ErrorBoundary @ref="_boundary">
+                <ChildContent>@ChildContent</ChildContent>
+                <ErrorContent>
+                    <section class="fc-panel fc-page-error" role="alert">
+                        <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline" Size="Size.Large" />
+                        <h2>@Text("Не удалось показать страницу", "This page could not be shown")</h2>
+                        <p class="fc-muted">@Text("Что-то пошло не так при отрисовке. Попробуйте ещё раз — остальной интерфейс работает.", "Something went wrong while rendering. Try again — the rest of the interface still works.")</p>
+                        <div><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RecoverPage">@Text("Повторить", "Try again")</MudButton>
+                            <MudButton OnClick="ReloadPage">@Text("Перезагрузить страницу", "Reload page")</MudButton></div>
+                    </section>
+                </ErrorContent>
+            </ErrorBoundary>
+        </div>
             <footer class="fc-footer"><span>FunAndChecks <span>/</span> @Text("пространство для учебного прогресса", "a workspace for learning progress")</span><span>@Text("Учебный кабинет", "Learning workspace")</span></footer>
         </main>
     </div>
@@ -104,7 +119,11 @@
     private void CloseNav() => _mobileOpen = false;
     private void OpenSettings() => _settingsOpen = true;
     private async Task LogoutAsync() { await Auth.LogoutAsync(); AuthState.NotifyAuthenticationStateChanged(); Nav.NavigateTo("/login"); }
-    private void LocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs args) { Dirty.ClearAll(); _mobileOpen = false; InvokeAsync(StateHasChanged); }
+    private ErrorBoundary? _boundary;
+    private void RecoverPage() => _boundary?.Recover();
+    private void ReloadPage() => Nav.NavigateTo(Nav.Uri, forceLoad: true);
+    // Переход на другую страницу сбрасывает прошлую ошибку — новая страница рисуется заново.
+    private void LocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs args) { Dirty.ClearAll(); _mobileOpen = false; InvokeAsync(() => { _boundary?.Recover(); StateHasChanged(); }); }
     public void Dispose() { Appearance.Changed -= Refresh; Nav.LocationChanged -= LocationChanged; Profiles.ProfileChanged -= ProfileChanged; Dirty.ClearAll(); }
     private static string Text(string ru, string en) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru" ? ru : en;
 }
