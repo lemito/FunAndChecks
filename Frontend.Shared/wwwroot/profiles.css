@@ -16,3 +16,4 @@
 .fc-profile-timeline-handle.frame::before{inset:-2px -16px}
 .fc-profile-editor .fc-profile-modal-heading{padding-block:14px}
 .fc-profile-editor .fc-profile-modal-body{padding-block:14px}
+.fc-profile-hero-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.fc-account-section{padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--mud-palette-lines-default)}.fc-account-section h3{margin:0 0 12px}.fc-account-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}@media(max-width:600px){.fc-profile-hero-actions{margin-left:0;justify-content:flex-start}}

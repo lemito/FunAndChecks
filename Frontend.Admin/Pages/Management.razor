@@ -269,14 +269,12 @@ else
                 {
                     <div class="fc-task-bulk-bar" role="region" aria-label="@Loc["Management_TasksSelected", _selectedTasks.Count]">
                         <strong>@Loc["Management_TasksSelected", _selectedTasks.Count]</strong>
-                        @if (_taskGroups.Count > 0)
-                        {
-                            <MudSelect T="int" @bind-Value="_bulkGroupSelection" Label="@Loc["Management_TaskGroupLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 170px;">
-                                <MudSelectItem T="int" Value="KeepValue">@Loc["Management_BulkKeep"]</MudSelectItem>
-                                <MudSelectItem T="int" Value="0">@Loc["TaskGroup_None"]</MudSelectItem>
-                                @foreach (var g in _taskGroups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
-                            </MudSelect>
-                        }
+                        <MudSelect T="int" @bind-Value="_bulkGroupSelection" Label="@Loc["Management_TaskGroupLabel"]" HelperText="@TaskGroupsEmptyHint"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 170px;">
+                            <MudSelectItem T="int" Value="KeepValue">@Loc["Management_BulkKeep"]</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">@Loc["TaskGroup_None"]</MudSelectItem>
+                            @foreach (var g in _taskGroups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
+                        </MudSelect>
                         <MudNumericField T="int?" @bind-Value="_bulkPoints" Immediate="true" Label="@Loc["Management_TaskPointsLabel"]" Placeholder="@Loc["Management_BulkKeep"]"
                                          Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="1000" Clearable="true" Style="width: 140px;" />
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!BulkHasChanges || _bulkBusy)" OnClick="ApplyBulkEditAsync">@Loc["Management_BulkApply"]</MudButton>
@@ -363,13 +361,13 @@ else
 
     /// <summary>Группа задач в форме создания — только для того способа, что сейчас открыт.</summary>
     private RenderFragment NewTaskGroupSelect => @<text>
-        @if (_taskGroups.Count > 0)
-        {
-            <MudSelect T="int" @bind-Value="_newTaskGroupId" Label="@Loc["Management_TaskGroupForCreate"]"
-                       Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 200px;">
-                <MudSelectItem T="int" Value="0">@Loc["TaskGroup_None"]</MudSelectItem>
-                @foreach (var g in _taskGroups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
-            </MudSelect>
-        }
+        <MudSelect T="int" @bind-Value="_newTaskGroupId" Label="@Loc["Management_TaskGroupForCreate"]" HelperText="@TaskGroupsEmptyHint"
+                   Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width: 200px;">
+            <MudSelectItem T="int" Value="0">@Loc["TaskGroup_None"]</MudSelectItem>
+            @foreach (var g in _taskGroups) { <MudSelectItem T="int" Value="@g.Id">@g.Name</MudSelectItem> }
+        </MudSelect>
     </text>;
+
+    /// <summary>Списки групп видны всегда; пока групп нет — подсказка, где их создать.</summary>
+    private string? TaskGroupsEmptyHint => _taskGroups.Count == 0 ? Loc["Management_TaskGroupsEmptyHint"] : null;
 }

@@ -18,6 +18,8 @@ public class IdentityService(
     // 6-значные коды со сроком жизни 10 минут).
     private const string EmailConfirmationPurpose = "EmailConfirmation";
     private const string PasswordResetPurpose = "ResetPassword";
+    // Код смены почты действует только для того адреса, на который его отправили.
+    private static string EmailChangePurpose(string newEmail) => "ChangeEmail:" + newEmail.Trim().ToUpperInvariant();
 
     public async Task<AccountResult> CreateAccountAsync(
         Guid id,
@@ -251,6 +253,47 @@ public class IdentityService(
         });
 
         return outcome;
+    }
+
+    public async Task<bool> CheckPasswordAsync(Guid userId, string password)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        return user is not null && await userManager.CheckPasswordAsync(user, password);
+    }
+
+    public async Task<string?> GenerateEmailChangeCodeAsync(Guid userId, string newEmail)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        return user is null ? null
+            : await userManager.GenerateUserTokenAsync(user, TokenOptions.DefaultEmailProvider, EmailChangePurpose(newEmail));
+    }
+
+    public async Task<string?> ChangeEmailAsync(Guid userId, string newEmail, string code)
+    {
+        string? oldEmail = null;
+        await dbContext.ExecuteSerializableAsync(async _ =>
+        {
+            oldEmail = null;
+            var user = await userManager.FindByIdAsync(userId.ToString());
+            if (user is null || !await userManager.VerifyUserTokenAsync(
+                    user, TokenOptions.DefaultEmailProvider, EmailChangePurpose(newEmail), code))
+                return;
+
+            var existing = await userManager.FindByEmailAsync(newEmail);
+            if (existing is not null && existing.Id != userId)
+                throw new ConflictException($"Email '{newEmail}' is already taken.", "account.email_taken");
+
+            var previous = user.Email;
+            user.Email = newEmail.Trim();
+            user.UserName = newEmail.Trim();
+            // Владение новым ящиком доказано кодом из письма.
+            user.EmailConfirmed = true;
+            EnsureSucceeded(await userManager.UpdateAsync(user), "NewEmail");
+            // Новый штамп гасит все выданные ранее коды (в том числе этот).
+            EnsureSucceeded(await userManager.UpdateSecurityStampAsync(user), "NewEmail");
+            oldEmail = previous ?? "";
+        });
+        return oldEmail;
     }
 
     public async Task UpdateAccountAdminAsync(Guid userId, string email, string? newPassword)

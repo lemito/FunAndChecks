@@ -12,6 +12,8 @@ public class CapturingEmailSender : IEmailSender
 
     private readonly ConcurrentQueue<SentEmail> _sent = new();
 
+    public IReadOnlyCollection<SentEmail> Sent => _sent.ToArray();
+
     /// <summary>Адреса, которые «почтовый сервер» отвергает навсегда (как nullMX-домен).</summary>
     public ConcurrentDictionary<string, bool> RejectedRecipients { get; } = new(StringComparer.OrdinalIgnoreCase);
 

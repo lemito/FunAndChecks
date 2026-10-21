@@ -771,4 +771,7 @@
   <data name="Management_ColGroups" xml:space="preserve"><value>Группы</value></data>
   <data name="Management_NoSubjectAccess" xml:space="preserve"><value>нет предметов</value></data>
   <data name="Management_NoGroupAccess" xml:space="preserve"><value>нет групп</value></data>
+  <data name="Management_TaskGroupsEmptyHint" xml:space="preserve"><value>Групп пока нет: создайте их в блоке «Группы задач» выше</value></data>
+  <data name="Error_EmailUnchanged" xml:space="preserve"><value>Это и так ваша текущая почта.</value></data>
+  <data name="Error_InvalidCurrentPassword" xml:space="preserve"><value>Текущий пароль указан неверно.</value></data>
 </root>
