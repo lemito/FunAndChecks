@@ -16,6 +16,8 @@ public class RegisterModel
     public string Password { get; set; } = string.Empty;
     public string ConfirmPassword { get; set; } = string.Empty;
     public int? GroupId { get; set; }
+    public bool AcceptedPrivacyPolicy { get; set; }
+    public bool AcceptedTerms { get; set; }
 }
 
 public partial class Register
@@ -24,6 +26,7 @@ public partial class Register
     [Inject] private GroupsApi Groups { get; set; } = null!;
     [Inject] private NavigationManager Nav { get; set; } = null!;
     [Inject] private IStringLocalizer<AppStrings> Loc { get; set; } = null!;
+    [Inject] private FeatureFlagsService Flags { get; set; } = null!;
 
     private RegisterModel _model = new();
     private Frontend.Shared.Components.ServerValidator _serverValidator = null!;
@@ -57,6 +60,21 @@ public partial class Register
             _serverValidator.DisplayErrors(new() { [nameof(RegisterModel.GroupId)] = [Loc["Register_GroupRequired"].Value] });
             return;
         }
+
+        if (Flags.PrivacyPolicy)
+        {
+            if (!_model.AcceptedPrivacyPolicy)
+            {
+                _serverValidator.DisplayErrors(new() { [nameof(RegisterModel.AcceptedPrivacyPolicy)] = [Loc["Register_AcceptPrivacyPolicyRequired"].Value] });
+                return;
+            }
+            if (!_model.AcceptedTerms)
+            {
+                _serverValidator.DisplayErrors(new() { [nameof(RegisterModel.AcceptedTerms)] = [Loc["Register_AcceptTermsRequired"].Value] });
+                return;
+            }
+        }
+
         _busy = true;
 
         var request = new RegisterStudentRequest(
@@ -64,7 +82,9 @@ public partial class Register
             _model.LastName.Trim(),
             _model.Email.Trim(),
             _model.Password,
-            groupId);
+            groupId,
+            _model.AcceptedPrivacyPolicy,
+            _model.AcceptedTerms);
 
         try
         {
