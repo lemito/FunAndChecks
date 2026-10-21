@@ -19,7 +19,7 @@ public sealed partial class DashboardAppearanceService(IJSRuntime js)
     public bool IsDarkMode { get; private set; } = true;
     public bool IsCompact { get; private set; }
     /// <summary>Сезонное хэллоуин-оформление: показывается только при включённом флаге события.</summary>
-    public bool IsHalloweenMode { get; private set; }
+    public bool IsHalloweenMode { get; private set; } = true;
     public string Accent { get; private set; } = Presets[0].Dark;
     public event Action? Changed;
     public MudTheme Theme { get; private set; } = CreateTheme(Presets[0].Dark);

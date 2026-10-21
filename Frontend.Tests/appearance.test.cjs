@@ -20,10 +20,15 @@ function appearance({ stored = null, blocked = false } = {}) {
     return { app: window.dashboardAppearance, storage, document };
 }
 
-test('halloween mode is off until the user turns it on', () => {
+test('halloween mode is on by default', () => {
+    // Дефолт включён: событие показывается сразу, без ручного переключения.
     const { app } = appearance();
-    assert.equal(app.load().isHalloweenMode, false);
+    assert.equal(app.load().isHalloweenMode, true);
+});
+
+test('halloween mode stays off once the user turns it off', () => {
     assert.equal(appearance({ stored: 'off' }).app.load().isHalloweenMode, false);
+    assert.equal(appearance({ stored: 'on' }).app.load().isHalloweenMode, true);
 });
 
 test('halloween mode survives a reload', () => {
@@ -49,6 +54,7 @@ test('turning the halloween mode off is stored as well', () => {
 test('blocked storage does not break the appearance', () => {
     const { app } = appearance({ blocked: true });
 
-    assert.equal(app.load().isHalloweenMode, false);
+    // При недоступном хранилище применяются дефолты — как и для темы (тёмная).
+    assert.equal(app.load().isHalloweenMode, true);
     app.apply(false, false, null, '#66e4c1', '#09251f', true, true);
 });

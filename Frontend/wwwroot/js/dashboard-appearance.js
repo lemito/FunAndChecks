@@ -1,8 +1,8 @@
 // Appearance preferences only. This file never reads or changes authentication tokens.
 window.dashboardAppearance = {
     load() {
-        let theme = null, density = null, accent = null, halloween = false;
-        try { theme = localStorage.getItem('fc-theme'); density = localStorage.getItem('fc-density'); halloween = localStorage.getItem('fc-halloween') === 'on'; } catch { }
+        let theme = null, density = null, accent = null, halloween = true;
+        try { theme = localStorage.getItem('fc-theme'); density = localStorage.getItem('fc-density'); halloween = localStorage.getItem('fc-halloween') !== 'off'; } catch { }
         try {
             const cookie = document.cookie.split(';').map(s => s.trim()).find(s => s.startsWith('fc-accent='));
             const candidate = decodeURIComponent(cookie?.slice('fc-accent='.length) || '');
