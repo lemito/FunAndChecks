@@ -1,6 +1,9 @@
 @page "/privacy-policy"
 @layout AuthLayout
 @using Frontend.Shared.Community
+@using System.Globalization
+@using System.Reflection
+@using System.IO
 @inject IStringLocalizer<AppStrings> Loc
 @inject FeatureFlagsService Flags
 @inject NavigationManager NavigationManager
@@ -40,15 +43,15 @@ else
         <div class="fc-legal-body">
             <div class="fc-legal-content">
                 <h2 id="policy">@Loc["PrivacyPolicy_Title"]</h2>
-                @((MarkupString)ForumMarkdown.ToHtml(Loc["PrivacyPolicy_Text"], "/student"))
+                @((MarkupString)ForumMarkdown.ToHtml(PolicyMarkdown, "/student"))
             </div>
             <div class="fc-legal-content">
                 <h2 id="consent">@Loc["PrivacyPolicy_ConsentTitle"]</h2>
-                @((MarkupString)ForumMarkdown.ToHtml(Loc["PrivacyPolicy_ConsentText"], "/student"))
+                @((MarkupString)ForumMarkdown.ToHtml(ConsentMarkdown, "/student"))
             </div>
             <div class="fc-legal-content">
                 <h2 id="terms">@Loc["PrivacyPolicy_TermsTitle"]</h2>
-                @((MarkupString)ForumMarkdown.ToHtml(Loc["Terms_Text"], "/student"))
+                @((MarkupString)ForumMarkdown.ToHtml(TermsMarkdown, "/student"))
             </div>
             <div class="fc-legal-actions">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/register">
@@ -60,4 +63,42 @@ else
             </div>
         </div>
     </section>
+}
+
+@code {
+    private string PolicyMarkdown = string.Empty;
+    private string ConsentMarkdown = string.Empty;
+    private string TermsMarkdown = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        PolicyMarkdown = await LoadPolicyMarkdown("PrivacyPolicy") ?? string.Empty;
+        ConsentMarkdown = await LoadPolicyMarkdown("Consent") ?? string.Empty;
+        TermsMarkdown = await LoadPolicyMarkdown("Terms") ?? string.Empty;
+    }
+
+    private async Task<string?> LoadPolicyMarkdown(string policyName)
+    {
+        var culture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName; // "en" or "ru"
+        var assembly = Assembly.GetExecutingAssembly();
+
+        // Try culture-specific first (using underscore separator)
+        var resourceName = $"{policyName}_{culture}.md";
+        var stream = assembly.GetManifestResourceStream(resourceName);
+
+        // Fallback to English
+        if (stream == null && culture != "en")
+        {
+            resourceName = $"{policyName}_en.md";
+            stream = assembly.GetManifestResourceStream(resourceName);
+        }
+
+        if (stream == null)
+        {
+            return null;
+        }
+
+        using var reader = new StreamReader(stream);
+        return await reader.ReadToEndAsync();
+    }
 }
