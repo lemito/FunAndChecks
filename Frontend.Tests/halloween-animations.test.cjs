@@ -9,6 +9,7 @@ const razor = fs.readFileSync(path.join(root, 'Frontend.Shared/UI/HalloweenAnima
 const shell = fs.readFileSync(path.join(root, 'Frontend.Shared/UI/WorkspaceShell.razor'), 'utf8');
 const index = fs.readFileSync(path.join(root, 'Frontend/wwwroot/index.html'), 'utf8');
 const authLayout = fs.readFileSync(path.join(root, 'Frontend.Shared/Layout/AuthLayout.razor'), 'utf8');
+const program = fs.readFileSync(path.join(root, 'Frontend/Program.cs'), 'utf8');
 
 /** Убирает комментарии, чтобы не считать фигурные скобки внутри них. */
 function stripComments(source) { return source.replace(/\/\*[\s\S]*?\*\//g, ''); }
@@ -165,6 +166,16 @@ test('both layouts react to the halloween preference', () => {
         assert.match(source, /Flags\.HalloweenEvent\s*&&\s*Appearance\.IsHalloweenMode/,
             `${name} must gate the halloween look on the flag and the user preference`);
     }
+});
+
+test('appearance is initialized before the first render', () => {
+    // Иначе первый кадр рисуется с дефолтным состоянием: у выключивших
+    // Halloween оформление на миг появляется и исчезает.
+    const init = program.indexOf('appearance.InitializeAsync()');
+    const run = program.indexOf('host.RunAsync()');
+    assert.ok(init > 0, 'Program.cs must initialize the appearance service');
+    assert.ok(run > 0, 'Program.cs must start the host');
+    assert.ok(init < run, 'appearance must be initialized before host.RunAsync()');
 });
 
 test('halloween component is gated by the feature flag and the user preference', () => {
