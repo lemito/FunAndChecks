@@ -72,6 +72,18 @@ public interface IIdentityService
     /// </summary>
     Task<AccountResult> ResetPasswordAsync(string email, string code, string newPassword);
 
+    /// <summary>Проверяет пароль пользователя (без блокировки за неудачи — запрос уже под лимитом).</summary>
+    Task<bool> CheckPasswordAsync(Guid userId, string password);
+
+    /// <summary>Код смены почты, привязанный к новому адресу; null — если пользователя нет.</summary>
+    Task<string?> GenerateEmailChangeCodeAsync(Guid userId, string newEmail);
+
+    /// <summary>
+    /// Меняет почту (и логин) по коду, отправленному на новый адрес. Возвращает прежний адрес;
+    /// null — код неверный или истёк. Занятый адрес — <c>ConflictException</c> «account.email_taken».
+    /// </summary>
+    Task<string?> ChangeEmailAsync(Guid userId, string newEmail, string code);
+
     /// <summary>
     /// Редактирование учётки админом: смена email, пароля, разбан и подтверждение.
     /// </summary>

@@ -1163,4 +1163,7 @@ Email: «ПОДСТАВИТЬ СВОЁ: контактный email»
   <data name="PrivacyPolicy_ConsentTitle" xml:space="preserve"><value>Согласие на обработку персональных данных</value></data>
   <data name="PrivacyPolicy_TermsTitle" xml:space="preserve"><value>Пользовательское соглашение</value></data>
   <data name="PrivacyPolicy_DocumentsNav" xml:space="preserve"><value>Документы</value></data>
+  <data name="Management_TaskGroupsEmptyHint" xml:space="preserve"><value>Групп пока нет: создайте их в блоке «Группы задач» выше</value></data>
+  <data name="Error_EmailUnchanged" xml:space="preserve"><value>Это и так ваша текущая почта.</value></data>
+  <data name="Error_InvalidCurrentPassword" xml:space="preserve"><value>Текущий пароль указан неверно.</value></data>
 </root>
