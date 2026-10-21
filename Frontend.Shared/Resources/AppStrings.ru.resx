@@ -1161,6 +1161,9 @@ Email: «ПОДСТАВИТЬ СВОЁ: контактный email»
   <data name="Register_AcceptTermsRequired" xml:space="preserve"><value>Необходимо принять Пользовательское соглашение</value></data>
   <data name="Register_TermsLink" xml:space="preserve"><value>Пользовательское соглашение</value></data>
   <data name="PrivacyPolicy_ConsentTitle" xml:space="preserve"><value>Согласие на обработку персональных данных</value></data>
-  <data name="PrivacyPolicy_TermsTitle" xml:space="preserve"><value>Пользовательское соглашение</value></data>
+  <data name="PrivacyPolicy_TermsTitle" xml:space="preserve"><value>Пользовательское соглачение</value></data>
   <data name="PrivacyPolicy_DocumentsNav" xml:space="preserve"><value>Документы</value></data>
+
+  <!-- ==================== Halloween ==================== -->
+  <data name="Halloween_AriaLabel" xml:space="preserve"><value>Хэллоуинские украшения</value></data>
 </root>
