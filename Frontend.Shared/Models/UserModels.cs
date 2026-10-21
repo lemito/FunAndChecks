@@ -45,3 +45,12 @@ public record UserAccountDto(Guid Id, string? FirstName, string? LastName, strin
     bool EmailConfirmed, bool IsActive, bool HasStudentProfile);
 
 public record UserAccountPageDto(List<UserAccountDto> Items, int TotalCount, int Page, int PageSize);
+
+/// <summary>Студент сам меняет фамилию и имя.</summary>
+public record ChangeNameRequest(string FirstName, string LastName);
+
+/// <summary>Смена почты, шаг 1: код уходит на новый адрес после проверки пароля.</summary>
+public record RequestEmailChangeRequest(string NewEmail, string CurrentPassword);
+
+/// <summary>Смена почты, шаг 2: код из письма.</summary>
+public record ConfirmEmailChangeRequest(string NewEmail, string Code);

@@ -47,4 +47,16 @@ public class MeApi(HttpClient http, IStringLocalizer<AppStrings> loc) : ApiClien
 
     public Task SetGroupHiddenAsync(int groupId, bool hidden, CancellationToken ct = default) =>
         PutAsync($"api/me/groups/{groupId}/hidden", new SetHiddenRequest(hidden), ct);
+
+    /// <summary>Студент: сменить фамилию и имя.</summary>
+    public Task ChangeNameAsync(ChangeNameRequest request, CancellationToken ct = default) =>
+        PutAsync("api/me/account/name", request, ct);
+
+    /// <summary>Студент: отправить код на новую почту (нужен текущий пароль).</summary>
+    public Task RequestEmailChangeAsync(RequestEmailChangeRequest request, CancellationToken ct = default) =>
+        PostAsync("api/me/account/email/change", request, ct);
+
+    /// <summary>Студент: подтвердить новую почту кодом из письма.</summary>
+    public Task ConfirmEmailChangeAsync(ConfirmEmailChangeRequest request, CancellationToken ct = default) =>
+        PostAsync("api/me/account/email/confirm", request, ct);
 }

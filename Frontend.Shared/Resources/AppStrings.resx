@@ -780,6 +780,7 @@
   <data name="Management_ColGroups" xml:space="preserve"><value>Groups</value></data>
   <data name="Management_NoSubjectAccess" xml:space="preserve"><value>no subjects</value></data>
   <data name="Management_NoGroupAccess" xml:space="preserve"><value>no groups</value></data>
+
   <!-- ==================== Privacy Policy ==================== -->
   <data name="PrivacyPolicy_PageTitle" xml:space="preserve"><value>Legal documents</value></data>
   <data name="PrivacyPolicy_Title" xml:space="preserve"><value>Personal Data Processing Policy</value></data>
@@ -1166,4 +1167,7 @@ Revision dated 21 October 2026.</value></data>
 
   <!-- ==================== Halloween ==================== -->
   <data name="Halloween_AriaLabel" xml:space="preserve"><value>Halloween decorations</value></data>
+  <data name="Management_TaskGroupsEmptyHint" xml:space="preserve"><value>No groups yet: create them in “Task groups” above</value></data>
+  <data name="Error_EmailUnchanged" xml:space="preserve"><value>This is already your email.</value></data>
+  <data name="Error_InvalidCurrentPassword" xml:space="preserve"><value>The current password is incorrect.</value></data>
 </root>

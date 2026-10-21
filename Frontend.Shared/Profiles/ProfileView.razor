@@ -23,7 +23,14 @@ else if (_profile is not null)
     <section class="fc-panel fc-profile-hero">
         <ProfileMedia Media="_profile.Avatar" Alt="@_profile.FullName" Fallback="@ProfileText.Initials(_profile.FullName)" Class="fc-profile-avatar" />
         <div class="fc-profile-identity"><h1>@_profile.FullName</h1><div class="fc-profile-tags"><span>@(_profile.IsAdmin ? ProfileText.T("Преподаватель", "Teacher") : ProfileText.T("Студент", "Student"))</span>@if (_profile.GroupName is not null) { <span>@_profile.GroupName</span> }</div></div>
-        @if (_mine) { <MudButton OnClick="Edit" Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.Edit">@ProfileText.T("Редактировать", "Edit profile")</MudButton> }
+        @if (_mine)
+        {
+            <div class="fc-profile-hero-actions">
+                @* Имя и почту студент меняет сам; у преподавателей их ведёт администратор. *@
+                @if (!_profile.IsAdmin) { <MudButton OnClick="() => _account = true" Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.ManageAccounts">@ProfileText.T("Имя и почта", "Name and email")</MudButton> }
+                <MudButton OnClick="Edit" Variant="Variant.Outlined" StartIcon="@Icons.Material.Outlined.Edit">@ProfileText.T("Редактировать", "Edit profile")</MudButton>
+            </div>
+        }
     </section>
     <div class="fc-profile-columns">
         <div>
@@ -72,10 +79,13 @@ else if (_profile is not null)
             <MudTextField T="string" @bind-Value="_about" Immediate="true" Label="@ProfileText.T("О себе", "About me")" Lines="5" MaxLength="2000" Variant="Variant.Outlined" Class="mt-4" />
             <MudTextField T="string" @bind-Value="_github" Immediate="true" Label="GitHub" MaxLength="500" Variant="Variant.Outlined" Class="mt-3" />
             <MudTextField T="string" @bind-Value="_portfolio" Immediate="true" Label="@ProfileText.T("Портфолио", "Portfolio")" MaxLength="500" Variant="Variant.Outlined" Class="mt-3" />
-            <p class="fc-profile-hint">@ProfileText.T("Описание и ссылки видны другим пользователям после входа. ФИО и группу меняет администратор.", "Your description and links are visible to signed-in users. Administrators manage your name and group.")</p>
+            <p class="fc-profile-hint">@(_profile?.IsAdmin == false
+                ? ProfileText.T("Описание и ссылки видны другим пользователям после входа. Имя и почту можно поменять в «Имя и почта», группу меняет преподаватель.", "Your description and links are visible to signed-in users. Change your name and email under “Name and email”; your teacher manages your group.")
+                : ProfileText.T("Описание и ссылки видны другим пользователям после входа. ФИО и группу меняет администратор.", "Your description and links are visible to signed-in users. Administrators manage your name and group."))</p>
         </ChildContent><Actions><MudButton OnClick="CancelEdit" Disabled="@_busy">@ProfileText.T("Отмена", "Cancel")</MudButton><MudButton OnClick="SaveProfileAsync" Disabled="@_busy" Color="Color.Primary" Variant="Variant.Filled">@ProfileText.T("Сохранить", "Save")</MudButton></Actions>
     </ProfileDialog>
 }
+@if (_account && _mine) { <AccountSettingsDialog Changed="LoadAsync" Close="() => _account = false" /> }
 @if (_avatarEditor) { <MediaEditor Save="SaveAvatarAsync" Close="() => _avatarEditor = false" /> }
 @if (_award is not null) { <AchievementDetail AchievementId="_award.AchievementId" Award="_award" Mine="_mine" IsAdmin="_admin" BasePath="@BasePath" Pin="TogglePinAsync" Changed="RefreshAwardAsync" Close="() => _award = null" /> }
 @if (_grant && _admin && _profile is not null) { <GrantAchievementDialog Recipient="@(new AchievementUserDto(_profile.UserId, _profile.FullName, _profile.GroupName, _profile.IsAdmin))" Changed="GrantDoneAsync" Close="() => _grant = false" /> }
@@ -89,7 +99,7 @@ else if (_profile is not null)
     private UserProfileDto? _profile;
     private ProfileStatsDto? _stats;
     private AchievementAwardDto? _award;
-    private bool _mine, _admin, _superAdmin, _loading = true, _edit, _avatarEditor, _grant, _busy;
+    private bool _mine, _admin, _superAdmin, _loading = true, _edit, _avatarEditor, _grant, _busy, _account;
     private string? _error, _editError, _about, _github, _portfolio;
     private readonly CancellationTokenSource _life = new();
     private Guid? _routeUserId;
@@ -99,7 +109,7 @@ else if (_profile is not null)
     {
         if (_routeInitialized && _routeUserId == UserId && _routeAdminLayout == IsAdminLayout) return;
         _routeInitialized = true; _routeUserId = UserId; _routeAdminLayout = IsAdminLayout; _routeGeneration++;
-        _award = null; _grant = _edit = _avatarEditor = _busy = false; _profile = null; _stats = null;
+        _award = null; _grant = _edit = _avatarEditor = _busy = _account = false; _profile = null; _stats = null;
         _about = _github = _portfolio = _editError = null; Dirty.MarkClean();
         await LoadAsync();
     }
