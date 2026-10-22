@@ -59,11 +59,6 @@
   <data name="Login_GoToRegister" xml:space="preserve"><value>Регистрация</value></data>
   <data name="Login_ViewResults" xml:space="preserve"><value>Посмотреть результаты без входа</value></data>
   <data name="Login_ConfirmEmailButton" xml:space="preserve"><value>Подтвердить почту</value></data>
-  <data name="Login_PrivacyConsentTitle" xml:space="preserve"><value>Требуется согласие на обработку персональных данных</value></data>
-  <data name="Login_PrivacyConsentMessage" xml:space="preserve"><value>Для продолжения работы необходимо дать согласие на обработку персональных данных и принять Пользовательское соглашение.</value></data>
-  <data name="Login_PrivacyConsentAccept" xml:space="preserve"><value>Согласен и принимаю</value></data>
-  <data name="Login_PrivacyConsentRead" xml:space="preserve"><value>Открыть документы</value></data>
-  <data name="Login_PrivacyConsentAcceptRequired" xml:space="preserve"><value>Необходимо отметить оба пункта</value></data>
 
   <!-- ==================== Register ==================== -->
   <data name="Register_PageTitle" xml:space="preserve"><value>Регистрация</value></data>
@@ -82,10 +77,6 @@
   <data name="Register_GroupPlaceholder" xml:space="preserve"><value>Выберите группу</value></data>
   <data name="Register_SubmitButton" xml:space="preserve"><value>Зарегистрироваться</value></data>
   <data name="Register_HaveAccount" xml:space="preserve"><value>Уже есть аккаунт? Войти</value></data>
-  <data name="Register_AcceptPrivacyPolicy" xml:space="preserve"><value>Согласен на обработку персональных данных</value></data>
-  <data name="Register_AcceptPrivacyPolicyRequired" xml:space="preserve"><value>Необходимо согласиться на обработку персональных данных</value></data>
-  <data name="Register_AcceptPrivacyPolicyHint" xml:space="preserve"><value>Все правовые документы — на одной странице</value></data>
-  <data name="Register_PrivacyPolicyLink" xml:space="preserve"><value>Политика обработки персональных данных</value></data>
 
   <!-- ==================== ConfirmEmail ==================== -->
   <data name="ConfirmEmail_PageTitle" xml:space="preserve"><value>Подтверждение почты</value></data>
@@ -780,23 +771,6 @@
   <data name="Management_ColGroups" xml:space="preserve"><value>Группы</value></data>
   <data name="Management_NoSubjectAccess" xml:space="preserve"><value>нет предметов</value></data>
   <data name="Management_NoGroupAccess" xml:space="preserve"><value>нет групп</value></data>
-  <!-- ==================== Privacy Policy ==================== -->
-  <data name="PrivacyPolicy_PageTitle" xml:space="preserve"><value>Правовые документы</value></data>
-  <data name="PrivacyPolicy_Title" xml:space="preserve"><value>Политика обработки персональных данных</value></data>
-  
-  <data name="PrivacyPolicy_BackToRegister" xml:space="preserve"><value>К регистрации</value></data>
-  <data name="PrivacyPolicy_Unavailable" xml:space="preserve"><value>Страница недоступна</value></data>
-  <data name="PrivacyPolicy_UnavailableHint" xml:space="preserve"><value>Документы временно недоступны.</value></data>
-  
-  
-  <data name="Terms_PageTitle" xml:space="preserve"><value>Пользовательское соглашение</value></data>
-  <data name="Terms_Title" xml:space="preserve"><value>Пользовательское соглашение</value></data>
-  <data name="Register_AcceptTerms" xml:space="preserve"><value>Принимаю Пользовательское соглашение</value></data>
-  <data name="Register_AcceptTermsRequired" xml:space="preserve"><value>Необходимо принять Пользовательское соглашение</value></data>
-  <data name="Register_TermsLink" xml:space="preserve"><value>Пользовательское соглашение</value></data>
-  <data name="PrivacyPolicy_ConsentTitle" xml:space="preserve"><value>Согласие на обработку персональных данных</value></data>
-  <data name="PrivacyPolicy_TermsTitle" xml:space="preserve"><value>Пользовательское соглашение</value></data>
-  <data name="PrivacyPolicy_DocumentsNav" xml:space="preserve"><value>Документы</value></data>
   <data name="Management_TaskGroupsEmptyHint" xml:space="preserve"><value>Групп пока нет: создайте их в блоке «Группы задач» выше</value></data>
   <data name="Error_EmailUnchanged" xml:space="preserve"><value>Это и так ваша текущая почта.</value></data>
   <data name="Error_InvalidCurrentPassword" xml:space="preserve"><value>Текущий пароль указан неверно.</value></data>

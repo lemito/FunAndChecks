@@ -1,9 +1,7 @@
-using Frontend.Shared.Api;
 using Frontend.Shared.Auth;
 using Frontend.Shared.Models;
 using Frontend.Shared.Resources;
 using Frontend.Shared.Services;
-using Frontend.Shared.UI;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
@@ -18,8 +16,6 @@ public partial class Login
     [Inject] private JwtAuthenticationStateProvider AuthState { get; set; } = null!;
     [Inject] private NavigationManager Nav { get; set; } = null!;
     [Inject] private IStringLocalizer<AppStrings> Loc { get; set; } = null!;
-    [Inject] private IDialogService DialogService { get; set; } = null!;
-    [Inject] private FeatureFlagsService Flags { get; set; } = null!;
     [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
 
     private MudForm _form = null!;
@@ -28,7 +24,6 @@ public partial class Login
     private string? _error;
     private bool _emailNotConfirmed;
     private bool _busy, _showPassword, _sharedComputer;
-    private bool _showPrivacyConsentDialog;
 
     private async Task SubmitAsync()
     {
@@ -53,27 +48,6 @@ public partial class Login
             }
 
             AuthState.NotifyAuthenticationStateChanged();
-
-            // Админам сервер сам отдаёт «согласие есть» — им согласие не требуется.
-            if (Flags.PrivacyPolicy)
-            {
-                var accepted = false;
-                try
-                {
-                    var status = await Auth.GetPrivacyPolicyStatusAsync();
-                    accepted = status.Accepted && status.TermsAccepted;
-                }
-                catch (ApiException)
-                {
-                    // Статус не удалось получить — считаем согласие неданным и просим его явно.
-                }
-                if (!accepted)
-                {
-                    _showPrivacyConsentDialog = true;
-                    return;
-                }
-            }
-
             await RedirectByRoleAsync();
         }
         finally
@@ -82,19 +56,12 @@ public partial class Login
         }
     }
 
-    private void OnPrivacyPolicyAccepted()
-    {
-        _showPrivacyConsentDialog = false;
-        _ = RedirectByRoleAsync();
-    }
-
     private async Task RedirectByRoleAsync()
     {
         var state = await ((AuthenticationStateProvider)AuthState).GetAuthenticationStateAsync();
         var home = state.User.IsInRole(Roles.Admin) ? "/admin" : "/student";
         Nav.NavigateTo(SafeReturnUrl(ReturnUrl, home) ?? home);
     }
-
 
     /// <summary>
     /// Возврат после входа — только на страницы своего кабинета или мониторинг,

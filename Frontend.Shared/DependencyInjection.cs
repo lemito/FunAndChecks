@@ -25,7 +25,6 @@ public static class DependencyInjection
         // Хранение токенов и аутентификация.
         services.AddSingleton<TokenStore>();
         services.AddSingleton<TokenRefresher>();
-        services.AddSingleton<FeatureFlagsService>();
         services.AddTransient<AuthHeaderHandler>();
         services.AddScoped<AuthService>();
         services.AddScoped<ThemeService>();

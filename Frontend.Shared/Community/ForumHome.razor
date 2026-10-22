@@ -26,12 +26,9 @@
         @foreach (var section in _sections)
         {
             var selected = section.SubjectId is null ? _filter == Filter.General : _filter == Filter.Subject && _subjectId == section.SubjectId;
-            var badgeHtml = section.UnreadTopicCount > 0
-                ? $"<span class=\"fc-nav-badge\">{section.UnreadTopicCount}</span>"
-                : $"<small>{section.TopicCount}</small>";
             <button type="button" class="@(selected ? "selected" : "")" @onclick="() => SelectAsync(section.SubjectId is null ? Filter.General : Filter.Subject, section.SubjectId)">
                 <span>@SectionName(section)</span>
-                @((MarkupString)badgeHtml)
+                @if (section.UnreadTopicCount > 0) { <span class="fc-nav-badge">@section.UnreadTopicCount</span> } else { <small>@section.TopicCount</small> }
             </button>
         }
     </nav>

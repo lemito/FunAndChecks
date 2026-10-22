@@ -22,8 +22,4 @@ await cultureService.InitializeAsync();
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo(cultureService.CurrentCulture);
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo(cultureService.CurrentCulture);
 
-// Load feature flags from backend
-var featureFlags = host.Services.GetRequiredService<FeatureFlagsService>();
-await featureFlags.LoadAsync();
-
 await host.RunAsync();

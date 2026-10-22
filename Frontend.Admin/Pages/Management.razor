@@ -14,19 +14,13 @@
 else
 {
     <div class="fc-management-mobile"><MudSelect T="string" @bind-Value="_section" Label="@Loc["Management_Title"]" Variant="Variant.Outlined">
-        @foreach (var section in ManagementSections)
-        {
-            var sectionId = section.Id;
-            <MudSelectItem T="string" Value="@sectionId">@Loc[section.Label]</MudSelectItem>
-        }
+        @foreach (var section in ManagementSections) { <MudSelectItem T="string" Value="@section.Id">@Loc[section.Label]</MudSelectItem> }
     </MudSelect></div>
     <div class="fc-management-layout">
         <nav class="fc-panel fc-management-nav" aria-label="@Loc["Management_Title"]">
             @foreach (var section in ManagementSections)
             {
-                var sectionId = section.Id;
-                var sectionIcon = section.Icon;
-                <button type="button" class="fc-management-link @(_section == sectionId ? "active" : "")" aria-current="@(_section == sectionId ? "page" : null)" @onclick="@(() => _section = sectionId)"><MudIcon Icon="@sectionIcon" Size="Size.Small" />@Loc[section.Label]</button>
+                <button type="button" class="fc-management-link @(_section == section.Id ? "active" : "")" aria-current="@(_section == section.Id ? "page" : null)" @onclick="@(() => _section = section.Id)"><MudIcon Icon="@section.Icon" Size="Size.Small" />@Loc[section.Label]</button>
             }
         </nav>
         <div class="fc-management-content">

@@ -1,5 +1,4 @@
 using FunAndChecks.Application.Backups;
-using FunAndChecks.Application.Common;
 using FunAndChecks.Application.Common.Interfaces;
 using FunAndChecks.Application.Profiles;
 using FunAndChecks.Infrastructure.Backup;
@@ -59,7 +58,6 @@ public static class DependencyInjection
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
         services.Configure<BackupOptions>(configuration.GetSection(BackupOptions.SectionName));
         services.Configure<ProfileMediaOptions>(configuration.GetSection("ProfileMedia"));
-        services.Configure<FeatureFlags>(configuration.GetSection(FeatureFlags.SectionName));
         services.AddOptions<EmailCodeTokenProviderOptions>();
 
         services.AddScoped<IEmailSender, SmtpEmailSender>();
